@@ -1,0 +1,100 @@
+name: Independent component builds
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build and test backend
+        working-directory: backend
+        run: mvn -B --no-transfer-progress verify
+      - name: Package backend without runtime configuration
+        run: |
+          python3 deploy/package.py backend \
+            --input backend/target/site-backend-0.1.0-SNAPSHOT.jar \
+            --output artifacts \
+            --version "0.1.0-${GITHUB_SHA:0:12}" \
+            --source-commit "$GITHUB_SHA" \
+            --build-id "$GITHUB_RUN_ID" \
+            --toolchain jdk21-maven
+      - uses: actions/upload-artifact@v5
+        with:
+          name: backend-build
+          path: artifacts/backend/
+          if-no-files-found: error
+
+  collector:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: collector/go.mod
+          cache-dependency-path: collector/go.sum
+      - name: Test collector
+        working-directory: collector
+        run: go test ./...
+      - name: Build linux/amd64 collector
+        working-directory: collector
+        run: |
+          mkdir -p ../build
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' \
+            -o ../build/collector-linux-amd64 ./cmd/collector
+      - name: Package collector without runtime configuration
+        run: |
+          python3 deploy/package.py collector \
+            --input build/collector-linux-amd64 \
+            --output artifacts \
+            --version "0.1.0-${GITHUB_SHA:0:12}" \
+            --source-commit "$GITHUB_SHA" \
+            --build-id "$GITHUB_RUN_ID" \
+            --toolchain go1.27.1-cgo0
+      - uses: actions/upload-artifact@v5
+        with:
+          name: collector-build
+          path: artifacts/collector/
+          if-no-files-found: error
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.19.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Test artifact boundary
+        run: python3 -m unittest discover -s deploy -p 'test_*.py'
+      - name: Build and test frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: Fingerprint and package frontend
+        run: |
+          python3 deploy/package.py frontend \
+            --input frontend/dist \
+            --output artifacts \
+            --version "0.1.0-${GITHUB_SHA:0:12}" \
+            --source-commit "$GITHUB_SHA" \
+            --build-id "$GITHUB_RUN_ID" \
+            --toolchain node24.19-npm11.17
+      - uses: actions/upload-artifact@v5
+        with:
+          name: frontend-build
+          path: artifacts/frontend/
+          if-no-files-found: error
