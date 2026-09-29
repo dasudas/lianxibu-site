@@ -33,6 +33,7 @@ public interface ContentService {
     record ContentPage(List<ContentView> items, long page, int pageSize, long total) { }
     record ContentWrite(long expectedRevision, ContentBody body) { }
     record ContentAction(long expectedRevision, String action, String reason, String withdrawalReason) { }
+    record EvidenceAction(long expectedValidityRevision, String action, String reason, String invalidationId) { }
     record ContentVersionKey(String kind, String contentKind, String contentId, long revision,
                              String bodyHash, String inputJobId) { }
     record VersionSummary(ContentVersionKey target, String versionKind, long validityRevision,
@@ -66,6 +67,8 @@ public interface ContentService {
                       String idempotencyKey, String csrfToken, String origin);
     ActionResult action(Actor actor, String kind, String id, ContentAction command,
                         String idempotencyKey, String csrfToken, String origin);
+    ActionResult evidenceAction(Actor actor, String kind, String id, EvidenceAction command,
+                                String idempotencyKey, String csrfToken, String origin);
     VersionPage referencedVersions(Actor actor, String kind, String id, long page, int pageSize);
     ActionResult versionAction(Actor actor, String kind, String id, VersionAction command,
                                String idempotencyKey, String csrfToken, String origin);

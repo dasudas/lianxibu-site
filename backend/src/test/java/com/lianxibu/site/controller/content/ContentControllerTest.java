@@ -194,6 +194,34 @@ class ContentControllerTest {
     }
 
     @Test
+    void evidenceActionsMapBothBranchesAndRejectUnknownKinds() throws Exception {
+        when(service.evidenceAction(eq(OWNER), eq("article_revision"), eq("fixture-evidence"), any(),
+                eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN))).thenReturn(ACTION);
+        mvc.perform(write(post("/admin/evidence/article_revision/fixture-evidence/actions"),
+                        "{\"expected_validity_revision\":0,\"action\":\"invalidate\","
+                        + "\"reason\":\"fixture\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.operation_ref").value("fixture-operation"));
+        verify(service).evidenceAction(eq(OWNER), eq("article_revision"), eq("fixture-evidence"),
+                eq(new ContentService.EvidenceAction(0, "invalidate", "fixture", null)),
+                eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN));
+        mvc.perform(write(post("/admin/evidence/article_revision/fixture-evidence/actions"),
+                        "{\"expected_validity_revision\":1,\"action\":\"reverse_invalidation\","
+                        + "\"reason\":\"fixture\",\"invalidation_id\":\"fixture-invalidation\"}"))
+                .andExpect(status().isOk());
+        verify(service).evidenceAction(eq(OWNER), eq("article_revision"), eq("fixture-evidence"),
+                eq(new ContentService.EvidenceAction(1, "reverse_invalidation", "fixture",
+                        "fixture-invalidation")), eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN));
+        mvc.perform(write(post("/admin/evidence/unknown/fixture-evidence/actions"),
+                        "{\"expected_validity_revision\":0,\"action\":\"invalidate\","
+                        + "\"reason\":\"fixture\"}"))
+                .andExpect(status().isUnprocessableEntity());
+        mvc.perform(write(post("/admin/evidence/article_revision/fixture-evidence/actions"),
+                        "{\"expected_validity_revision\":1,\"action\":\"reverse_invalidation\","
+                        + "\"reason\":\"fixture\"}"))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
     void malformedCommandsDoNotReachBusinessService() throws Exception {
         mvc.perform(auth(get("/admin/content/report/" + "x".repeat(65))))
                 .andExpect(status().isUnprocessableEntity());

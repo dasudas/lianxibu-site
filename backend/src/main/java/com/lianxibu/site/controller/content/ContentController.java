@@ -126,6 +126,33 @@ public final class ContentController {
         return success(actionResult(service().action(actor, kind(kind), id(id), command, key, csrf, origin)));
     }
 
+    @PostMapping(path = "/admin/evidence/{kind}/{id}/actions", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ContentDtos.Envelope<Map<String, Object>>> evidenceAction(
+            @CookieValue(name = "lianxibu_session", required = false) String cookie,
+            @PathVariable("kind") String kind, @PathVariable("id") String id,
+            @RequestHeader(name = "X-CSRF-Token", required = false) String csrf,
+            @RequestHeader(name = "Origin", required = false) String origin,
+            @RequestHeader(name = "Idempotency-Key", required = false) String key,
+            @RequestBody(required = false) byte[] raw) {
+        Actor actor = owner(cookie);
+        writeHeaders(csrf, origin, key);
+        if (!Set.of("article_revision", "catalog_evidence").contains(kind)) {
+            throw validation("invalid evidence kind");
+        }
+        JsonNode value = parse(raw);
+        String action = text(value.get("action"), 1, 32);
+        if (!Set.of("invalidate", "reverse_invalidation").contains(action)) {
+            throw validation("invalid evidence action");
+        }
+        fields(value, Set.of("expected_validity_revision", "action", "reason"),
+                action.equals("reverse_invalidation") ? Set.of("invalidation_id") : Set.of());
+        var command = new ContentService.EvidenceAction(number(value.get("expected_validity_revision")),
+                action, text(value.get("reason"), 1, 2048),
+                action.equals("reverse_invalidation") ? id(value.get("invalidation_id")) : null);
+        return success(actionResult(service().evidenceAction(actor, kind, id(id), command, key, csrf, origin)));
+    }
+
     @GetMapping(path = "/admin/content/{kind}/{id}/referenced-versions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ContentDtos.Envelope<ContentDtos.Page<Map<String, Object>>>> referencedVersions(
             @CookieValue(name = "lianxibu_session", required = false) String cookie,
