@@ -55,6 +55,7 @@ public final class IdentityController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<IdentityDtos.Envelope<IdentityDtos.Session>> login(
             @RequestBody(required = false) byte[] body,
+            @CookieValue(name = SESSION_COOKIE, required = false) String sessionCookie,
             @CookieValue(name = ANONYMOUS_COOKIE, required = false) String anonymousCookie,
             @RequestHeader(name = "X-CSRF-Token", required = false) String csrf,
             @RequestHeader(name = "Origin", required = false) String origin) {
@@ -62,7 +63,7 @@ public final class IdentityController {
         JsonNode request = request(body, Set.of("username", "password"));
         var command = new IdentityService.LoginCommand(string(request, "username", 1, 64, false),
                 string(request, "password", 1, 1024, false));
-        return sessionResponse(service().login(command, anonymousCookie, csrf, origin));
+        return sessionResponse(service().login(command, sessionCookie, anonymousCookie, csrf, origin));
     }
 
     @DeleteMapping(path = "/session", produces = MediaType.APPLICATION_JSON_VALUE)

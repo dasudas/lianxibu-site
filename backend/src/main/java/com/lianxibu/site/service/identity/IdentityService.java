@@ -37,8 +37,10 @@ public interface IdentityService {
     record NodeActionOutcome(CollectorNode node, String token) { }
 
     SessionOutcome session(String sessionCookie, String anonymousCookie);
-    SessionOutcome login(LoginCommand command, String anonymousCookie, String csrfToken, String origin);
+    SessionOutcome login(LoginCommand command, String sessionCookie, String anonymousCookie,
+                         String csrfToken, String origin);
     Actor authenticate(String sessionCookie);
+    Actor authorizeWrite(String sessionCookie, String csrfToken, String origin);
     SessionOutcome logout(Actor actor, String sessionCookie, String csrfToken, String origin);
     CollectorNodePage listNodes(Actor actor, long page, int pageSize);
     NodeCredential createNode(Actor actor, NodeCreateCommand command, String idempotencyKey,

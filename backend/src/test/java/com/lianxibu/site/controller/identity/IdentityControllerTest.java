@@ -60,7 +60,8 @@ class IdentityControllerTest {
                 .andExpect(jsonPath("$.data.csrf_token").value("fixture-csrf"))
                 .andExpect(jsonPath("$.meta.request_id").isNotEmpty());
 
-        when(service.login(any(), eq("fixture-anon"), eq("fixture-csrf"), eq("https://site.example.invalid")))
+        when(service.login(any(), eq(null), eq("fixture-anon"), eq("fixture-csrf"),
+                eq("https://site.example.invalid")))
                 .thenReturn(new SessionOutcome(new SessionState(true, "fixture-owner", "owner", "new-csrf"),
                         "fixture-session", null, false, true));
         mvc.perform(post("/session").contentType(MediaType.APPLICATION_JSON)
@@ -70,7 +71,21 @@ class IdentityControllerTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.user_id").value("fixture-owner"))
                 .andExpect(jsonPath("$.data.role").value("owner"));
         verify(service).login(eq(new IdentityService.LoginCommand("fixture", "fixture")),
-                eq("fixture-anon"), eq("fixture-csrf"), eq("https://site.example.invalid"));
+                eq(null), eq("fixture-anon"), eq("fixture-csrf"), eq("https://site.example.invalid"));
+
+        when(service.login(any(), eq("fixture-old-session"), eq(null), eq("fixture-old-csrf"),
+                eq("https://site.example.invalid")))
+                .thenReturn(new SessionOutcome(new SessionState(true, "fixture-owner", "owner", "rotated-csrf"),
+                        "fixture-new-session", null, false, true));
+        mvc.perform(post("/session").contentType(MediaType.APPLICATION_JSON)
+                        .cookie(new jakarta.servlet.http.Cookie("lianxibu_session", "fixture-old-session"))
+                        .header("X-CSRF-Token", "fixture-old-csrf")
+                        .header("Origin", "https://site.example.invalid")
+                        .content("{\"username\":\"fixture\",\"password\":\"fixture\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.csrf_token").value("rotated-csrf"));
+        verify(service).login(eq(new IdentityService.LoginCommand("fixture", "fixture")),
+                eq("fixture-old-session"), eq(null), eq("fixture-old-csrf"),
+                eq("https://site.example.invalid"));
 
         when(service.authenticate("fixture-session")).thenReturn(OWNER);
         when(service.logout(OWNER, "fixture-session", "fixture-csrf", "https://site.example.invalid"))
