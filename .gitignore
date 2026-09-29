@@ -22,3 +22,44 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Local secrets and machine configuration
+.env
+.env.*
+!.env.example
+!.env.sample
+*.local
+*.secret
+*.secrets
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+application-prod.yml
+application-prod.yaml
+application-prod.properties
+config-prod.yml
+config-prod.yaml
+secrets/
+
+# Runtime data, evidence and generated output
+*.sqlite
+*.sqlite3
+*.db
+*.sql.gz
+*.dump
+*.bak
+*.backup
+*.log.*
+logs/
+data/
+outbox/
+evidence/
+screenshots/
+artifacts/
+dist/
+build/
+target/
+.idea/
