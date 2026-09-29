@@ -1,0 +1,1202 @@
+[
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/session",
+    "response": "Session",
+    "request": "Login",
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "登录前先GET会话取得匿名CSRF；校验Origin；成功轮换会话与CSRF。",
+    "operation_id": "business_post_session"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/session",
+    "response": "Session",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_session"
+  },
+  {
+    "group": "business",
+    "method": "delete",
+    "path": "/session",
+    "response": "Session",
+    "request": null,
+    "access": "user",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_delete_session"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/capabilities",
+    "response": "Capabilities",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_capabilities"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/home",
+    "response": "Home",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_home"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/reports",
+    "response": "ContentSummaryPage",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "daily",
+          "weekly",
+          "monthly"
+        ]
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_reports"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/reports/{id}",
+    "response": "ContentDetail",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_reports_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/interpretations",
+    "response": "ContentSummaryPage",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "agent",
+          "skill",
+          "workflow",
+          "model"
+        ]
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_interpretations"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/interpretations/{id}",
+    "response": "ContentDetail",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_interpretations_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/private/articles",
+    "response": "ArticlePage",
+    "request": null,
+    "access": "user",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "source_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "q": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "not_started",
+          "planned",
+          "learning",
+          "completed"
+        ]
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_private_articles"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/private/articles/{id}",
+    "response": "Article",
+    "request": null,
+    "access": "user",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_private_articles_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/private/records",
+    "response": "RecordPage",
+    "request": null,
+    "access": "user",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "package_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "article",
+          "node",
+          "question",
+          "project"
+        ]
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_private_records"
+  },
+  {
+    "group": "business",
+    "method": "put",
+    "path": "/private/records/{kind}/{id}",
+    "response": "Record",
+    "request": "RecordWrite",
+    "access": "user",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_put_private_records_kind_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages",
+    "response": "PackageSummaryPage",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": true,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_learning_packages"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages/{id}",
+    "response": "PackageSummary",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_learning_packages_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages/{id}/routes",
+    "response": "RoutePage",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "route_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "module_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "q": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_learning_packages_id_routes"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages/{id}/modules",
+    "response": "ModulePage",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "route_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "module_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "q": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_learning_packages_id_modules"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages/{id}/nodes",
+    "response": "NodePage",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "route_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "module_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "q": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_learning_packages_id_nodes"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages/{id}/questions",
+    "response": "QuestionPage",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "route_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "module_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "q": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "difficulty": {
+        "type": "string",
+        "enum": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "concept",
+          "principle",
+          "code",
+          "scenario",
+          "system_design"
+        ]
+      },
+      "node_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_learning_packages_id_questions"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages/{id}/projects",
+    "response": "ProjectPage",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "route_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "module_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "q": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "node_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_learning_packages_id_projects"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages/{id}/nodes/{node_id}",
+    "response": "Node",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_learning_packages_id_nodes_node_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages/{id}/questions/{question_id}",
+    "response": "Question",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_learning_packages_id_questions_question_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages/{id}/projects/{project_id}",
+    "response": "Project",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_learning_packages_id_projects_project_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/packages/{id}/graph",
+    "response": "Graph",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {
+      "module_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "cursor": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_learning_packages_id_graph"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/learning/resolve",
+    "response": "ResolvedPackage",
+    "request": null,
+    "access": "public",
+    "scope": null,
+    "paging": false,
+    "query": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "route",
+          "node",
+          "question",
+          "project"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_learning_resolve"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/sources",
+    "response": "SourcePage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": true,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_admin_sources"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/source-runs",
+    "response": "RunPage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "source_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      },
+      "business_date": {
+        "type": "string",
+        "format": "date",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_admin_source_runs"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/source-runs/{id}",
+    "response": "Run",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_admin_source_runs_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/entities",
+    "response": "EntityPage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "category": {
+        "type": "string",
+        "enum": [
+          "news_tech",
+          "agent",
+          "skill",
+          "workflow",
+          "model"
+        ]
+      },
+      "q": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_admin_entities"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/entities/{id}",
+    "response": "Entity",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_admin_entities_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/collector-nodes",
+    "response": "CollectorNodePage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": true,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_admin_collector_nodes"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/jobs",
+    "response": "JobOrAlertPage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "record_kind": {
+        "type": "string",
+        "enum": [
+          "generation_intent",
+          "logical_task",
+          "ai_attempt",
+          "snapshot_part",
+          "disposition"
+        ]
+      },
+      "target_type": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 32
+      }
+    },
+    "description": "",
+    "operation_id": "business_get_admin_jobs"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/jobs/{id}",
+    "response": "Job",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_admin_jobs_id"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/sources",
+    "response": "Source",
+    "request": "SourceCreate",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_sources"
+  },
+  {
+    "group": "business",
+    "method": "put",
+    "path": "/admin/sources/{id}",
+    "response": "Source",
+    "request": "SourceWrite",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_put_admin_sources_id"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/sources/{id}/actions",
+    "response": "ActionResult",
+    "request": "SourceAction",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_sources_id_actions"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/source-runs",
+    "response": "Run",
+    "request": "RunCreate",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_source_runs"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/source-runs/{id}/items",
+    "response": "RunItemPage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": true,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_admin_source_runs_id_items"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/source-runs/{id}/items/{item_id}/actions",
+    "response": "ActionResult",
+    "request": "ItemAction",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_source_runs_id_items_item_id_actions"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/entities/{id}/actions",
+    "response": "ActionResult",
+    "request": "EntityAction",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_entities_id_actions"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/collector-nodes",
+    "response": "NodeCredential",
+    "request": "NodeCreate",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_collector_nodes"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/collector-nodes/{id}/actions",
+    "response": "NodeActionResult",
+    "request": "NodeAction",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_collector_nodes_id_actions"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/content/{kind}/{id}",
+    "response": "ContentDetail",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_admin_content_kind_id"
+  },
+  {
+    "group": "business",
+    "method": "put",
+    "path": "/admin/content/{kind}/{id}",
+    "response": "ContentDetail",
+    "request": "ContentWrite",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_put_admin_content_kind_id"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/content/{kind}/{id}/actions",
+    "response": "ActionResult",
+    "request": "ContentAction",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_content_kind_id_actions"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/content/{kind}/{id}/referenced-versions",
+    "response": "VersionSummaryPage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": true,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_admin_content_kind_id_referenced_versions"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/content/{kind}/{id}/version-actions",
+    "response": "ActionResult",
+    "request": "VersionAction",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_content_kind_id_version_actions"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/evidence/{kind}/{id}/actions",
+    "response": "ActionResult",
+    "request": "EvidenceAction",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_evidence_kind_id_actions"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/learning/packages",
+    "response": "PackageImportResult",
+    "request": "PackageCreateCommand",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_learning_packages"
+  },
+  {
+    "group": "business",
+    "method": "put",
+    "path": "/admin/learning/packages/{id}",
+    "response": "PackageImportResult",
+    "request": "PackageWriteCommand",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_put_admin_learning_packages_id"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/learning/packages/{id}/actions",
+    "response": "ActionResult",
+    "request": "AnswerAction",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_learning_packages_id_actions"
+  },
+  {
+    "group": "business",
+    "method": "put",
+    "path": "/admin/learning/packages/{id}/questions/{question_id}/answer",
+    "response": "ActionResult",
+    "request": "AnswerWrite",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_put_admin_learning_packages_id_questions_question_id_answer"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/learning/packages/{id}/questions/{question_id}/answer/actions",
+    "response": "ActionResult",
+    "request": "AnswerAction",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_learning_packages_id_questions_question_id_answer_actions"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/jobs",
+    "response": "Job",
+    "request": "JobCreate",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_jobs"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/jobs/{id}/actions",
+    "response": "ActionResult",
+    "request": "JobAction",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_jobs_id_actions"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/preferences",
+    "response": "Preferences",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_get_admin_preferences"
+  },
+  {
+    "group": "business",
+    "method": "put",
+    "path": "/admin/preferences",
+    "response": "Preferences",
+    "request": "PreferencesWrite",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_put_admin_preferences"
+  },
+  {
+    "group": "business",
+    "method": "post",
+    "path": "/admin/reports/generation-intents",
+    "response": "Job",
+    "request": "GenerationIntentWrite",
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "business_post_admin_reports_generation_intents"
+  },
+  {
+    "group": "collector",
+    "method": "get",
+    "path": "/config",
+    "response": "Config",
+    "request": null,
+    "access": "collector",
+    "scope": "config:read",
+    "paging": false,
+    "query": {
+      "cursor": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      }
+    },
+    "description": "",
+    "operation_id": "collector_get_config"
+  },
+  {
+    "group": "collector",
+    "method": "post",
+    "path": "/run-claims",
+    "response": "RunClaims",
+    "request": "ClaimWrite",
+    "access": "collector",
+    "scope": "run:claim",
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "collector_post_run_claims"
+  },
+  {
+    "group": "collector",
+    "method": "put",
+    "path": "/runs/{run_id}/claim",
+    "response": "ControlResult",
+    "request": "ClaimControl",
+    "access": "collector",
+    "scope": "run:write",
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "collector_put_runs_run_id_claim"
+  },
+  {
+    "group": "collector",
+    "method": "get",
+    "path": "/runs",
+    "response": "RunsPage",
+    "request": null,
+    "access": "collector",
+    "scope": "run:read",
+    "paging": false,
+    "query": {
+      "cursor": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50
+      },
+      "source_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      }
+    },
+    "description": "",
+    "operation_id": "collector_get_runs"
+  },
+  {
+    "group": "collector",
+    "method": "get",
+    "path": "/runs/{run_id}",
+    "response": "Run",
+    "request": null,
+    "access": "collector",
+    "scope": "run:read",
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "collector_get_runs_run_id"
+  },
+  {
+    "group": "collector",
+    "method": "get",
+    "path": "/runs/{run_id}/manifest",
+    "response": "ManifestPage",
+    "request": null,
+    "access": "collector",
+    "scope": "run:read",
+    "paging": false,
+    "query": {
+      "cursor": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      }
+    },
+    "description": "",
+    "operation_id": "collector_get_runs_run_id_manifest"
+  },
+  {
+    "group": "collector",
+    "method": "put",
+    "path": "/runs/{run_id}/manifest",
+    "response": "ControlResult",
+    "request": "ManifestControl",
+    "access": "collector",
+    "scope": "run:write",
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "collector_put_runs_run_id_manifest"
+  },
+  {
+    "group": "collector",
+    "method": "put",
+    "path": "/runs/{run_id}/result",
+    "response": "ControlResult",
+    "request": "ResultControl",
+    "access": "collector",
+    "scope": "run:write",
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "collector_put_runs_run_id_result"
+  },
+  {
+    "group": "collector",
+    "method": "post",
+    "path": "/runs/{run_id}/members/{member_id}/actions",
+    "response": "ControlResult",
+    "request": "SealControl",
+    "access": "collector",
+    "scope": "run:write",
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "collector_post_runs_run_id_members_member_id_actions"
+  },
+  {
+    "group": "collector",
+    "method": "post",
+    "path": "/observations",
+    "response": "ObservationAcks",
+    "request": "ObservationsWrite",
+    "access": "collector",
+    "scope": "observation:write",
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "collector_post_observations"
+  },
+  {
+    "group": "collector",
+    "method": "post",
+    "path": "/heartbeat",
+    "response": "HeartbeatResult",
+    "request": "Heartbeat",
+    "access": "collector",
+    "scope": "heartbeat:write",
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "collector_post_heartbeat"
+  },
+  {
+    "group": "collector",
+    "method": "post",
+    "path": "/probe-claims",
+    "response": "ProbeClaim",
+    "request": "ProbeClaimWrite",
+    "access": "collector",
+    "scope": "probe:claim",
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "collector_post_probe_claims"
+  },
+  {
+    "group": "collector",
+    "method": "put",
+    "path": "/probes/{probe_id}/result",
+    "response": "ControlResult",
+    "request": "ProbeControl",
+    "access": "collector",
+    "scope": "probe:write",
+    "paging": false,
+    "query": {},
+    "description": "",
+    "operation_id": "collector_put_probes_probe_id_result"
+  }
+]

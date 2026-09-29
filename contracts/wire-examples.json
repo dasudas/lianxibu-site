@@ -1,0 +1,563 @@
+{
+  "scope": "Offline semantic fixtures with valid hashes and intentional invalid mutations",
+  "cases": [
+    {
+      "schema": "ObservationEnvelope",
+      "value": {
+        "protocol_revision": "0.11",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "fixture",
+        "source_revision": 0,
+        "source_item_id": "fixture",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "a3fa56725962f8717930944bac8ff71c0b5dde3c5960d9561b4b5b7e94b4cf52",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "updated_at": null,
+          "time_basis": "published",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "fixture",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          }
+        }
+      },
+      "path_params": null,
+      "valid": true
+    },
+    {
+      "schema": "ObservationEnvelope",
+      "value": {
+        "protocol_revision": "0.11",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "fixture",
+        "source_revision": 0,
+        "source_item_id": "fixture",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "a3fa56725962f8717930944bac8ff71c0b5dde3c5960d9561b4b5b7e94b4cf52",
+        "kind": "article",
+        "payload": {
+          "title": "changed",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "updated_at": null,
+          "time_basis": "published",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "fixture",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          }
+        }
+      },
+      "path_params": null,
+      "valid": false
+    },
+    {
+      "schema": "ObservationsWrite",
+      "value": {
+        "observations": [
+          {
+            "protocol_revision": "0.11",
+            "observation_id": "fixture",
+            "member_id": "fixture",
+            "run_id": "fixture",
+            "business_date": "2026-09-27",
+            "source_id": "fixture",
+            "source_revision": 0,
+            "source_item_id": "fixture",
+            "retrieved_at": "2026-09-27T00:00:00.000000Z",
+            "replaces_observation_id": null,
+            "payload_hash": "a3fa56725962f8717930944bac8ff71c0b5dde3c5960d9561b4b5b7e94b4cf52",
+            "kind": "article",
+            "payload": {
+              "title": "fixture",
+              "source_url": "https://example.com/evidence",
+              "published_at": null,
+              "updated_at": null,
+              "time_basis": "published",
+              "source_summary": null,
+              "body_text": null,
+              "content_status": "full",
+              "body_truncated": false,
+              "parser_version": "fixture",
+              "config_version": 0,
+              "source_order": {
+                "basis": "unknown",
+                "domain": null,
+                "value": null,
+                "evidence_ref": null
+              }
+            }
+          },
+          {
+            "protocol_revision": "0.11",
+            "observation_id": "fixture",
+            "member_id": "fixture",
+            "run_id": "fixture",
+            "business_date": "2026-09-27",
+            "source_id": "fixture",
+            "source_revision": 0,
+            "source_item_id": "fixture",
+            "retrieved_at": "2026-09-27T00:00:00.000000Z",
+            "replaces_observation_id": null,
+            "payload_hash": "a3fa56725962f8717930944bac8ff71c0b5dde3c5960d9561b4b5b7e94b4cf52",
+            "kind": "article",
+            "payload": {
+              "title": "fixture",
+              "source_url": "https://example.com/evidence",
+              "published_at": null,
+              "updated_at": null,
+              "time_basis": "published",
+              "source_summary": null,
+              "body_text": null,
+              "content_status": "full",
+              "body_truncated": false,
+              "parser_version": "fixture",
+              "config_version": 0,
+              "source_order": {
+                "basis": "unknown",
+                "domain": null,
+                "value": null,
+                "evidence_ref": null
+              }
+            }
+          }
+        ]
+      },
+      "path_params": null,
+      "valid": false
+    },
+    {
+      "schema": "ManifestControl",
+      "value": {
+        "business": {
+          "run_id": "fixture",
+          "part_no": 0,
+          "part_hash": "51cc014d66d0354c5eb5f5402d9d700023c6ef9976bc3ea439bfed5fac580db2",
+          "members": [
+            {
+              "member_id": "fixture",
+              "source_item_id": null,
+              "observation_id": "fixture",
+              "payload_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "replaces_observation_id": null
+            }
+          ]
+        },
+        "attempt": {
+          "claim_token": "fixture",
+          "expected_run_revision": null
+        }
+      },
+      "path_params": null,
+      "valid": true
+    },
+    {
+      "schema": "ManifestControl",
+      "value": {
+        "business": {
+          "run_id": "fixture",
+          "part_no": 0,
+          "part_hash": "51cc014d66d0354c5eb5f5402d9d700023c6ef9976bc3ea439bfed5fac580db2",
+          "members": [
+            {
+              "member_id": "fixture",
+              "source_item_id": null,
+              "observation_id": "fixture",
+              "payload_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "replaces_observation_id": null
+            }
+          ]
+        },
+        "attempt": {
+          "claim_token": "fixture",
+          "expected_run_revision": null
+        }
+      },
+      "path_params": {
+        "run_id": "wrong-run"
+      },
+      "valid": false
+    },
+    {
+      "schema": "ManifestControl",
+      "value": {
+        "business": {
+          "run_id": "fixture",
+          "part_no": 0,
+          "part_hash": "51cc014d66d0354c5eb5f5402d9d700023c6ef9976bc3ea439bfed5fac580db2",
+          "members": [
+            {
+              "member_id": "fixture",
+              "source_item_id": null,
+              "observation_id": "fixture",
+              "payload_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "replaces_observation_id": null
+            },
+            {
+              "member_id": "fixture",
+              "source_item_id": null,
+              "observation_id": "fixture",
+              "payload_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "replaces_observation_id": null
+            }
+          ]
+        },
+        "attempt": {
+          "claim_token": "fixture",
+          "expected_run_revision": null
+        }
+      },
+      "path_params": null,
+      "valid": false
+    },
+    {
+      "schema": "GenerationIntentWrite",
+      "value": {
+        "kind": "daily",
+        "period_start": "2026-09-27T00:00:00.000000Z",
+        "period_end": "2026-09-28T00:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "mode": "initial",
+        "reason": "fixture"
+      },
+      "path_params": null,
+      "valid": true
+    },
+    {
+      "schema": "GenerationIntentWrite",
+      "value": {
+        "kind": "daily",
+        "period_start": "2026-09-27T00:00:00.000000Z",
+        "period_end": "2026-09-27T00:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "mode": "initial",
+        "reason": "fixture"
+      },
+      "path_params": null,
+      "valid": false
+    },
+    {
+      "schema": "VersionAction",
+      "value": {
+        "expected_validity_revision": 0,
+        "action": "invalidate_conclusion",
+        "reason": "fixture",
+        "target": {
+          "kind": "content_version",
+          "content_kind": "report",
+          "content_id": "fixture",
+          "revision": 0,
+          "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "input_job_id": null
+        }
+      },
+      "path_params": {
+        "kind": "model",
+        "id": "fixture"
+      },
+      "valid": false
+    },
+    {
+      "schema": "ObservationEnvelope",
+      "value": {
+        "protocol_revision": "0.11",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "fixture",
+        "source_revision": 1,
+        "source_item_id": "fixture",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "915ad78b610e7cc35f4b614c38cb95a1a9a7c749b7911e6415fcfeacc4bfcaea",
+        "kind": "catalog",
+        "payload": {
+          "schema_version": "1",
+          "parser_version": "fixture-1",
+          "config_version": 1,
+          "category": "agent",
+          "identity": {
+            "namespace": "github_repository",
+            "key": "123456"
+          },
+          "title": "Example agent",
+          "source_url": "https://example.com/repo",
+          "version": "v1",
+          "published_at": null,
+          "updated_at": null,
+          "summary": null,
+          "document_text": "Example documentation",
+          "truncated": false,
+          "evidence": [
+            {
+              "url": "https://example.com/readme",
+              "revision": "example-commit",
+              "path": "README.md",
+              "file_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "evidence_type": "readme"
+            }
+          ]
+        }
+      },
+      "path_params": null,
+      "valid": true
+    },
+    {
+      "schema": "ObservationEnvelope",
+      "value": {
+        "protocol_revision": "0.11",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "fixture",
+        "source_revision": 1,
+        "source_item_id": "fixture",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "849b952050340067c6b7a3da82faf197d5e60dccc2365817d261530a4b7789ce",
+        "kind": "metric",
+        "payload": {
+          "schema_version": "1",
+          "parser_version": "fixture-1",
+          "config_version": 1,
+          "subject": {
+            "category": "model",
+            "identity": {
+              "namespace": "model_registry",
+              "key": "example/model"
+            }
+          },
+          "benchmark": "example-bench",
+          "benchmark_version": "v1",
+          "task": "example-task",
+          "score": "42.5",
+          "unit": "percent",
+          "scale_min": "0",
+          "scale_max": "100",
+          "higher_is_better": true,
+          "evaluated_at": null,
+          "evaluation_scope": "configuration",
+          "evaluation_config": {
+            "agent": null,
+            "model": "example/model",
+            "skills": [],
+            "parameters": {}
+          },
+          "provenance": "third_party",
+          "evidence": [
+            {
+              "url": "https://example.com/scores",
+              "revision": "example-release",
+              "path": "scores.json",
+              "file_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "evidence_type": "benchmark"
+            }
+          ]
+        }
+      },
+      "path_params": null,
+      "valid": true
+    },
+    {
+      "schema": "PackageCreateCommand",
+      "value": {
+        "action": "stage",
+        "chunk": {
+          "import_id": "fixture",
+          "part_no": 0,
+          "part_count": 1,
+          "part_hash": "94491829043333b1979eb07cb9319ba6d359b36a17d094e2a7ef8aed345a082a",
+          "items": [
+            {
+              "package_id": "fixture",
+              "id": "fixture",
+              "module_id": "fixture",
+              "title": "fixture",
+              "scope": "",
+              "goals": [],
+              "completion_criteria": [],
+              "dependencies": [],
+              "resources": [],
+              "revision": 0
+            }
+          ]
+        }
+      },
+      "path_params": null,
+      "valid": true
+    },
+    {
+      "schema": "PackageCreateCommand",
+      "value": {
+        "action": "stage",
+        "chunk": {
+          "import_id": "fixture",
+          "part_no": 1,
+          "part_count": 1,
+          "part_hash": "94491829043333b1979eb07cb9319ba6d359b36a17d094e2a7ef8aed345a082a",
+          "items": [
+            {
+              "package_id": "fixture",
+              "id": "fixture",
+              "module_id": "fixture",
+              "title": "fixture",
+              "scope": "",
+              "goals": [],
+              "completion_criteria": [],
+              "dependencies": [],
+              "resources": [],
+              "revision": 0
+            }
+          ]
+        }
+      },
+      "path_params": null,
+      "valid": false
+    },
+    {
+      "schema": "ValidatedResult",
+      "value": {
+        "schema_version": "1",
+        "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "payload": {
+          "kind": "dedup",
+          "items": [
+            {
+              "item_id": "fixture",
+              "category": "news_tech",
+              "decision": "new",
+              "candidate_entity_id": null,
+              "reason": "fixture",
+              "confidence": "0",
+              "suggested_title": "fixture",
+              "suggested_summary": null,
+              "reanalyze_recommended": false
+            }
+          ],
+          "summary": ""
+        },
+        "result_hash": "83d166b1b0d44b77bb5b98fed10ed9f52cf0b139e0e29efadf37882620584c13"
+      },
+      "path_params": null,
+      "valid": true
+    },
+    {
+      "schema": "ValidatedResult",
+      "value": {
+        "schema_version": "1",
+        "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "payload": {
+          "kind": "dedup",
+          "items": [
+            {
+              "item_id": "fixture",
+              "category": "news_tech",
+              "decision": "new",
+              "candidate_entity_id": null,
+              "reason": "fixture",
+              "confidence": "0",
+              "suggested_title": "fixture",
+              "suggested_summary": null,
+              "reanalyze_recommended": false
+            }
+          ],
+          "summary": ""
+        },
+        "result_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "path_params": null,
+      "valid": false
+    },
+    {
+      "schema": "ValidatedResult",
+      "value": {
+        "schema_version": "1",
+        "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "payload": {
+          "kind": "dedup",
+          "items": [
+            {
+              "item_id": "fixture",
+              "category": "news_tech",
+              "decision": "new",
+              "candidate_entity_id": null,
+              "reason": "fixture",
+              "confidence": "0",
+              "suggested_title": "fixture",
+              "suggested_summary": null,
+              "reanalyze_recommended": false
+            },
+            {
+              "item_id": "fixture",
+              "category": "news_tech",
+              "decision": "new",
+              "candidate_entity_id": null,
+              "reason": "fixture",
+              "confidence": "0",
+              "suggested_title": "fixture",
+              "suggested_summary": null,
+              "reanalyze_recommended": false
+            }
+          ],
+          "summary": ""
+        },
+        "result_hash": "5d4ed086a4f4cc4e5f7d864513bc72a9d7f46c4b92348656be5ec6d082a13b6f"
+      },
+      "path_params": null,
+      "valid": false
+    },
+    {
+      "schema": "ValidatedResult",
+      "value": {
+        "schema_version": "1",
+        "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "payload": {
+          "kind": "value",
+          "items": [
+            {
+              "item_id": "fixture",
+              "category": "news_tech",
+              "high_value": false,
+              "reason": "fixture"
+            }
+          ],
+          "selected_item_ids": [
+            "not-in-input"
+          ],
+          "summary": ""
+        },
+        "result_hash": "8fceb5452cfc7bea0c1dcbf8687142ba5c6f03b3ad0180fe8f5d49621f30004a"
+      },
+      "path_params": null,
+      "valid": false
+    }
+  ]
+}

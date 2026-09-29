@@ -1,0 +1,1870 @@
+{
+  "scope": "Fictional structural fixtures, not backend execution evidence",
+  "examples": [
+    {
+      "operation_id": "business_post_session",
+      "request": {
+        "username": "fixture",
+        "password": "fixture"
+      },
+      "response": {
+        "data": {
+          "authenticated": false,
+          "user_id": null,
+          "role": null,
+          "csrf_token": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_session",
+      "request": null,
+      "response": {
+        "data": {
+          "authenticated": false,
+          "user_id": null,
+          "role": null,
+          "csrf_token": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_delete_session",
+      "request": null,
+      "response": {
+        "data": {
+          "authenticated": false,
+          "user_id": null,
+          "role": null,
+          "csrf_token": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_capabilities",
+      "request": null,
+      "response": {
+        "data": {
+          "protocol_revision": "0.11",
+          "contract_version": "0.13",
+          "supported_features": [],
+          "max_page_size": 50,
+          "max_observations": 10
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_home",
+      "request": null,
+      "response": {
+        "data": {
+          "reports": [],
+          "learning_packages": [],
+          "default_package_id": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_reports",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_reports_id",
+      "request": null,
+      "response": {
+        "data": {
+          "id": "fixture",
+          "kind": "report",
+          "title": "fixture",
+          "revision": 0,
+          "body_revision": 0,
+          "publication_state": "draft",
+          "published_at": null,
+          "input_snapshot_id": null,
+          "generation": null,
+          "input_cutoff_at": null,
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          },
+          "review_required": false,
+          "blocking_reasons": [],
+          "affected_by_correction": false,
+          "supersedes_job_id": null,
+          "body": {
+            "title": "fixture",
+            "sections": [],
+            "citation_ids": [],
+            "type": "daily",
+            "period_start": "2026-09-27T00:00:00.000000Z",
+            "period_end": "2026-09-28T00:00:00.000000Z",
+            "timezone": "Asia/Shanghai",
+            "learning_task": null
+          },
+          "citations": []
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_interpretations",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_interpretations_id",
+      "request": null,
+      "response": {
+        "data": {
+          "id": "fixture",
+          "kind": "report",
+          "title": "fixture",
+          "revision": 0,
+          "body_revision": 0,
+          "publication_state": "draft",
+          "published_at": null,
+          "input_snapshot_id": null,
+          "generation": null,
+          "input_cutoff_at": null,
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          },
+          "review_required": false,
+          "blocking_reasons": [],
+          "affected_by_correction": false,
+          "supersedes_job_id": null,
+          "body": {
+            "title": "fixture",
+            "sections": [],
+            "citation_ids": [],
+            "type": "daily",
+            "period_start": "2026-09-27T00:00:00.000000Z",
+            "period_end": "2026-09-28T00:00:00.000000Z",
+            "timezone": "Asia/Shanghai",
+            "learning_task": null
+          },
+          "citations": []
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_private_articles",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_private_articles_id",
+      "request": null,
+      "response": {
+        "data": {
+          "id": "fixture",
+          "title": "fixture",
+          "summary": null,
+          "source_id": "fixture",
+          "source_name": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "observed_at": "2026-09-27T00:00:00.000000Z",
+          "topic": null,
+          "region": null,
+          "content_status": "fixture",
+          "revision": 0,
+          "record": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_private_records",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_put_private_records_kind_id",
+      "request": {
+        "expected_revision": 0,
+        "status": "not_started",
+        "self_assessment": "unassessed",
+        "note": "",
+        "artifact_url": null,
+        "package_id": null,
+        "object_kind": "article",
+        "is_read": false,
+        "is_favorite": false,
+        "is_ignored": false
+      },
+      "response": {
+        "data": {
+          "package_id": null,
+          "object_kind": "article",
+          "object_id": "fixture",
+          "revision": 0,
+          "status": "not_started",
+          "self_assessment": "unassessed",
+          "note": "",
+          "artifact_url": null,
+          "latest_answer_text": null,
+          "latest_submission_url": null,
+          "confirmed_body_revision": null,
+          "updated_at": "2026-09-27T00:00:00.000000Z",
+          "is_read": false,
+          "is_favorite": false,
+          "is_ignored": false
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages_id",
+      "request": null,
+      "response": {
+        "data": {
+          "id": "fixture",
+          "title": "fixture",
+          "description": "",
+          "revision": 0,
+          "state": "draft"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages_id_routes",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages_id_modules",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages_id_nodes",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages_id_questions",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages_id_projects",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages_id_nodes_node_id",
+      "request": null,
+      "response": {
+        "data": {
+          "package_id": "fixture",
+          "id": "fixture",
+          "module_id": "fixture",
+          "title": "fixture",
+          "scope": "",
+          "goals": [],
+          "completion_criteria": [],
+          "dependencies": [],
+          "resources": [],
+          "revision": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages_id_questions_question_id",
+      "request": null,
+      "response": {
+        "data": {
+          "package_id": "fixture",
+          "id": "fixture",
+          "title": "fixture",
+          "question": "fixture",
+          "difficulty": "beginner",
+          "kind": "concept",
+          "assessment_points": [],
+          "answer_state": "published",
+          "generation_state": "not_generated",
+          "revision": 0,
+          "answer": ""
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages_id_projects_project_id",
+      "request": null,
+      "response": {
+        "data": {
+          "package_id": "fixture",
+          "id": "fixture",
+          "title": "fixture",
+          "description": "",
+          "goals": [],
+          "requirements": [],
+          "tasks": [],
+          "deliverables": [],
+          "acceptance_criteria": [],
+          "revision": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_packages_id_graph",
+      "request": null,
+      "response": {
+        "data": {
+          "nodes": [],
+          "edges": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_learning_resolve",
+      "request": null,
+      "response": {
+        "data": {
+          "package_id": "fixture",
+          "kind": "route",
+          "id": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_sources",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_source_runs",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_source_runs_id",
+      "request": null,
+      "response": {
+        "data": {
+          "run_id": "fixture",
+          "source_id": "fixture",
+          "run_kind": "daily",
+          "business_date": "2026-09-27",
+          "generation": 0,
+          "window_start": "2026-09-27T00:00:00.000000Z",
+          "window_end": "2026-09-28T00:00:00.000000Z",
+          "fetch_mode": "daily_delta",
+          "collection_reason": "daily",
+          "config_version": 0,
+          "run_revision": 0,
+          "delivery_state": "pending",
+          "fetch_state": "pending",
+          "analysis_state": "waiting_input",
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          },
+          "expected_count": null,
+          "accepted_count": 0,
+          "excluded_count": 0,
+          "pending_count": 0,
+          "barrier_closed_at": null,
+          "late_results_available": false,
+          "result_business_hash": null,
+          "manifest_hash": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_entities",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_entities_id",
+      "request": null,
+      "response": {
+        "data": {
+          "id": "fixture",
+          "category": "news_tech",
+          "title": "fixture",
+          "summary": null,
+          "first_recorded_at": "2026-09-27T00:00:00.000000Z",
+          "first_seen_business_date": null,
+          "last_seen_at": "2026-09-27T00:00:00.000000Z",
+          "occurrence_count": null,
+          "repeat_count": null,
+          "analysis_state": "pending",
+          "revision": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_collector_nodes",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_jobs",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_jobs_id",
+      "request": null,
+      "response": {
+        "data": {
+          "id": "fixture",
+          "record_kind": "generation_intent",
+          "revision": 0,
+          "task_type": null,
+          "priority": 0,
+          "state": "fixture",
+          "intent_id": null,
+          "intent_revision": null,
+          "content_id": null,
+          "report_mode": null,
+          "input_state": null,
+          "input_snapshot_id": null,
+          "input_cutoff_at": null,
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          },
+          "next_eligible_at": null,
+          "call_count": 0,
+          "max_attempts": null,
+          "remaining_attempts": 0,
+          "retry_exhausted": false,
+          "slot_state": "free",
+          "slot_revision": 0,
+          "occupied_attempt_id": null,
+          "external_result_state": null,
+          "slot_released_at": null,
+          "release_reason": null,
+          "attempts": [],
+          "waiting_reasons": []
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_sources",
+      "request": {
+        "id": "fixture",
+        "name": "fixture",
+        "category": "news_tech",
+        "config": {
+          "adapter": "fixture",
+          "entry_urls": [
+            "https://example.com/evidence"
+          ],
+          "identity_rule": "fixture",
+          "window_rule": "fixture",
+          "parser_version": "fixture",
+          "max_items": 1,
+          "max_response_bytes": 1,
+          "allowed_hosts": [
+            "fixture"
+          ],
+          "valid_until": "2026-09-27T00:00:00.000000Z",
+          "auth_secret_ref": null
+        }
+      },
+      "response": {
+        "data": {
+          "id": "fixture",
+          "name": "fixture",
+          "category": "news_tech",
+          "revision": 0,
+          "config_revision": 0,
+          "activation_stage": "disabled",
+          "draft_config": null,
+          "effective_config": null,
+          "config_valid_until": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_put_admin_sources_id",
+      "request": {
+        "expected_revision": 0,
+        "name": "fixture",
+        "category": "news_tech",
+        "config": {
+          "adapter": "fixture",
+          "entry_urls": [
+            "https://example.com/evidence"
+          ],
+          "identity_rule": "fixture",
+          "window_rule": "fixture",
+          "parser_version": "fixture",
+          "max_items": 1,
+          "max_response_bytes": 1,
+          "allowed_hosts": [
+            "fixture"
+          ],
+          "valid_until": "2026-09-27T00:00:00.000000Z",
+          "auth_secret_ref": null
+        }
+      },
+      "response": {
+        "data": {
+          "id": "fixture",
+          "name": "fixture",
+          "category": "news_tech",
+          "revision": 0,
+          "config_revision": 0,
+          "activation_stage": "disabled",
+          "draft_config": null,
+          "effective_config": null,
+          "config_valid_until": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_sources_id_actions",
+      "request": {
+        "expected_revision": 0,
+        "action": "probe",
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "operation_ref": "fixture",
+          "result_resource_ref": {
+            "kind": "fixture",
+            "id": "fixture",
+            "package_id": null
+          },
+          "result_revision": 0,
+          "generation": null,
+          "cutoff": null,
+          "coverage": null,
+          "affected": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_source_runs",
+      "request": {
+        "source_id": "fixture",
+        "business_date": "2026-09-27",
+        "window_start": "2026-09-27T00:00:00.000000Z",
+        "window_end": "2026-09-28T00:00:00.000000Z",
+        "run_kind": "production_qualification",
+        "config_version": 0,
+        "expected_revision": 0,
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "run_id": "fixture",
+          "source_id": "fixture",
+          "run_kind": "daily",
+          "business_date": "2026-09-27",
+          "generation": 0,
+          "window_start": "2026-09-27T00:00:00.000000Z",
+          "window_end": "2026-09-28T00:00:00.000000Z",
+          "fetch_mode": "daily_delta",
+          "collection_reason": "daily",
+          "config_version": 0,
+          "run_revision": 0,
+          "delivery_state": "pending",
+          "fetch_state": "pending",
+          "analysis_state": "waiting_input",
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          },
+          "expected_count": null,
+          "accepted_count": 0,
+          "excluded_count": 0,
+          "pending_count": 0,
+          "barrier_closed_at": null,
+          "late_results_available": false,
+          "result_business_hash": null,
+          "manifest_hash": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_source_runs_id_items",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_source_runs_id_items_item_id_actions",
+      "request": {
+        "expected_revision": 0,
+        "action": "confirm_new",
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "operation_ref": "fixture",
+          "result_resource_ref": {
+            "kind": "fixture",
+            "id": "fixture",
+            "package_id": null
+          },
+          "result_revision": 0,
+          "generation": null,
+          "cutoff": null,
+          "coverage": null,
+          "affected": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_entities_id_actions",
+      "request": {
+        "expected_revision": 0,
+        "action": "correct_assignments",
+        "reason": "fixture",
+        "assignments": [
+          {
+            "item_id": "fixture",
+            "old_entity_id": "fixture",
+            "new_entity_id": "fixture",
+            "expected_item_revision": 0
+          }
+        ]
+      },
+      "response": {
+        "data": {
+          "operation_ref": "fixture",
+          "result_resource_ref": {
+            "kind": "fixture",
+            "id": "fixture",
+            "package_id": null
+          },
+          "result_revision": 0,
+          "generation": null,
+          "cutoff": null,
+          "coverage": null,
+          "affected": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_collector_nodes",
+      "request": {
+        "name": "fixture",
+        "source_ids": [],
+        "permissions": []
+      },
+      "response": {
+        "data": {
+          "node": {
+            "id": "fixture",
+            "name": "fixture",
+            "source_ids": [],
+            "permissions": [],
+            "revision": 0,
+            "revoked": false,
+            "last_heartbeat_at": null
+          },
+          "token": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_collector_nodes_id_actions",
+      "request": {
+        "expected_revision": 0,
+        "action": "rotate_token",
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "node": {
+            "id": "fixture",
+            "name": "fixture",
+            "source_ids": [],
+            "permissions": [],
+            "revision": 0,
+            "revoked": false,
+            "last_heartbeat_at": null
+          },
+          "token": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_content_kind_id",
+      "request": null,
+      "response": {
+        "data": {
+          "id": "fixture",
+          "kind": "report",
+          "title": "fixture",
+          "revision": 0,
+          "body_revision": 0,
+          "publication_state": "draft",
+          "published_at": null,
+          "input_snapshot_id": null,
+          "generation": null,
+          "input_cutoff_at": null,
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          },
+          "review_required": false,
+          "blocking_reasons": [],
+          "affected_by_correction": false,
+          "supersedes_job_id": null,
+          "body": {
+            "title": "fixture",
+            "sections": [],
+            "citation_ids": [],
+            "type": "daily",
+            "period_start": "2026-09-27T00:00:00.000000Z",
+            "period_end": "2026-09-28T00:00:00.000000Z",
+            "timezone": "Asia/Shanghai",
+            "learning_task": null
+          },
+          "citations": []
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_put_admin_content_kind_id",
+      "request": {
+        "expected_revision": 0,
+        "title": "fixture",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-09-27T00:00:00.000000Z",
+        "period_end": "2026-09-28T00:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "response": {
+        "data": {
+          "id": "fixture",
+          "kind": "report",
+          "title": "fixture",
+          "revision": 0,
+          "body_revision": 0,
+          "publication_state": "draft",
+          "published_at": null,
+          "input_snapshot_id": null,
+          "generation": null,
+          "input_cutoff_at": null,
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          },
+          "review_required": false,
+          "blocking_reasons": [],
+          "affected_by_correction": false,
+          "supersedes_job_id": null,
+          "body": {
+            "title": "fixture",
+            "sections": [],
+            "citation_ids": [],
+            "type": "daily",
+            "period_start": "2026-09-27T00:00:00.000000Z",
+            "period_end": "2026-09-28T00:00:00.000000Z",
+            "timezone": "Asia/Shanghai",
+            "learning_task": null
+          },
+          "citations": []
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_content_kind_id_actions",
+      "request": {
+        "expected_revision": 0,
+        "action": "approve",
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "operation_ref": "fixture",
+          "result_resource_ref": {
+            "kind": "fixture",
+            "id": "fixture",
+            "package_id": null
+          },
+          "result_revision": 0,
+          "generation": null,
+          "cutoff": null,
+          "coverage": null,
+          "affected": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_content_kind_id_referenced_versions",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 1,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_content_kind_id_version_actions",
+      "request": {
+        "expected_validity_revision": 0,
+        "action": "invalidate_conclusion",
+        "reason": "fixture",
+        "target": {
+          "kind": "content_version",
+          "content_kind": "report",
+          "content_id": "fixture",
+          "revision": 0,
+          "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "input_job_id": null
+        }
+      },
+      "response": {
+        "data": {
+          "operation_ref": "fixture",
+          "result_resource_ref": {
+            "kind": "fixture",
+            "id": "fixture",
+            "package_id": null
+          },
+          "result_revision": 0,
+          "generation": null,
+          "cutoff": null,
+          "coverage": null,
+          "affected": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_evidence_kind_id_actions",
+      "request": {
+        "expected_validity_revision": 0,
+        "action": "invalidate",
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "operation_ref": "fixture",
+          "result_resource_ref": {
+            "kind": "fixture",
+            "id": "fixture",
+            "package_id": null
+          },
+          "result_revision": 0,
+          "generation": null,
+          "cutoff": null,
+          "coverage": null,
+          "affected": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_learning_packages",
+      "request": {
+        "action": "stage",
+        "chunk": {
+          "import_id": "fixture",
+          "part_no": 0,
+          "part_count": 1,
+          "part_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "items": [
+            {
+              "package_id": "fixture",
+              "id": "fixture",
+              "module_id": "fixture",
+              "title": "fixture",
+              "scope": "",
+              "goals": [],
+              "completion_criteria": [],
+              "dependencies": [],
+              "resources": [],
+              "revision": 0
+            }
+          ]
+        }
+      },
+      "response": {
+        "data": {
+          "import_id": "fixture",
+          "accepted_part_no": 0,
+          "part_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "expires_at": "2026-09-27T00:00:00.000000Z"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_put_admin_learning_packages_id",
+      "request": {
+        "expected_revision": 0,
+        "action": "stage",
+        "chunk": {
+          "import_id": "fixture",
+          "part_no": 0,
+          "part_count": 1,
+          "part_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "items": [
+            {
+              "package_id": "fixture",
+              "id": "fixture",
+              "module_id": "fixture",
+              "title": "fixture",
+              "scope": "",
+              "goals": [],
+              "completion_criteria": [],
+              "dependencies": [],
+              "resources": [],
+              "revision": 0
+            }
+          ]
+        }
+      },
+      "response": {
+        "data": {
+          "import_id": "fixture",
+          "accepted_part_no": 0,
+          "part_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "expires_at": "2026-09-27T00:00:00.000000Z"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_learning_packages_id_actions",
+      "request": {
+        "expected_revision": 0,
+        "action": "approve",
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "operation_ref": "fixture",
+          "result_resource_ref": {
+            "kind": "fixture",
+            "id": "fixture",
+            "package_id": null
+          },
+          "result_revision": 0,
+          "generation": null,
+          "cutoff": null,
+          "coverage": null,
+          "affected": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_put_admin_learning_packages_id_questions_question_id_answer",
+      "request": {
+        "expected_revision": 0,
+        "answer": ""
+      },
+      "response": {
+        "data": {
+          "operation_ref": "fixture",
+          "result_resource_ref": {
+            "kind": "fixture",
+            "id": "fixture",
+            "package_id": null
+          },
+          "result_revision": 0,
+          "generation": null,
+          "cutoff": null,
+          "coverage": null,
+          "affected": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_learning_packages_id_questions_question_id_answer_actions",
+      "request": {
+        "expected_revision": 0,
+        "action": "approve",
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "operation_ref": "fixture",
+          "result_resource_ref": {
+            "kind": "fixture",
+            "id": "fixture",
+            "package_id": null
+          },
+          "result_revision": 0,
+          "generation": null,
+          "cutoff": null,
+          "coverage": null,
+          "affected": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_jobs",
+      "request": {
+        "task_type": "fixture",
+        "target": {
+          "kind": "fixture",
+          "id": "fixture",
+          "package_id": null
+        },
+        "expected_revision": 0,
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "id": "fixture",
+          "record_kind": "generation_intent",
+          "revision": 0,
+          "task_type": null,
+          "priority": 0,
+          "state": "fixture",
+          "intent_id": null,
+          "intent_revision": null,
+          "content_id": null,
+          "report_mode": null,
+          "input_state": null,
+          "input_snapshot_id": null,
+          "input_cutoff_at": null,
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          },
+          "next_eligible_at": null,
+          "call_count": 0,
+          "max_attempts": null,
+          "remaining_attempts": 0,
+          "retry_exhausted": false,
+          "slot_state": "free",
+          "slot_revision": 0,
+          "occupied_attempt_id": null,
+          "external_result_state": null,
+          "slot_released_at": null,
+          "release_reason": null,
+          "attempts": [],
+          "waiting_reasons": []
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_jobs_id_actions",
+      "request": {
+        "expected_revision": 0,
+        "action": "cancel",
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "operation_ref": "fixture",
+          "result_resource_ref": {
+            "kind": "fixture",
+            "id": "fixture",
+            "package_id": null
+          },
+          "result_revision": 0,
+          "generation": null,
+          "cutoff": null,
+          "coverage": null,
+          "affected": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_get_admin_preferences",
+      "request": null,
+      "response": {
+        "data": {
+          "revision": 0,
+          "follow_keywords": [],
+          "blocked_keywords": [],
+          "ai_paused": false,
+          "default_package_id": null,
+          "model": "deepseek-flash",
+          "timezone": "Asia/Shanghai",
+          "collection_time": "00:10",
+          "report_time": "05:00",
+          "ai_window_start": "01:00",
+          "ai_window_end": "07:00",
+          "operational_limits": []
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_put_admin_preferences",
+      "request": {
+        "expected_revision": 0,
+        "follow_keywords": [],
+        "blocked_keywords": [],
+        "ai_paused": false,
+        "default_package_id": null,
+        "operational_limits": []
+      },
+      "response": {
+        "data": {
+          "revision": 0,
+          "follow_keywords": [],
+          "blocked_keywords": [],
+          "ai_paused": false,
+          "default_package_id": null,
+          "model": "deepseek-flash",
+          "timezone": "Asia/Shanghai",
+          "collection_time": "00:10",
+          "report_time": "05:00",
+          "ai_window_start": "01:00",
+          "ai_window_end": "07:00",
+          "operational_limits": []
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "business_post_admin_reports_generation_intents",
+      "request": {
+        "kind": "daily",
+        "period_start": "2026-09-27T00:00:00.000000Z",
+        "period_end": "2026-09-28T00:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "mode": "initial",
+        "reason": "fixture"
+      },
+      "response": {
+        "data": {
+          "id": "fixture",
+          "record_kind": "generation_intent",
+          "revision": 0,
+          "task_type": null,
+          "priority": 0,
+          "state": "fixture",
+          "intent_id": null,
+          "intent_revision": null,
+          "content_id": null,
+          "report_mode": null,
+          "input_state": null,
+          "input_snapshot_id": null,
+          "input_cutoff_at": null,
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          },
+          "next_eligible_at": null,
+          "call_count": 0,
+          "max_attempts": null,
+          "remaining_attempts": 0,
+          "retry_exhausted": false,
+          "slot_state": "free",
+          "slot_revision": 0,
+          "occupied_attempt_id": null,
+          "external_result_state": null,
+          "slot_released_at": null,
+          "release_reason": null,
+          "attempts": [],
+          "waiting_reasons": []
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_get_config",
+      "request": null,
+      "response": {
+        "data": {
+          "protocol_revision": "0.11",
+          "sources": [],
+          "next_cursor": null,
+          "valid_until": "2026-09-27T00:00:00.000000Z"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_post_run_claims",
+      "request": {
+        "source_ids": [],
+        "required_features": [],
+        "max_runs": 1
+      },
+      "response": {
+        "data": {
+          "runs": []
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_put_runs_run_id_claim",
+      "request": {
+        "business": {
+          "run_id": "fixture",
+          "action": "ack"
+        },
+        "attempt": {
+          "claim_token": "fixture",
+          "expected_run_revision": null
+        }
+      },
+      "response": {
+        "data": {
+          "business_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "run_id": null,
+          "probe_id": null,
+          "run_revision": null,
+          "delivery_state": null,
+          "current_lease_valid": false,
+          "lease_until": null,
+          "receipt_ref": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_get_runs",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_get_runs_run_id",
+      "request": null,
+      "response": {
+        "data": {
+          "run_id": "fixture",
+          "source_id": "fixture",
+          "run_kind": "daily",
+          "business_date": "2026-09-27",
+          "generation": 0,
+          "window_start": "2026-09-27T00:00:00.000000Z",
+          "window_end": "2026-09-28T00:00:00.000000Z",
+          "fetch_mode": "daily_delta",
+          "collection_reason": "daily",
+          "config_version": 0,
+          "run_revision": 0,
+          "delivery_state": "pending",
+          "fetch_state": "pending",
+          "analysis_state": "waiting_input",
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          },
+          "expected_count": null,
+          "accepted_count": 0,
+          "excluded_count": 0,
+          "pending_count": 0,
+          "barrier_closed_at": null,
+          "late_results_available": false,
+          "result_business_hash": null,
+          "manifest_hash": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_get_runs_run_id_manifest",
+      "request": null,
+      "response": {
+        "data": {
+          "run_id": "fixture",
+          "parts": [],
+          "next_cursor": null
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_put_runs_run_id_manifest",
+      "request": {
+        "business": {
+          "run_id": "fixture",
+          "part_no": 0,
+          "part_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "members": [
+            {
+              "member_id": "fixture",
+              "source_item_id": null,
+              "observation_id": "fixture",
+              "payload_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "replaces_observation_id": null
+            }
+          ]
+        },
+        "attempt": {
+          "claim_token": "fixture",
+          "expected_run_revision": null
+        }
+      },
+      "response": {
+        "data": {
+          "business_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "run_id": null,
+          "probe_id": null,
+          "run_revision": null,
+          "delivery_state": null,
+          "current_lease_valid": false,
+          "lease_until": null,
+          "receipt_ref": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_put_runs_run_id_result",
+      "request": {
+        "business": {
+          "run_id": "fixture",
+          "manifest_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "part_count": 0,
+          "expected_count": 0,
+          "fetch_outcome": "succeeded",
+          "coverage": {
+            "state": "complete",
+            "missing_inputs": [],
+            "missing_dates": [],
+            "no_update_dates": []
+          }
+        },
+        "attempt": {
+          "claim_token": "fixture",
+          "expected_run_revision": 0
+        }
+      },
+      "response": {
+        "data": {
+          "business_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "run_id": null,
+          "probe_id": null,
+          "run_revision": null,
+          "delivery_state": null,
+          "current_lease_valid": false,
+          "lease_until": null,
+          "receipt_ref": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_post_runs_run_id_members_member_id_actions",
+      "request": {
+        "business": {
+          "run_id": "fixture",
+          "member_id": "fixture",
+          "expected_member_revision": 0,
+          "action": "seal",
+          "reason": "fixture"
+        },
+        "attempt": {
+          "claim_token": "fixture",
+          "expected_run_revision": 0
+        }
+      },
+      "response": {
+        "data": {
+          "business_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "run_id": null,
+          "probe_id": null,
+          "run_revision": null,
+          "delivery_state": null,
+          "current_lease_valid": false,
+          "lease_until": null,
+          "receipt_ref": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_post_observations",
+      "request": {
+        "observations": [
+          {
+            "protocol_revision": "0.11",
+            "observation_id": "fixture",
+            "member_id": "fixture",
+            "run_id": "fixture",
+            "business_date": "2026-09-27",
+            "source_id": "fixture",
+            "source_revision": 0,
+            "source_item_id": "fixture",
+            "retrieved_at": "2026-09-27T00:00:00.000000Z",
+            "replaces_observation_id": null,
+            "payload_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "kind": "article",
+            "payload": {
+              "title": "fixture",
+              "source_url": "https://example.com/evidence",
+              "published_at": null,
+              "updated_at": null,
+              "time_basis": "published",
+              "source_summary": null,
+              "body_text": null,
+              "content_status": "full",
+              "body_truncated": false,
+              "parser_version": "fixture",
+              "config_version": 0,
+              "source_order": {
+                "basis": "unknown",
+                "domain": null,
+                "value": null,
+                "evidence_ref": null
+              }
+            }
+          }
+        ]
+      },
+      "response": {
+        "data": {
+          "acks": [
+            {
+              "observation_id": "fixture",
+              "member_id": "fixture",
+              "status": "accepted",
+              "code": null,
+              "receipt_ref": null,
+              "accepted_at": null,
+              "projection_decision": null,
+              "current_article_revision": null,
+              "comparison_reason": null
+            }
+          ]
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_post_heartbeat",
+      "request": {
+        "observed_at": "2026-09-27T00:00:00.000000Z",
+        "pending_observations": 0,
+        "pending_controls": 0,
+        "quarantined": 0,
+        "outbox_bytes": 0,
+        "free_bytes": 0,
+        "oldest_pending_at": null
+      },
+      "response": {
+        "data": {
+          "received_at": "2026-09-27T00:00:00.000000Z"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_post_probe_claims",
+      "request": {
+        "source_ids": [],
+        "required_features": []
+      },
+      "response": {
+        "data": {
+          "probe_id": "fixture",
+          "source_id": "fixture",
+          "config": {
+            "source_id": "fixture",
+            "config_version": 0,
+            "activation_stage": "disabled",
+            "config": {
+              "adapter": "fixture",
+              "entry_urls": [
+                "https://example.com/evidence"
+              ],
+              "identity_rule": "fixture",
+              "window_rule": "fixture",
+              "parser_version": "fixture",
+              "max_items": 1,
+              "max_response_bytes": 1,
+              "allowed_hosts": [
+                "fixture"
+              ],
+              "valid_until": "2026-09-27T00:00:00.000000Z",
+              "auth_secret_ref": null
+            }
+          },
+          "claim_token": null,
+          "lease_until": null,
+          "current_lease_valid": false
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    },
+    {
+      "operation_id": "collector_put_probes_probe_id_result",
+      "request": {
+        "business": {
+          "probe_id": "fixture",
+          "result": {
+            "reachable": false,
+            "http_status": null,
+            "tls_valid": false,
+            "parser_valid": false,
+            "identity_valid": false,
+            "checked_at": "2026-09-27T00:00:00.000000Z",
+            "error_code": null,
+            "evidence_refs": []
+          }
+        },
+        "attempt": {
+          "claim_token": "fixture",
+          "expected_run_revision": null
+        }
+      },
+      "response": {
+        "data": {
+          "business_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "run_id": null,
+          "probe_id": null,
+          "run_revision": null,
+          "delivery_state": null,
+          "current_lease_valid": false,
+          "lease_until": null,
+          "receipt_ref": "fixture"
+        },
+        "meta": {
+          "request_id": "fixture-request"
+        }
+      }
+    }
+  ]
+}
