@@ -4,7 +4,9 @@ digraph "com.lianxibu:site-backend:jar:0.1.0-SNAPSHOT" {
 	"com.lianxibu:site-backend:jar:0.1.0-SNAPSHOT" -> "org.springframework.boot:spring-boot-starter-jdbc:jar:4.1.1:compile" ;
 	"com.lianxibu:site-backend:jar:0.1.0-SNAPSHOT" -> "org.springframework.boot:spring-boot-starter-actuator:jar:4.1.1:compile" ;
 	"com.lianxibu:site-backend:jar:0.1.0-SNAPSHOT" -> "com.mysql:mysql-connector-j:jar:9.7.0:runtime" ;
+	"com.lianxibu:site-backend:jar:0.1.0-SNAPSHOT" -> "org.bouncycastle:bcprov-jdk18on:jar:1.86:compile" ;
 	"com.lianxibu:site-backend:jar:0.1.0-SNAPSHOT" -> "org.springframework.boot:spring-boot-starter-test:jar:4.1.1:test" ;
+	"com.lianxibu:site-backend:jar:0.1.0-SNAPSHOT" -> "com.h2database:h2:jar:2.3.232:test" ;
 	"org.springframework.boot:spring-boot-starter-webmvc:jar:4.1.1:compile" -> "org.springframework.boot:spring-boot-starter:jar:4.1.1:compile" ;
 	"org.springframework.boot:spring-boot-starter-webmvc:jar:4.1.1:compile" -> "org.springframework.boot:spring-boot-starter-jackson:jar:4.1.1:compile" ;
 	"org.springframework.boot:spring-boot-starter-webmvc:jar:4.1.1:compile" -> "org.springframework.boot:spring-boot-starter-tomcat:jar:4.1.1:compile" ;
