@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: lianxibu-site-backend
+  datasource:
+    url: ${SITE_DB_URL}
+    username: ${SITE_DB_USER}
+    password: ${SITE_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 0
+      initialization-fail-timeout: -1
+server:
+  tomcat:
+    threads:
+      max: 24
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+site:
+  execution:
+    enabled: false
+  scheduler:
+    enabled: false
