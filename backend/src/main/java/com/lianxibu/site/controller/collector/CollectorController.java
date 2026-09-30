@@ -220,6 +220,7 @@ public final class CollectorController {
                 default -> throw new IllegalArgumentException("unsupported body operation");
             }
         } catch (BoundaryFailure failure) { throw failure; }
+        catch (WireValues.UnknownMember unknown) { throw protocol("unknown collector field"); }
         catch (IllegalArgumentException invalid) { throw validation("invalid collector body"); }
         return value;
     }

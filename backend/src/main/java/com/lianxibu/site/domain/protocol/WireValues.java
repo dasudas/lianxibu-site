@@ -13,12 +13,16 @@ import tools.jackson.databind.JsonNode;
 public final class WireValues {
     private WireValues() { }
 
+    public static final class UnknownMember extends IllegalArgumentException {
+        public UnknownMember() { super("unknown JSON member"); }
+    }
+
     public static JsonNode object(JsonNode node, Set<String> allowed, Set<String> required) {
         if (node == null || !node.isObject()) throw new IllegalArgumentException("JSON object required");
         if (!allowed.containsAll(required)) throw new IllegalArgumentException("invalid field definition");
         Set<String> actual = new HashSet<>();
         node.properties().forEach(entry -> actual.add(entry.getKey()));
-        if (!allowed.containsAll(actual)) throw new IllegalArgumentException("unknown JSON member");
+        if (!allowed.containsAll(actual)) throw new UnknownMember();
         if (!actual.containsAll(required)) throw new IllegalArgumentException("missing JSON member");
         return node;
     }

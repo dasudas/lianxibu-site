@@ -84,7 +84,7 @@ class CollectorControllerTest {
         mvc.perform(auth(write(post(path), "{\"source_ids\":[\"other\"],\"required_features\":[],\"max_runs\":1}", true)))
                 .andExpect(status().isForbidden());
         mvc.perform(auth(write(post(path), "{\"source_ids\":[],\"required_features\":[],\"max_runs\":1,\"extra\":1}", true)))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isBadRequest());
         mvc.perform(auth(write(post(path), "{\"source_ids\":[],\"source_ids\":[],\"required_features\":[],\"max_runs\":1}", true)))
                 .andExpect(status().isBadRequest());
         mvc.perform(auth(write(post(path), "{\"source_ids\":[],\"required_features\":[],\"max_runs\":1}", false)))

@@ -187,6 +187,8 @@ class CollectorRuntimeHttpTest {
                         "SELECT delivery_state FROM source_runs WHERE id=?", String.class, "fixture-go-run"));
                 assertEquals(1L, jdbc.queryForObject(
                         "SELECT expected_count FROM source_runs WHERE id=?", Long.class, "fixture-go-run"));
+                goInterop("negative");
+                assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
                 assertEquals(1, jdbc.update("UPDATE request_receipts SET created_at=? WHERE observation_id=?",
                         Timestamp.from(Instant.now().minusSeconds(91L * 24 * 3600)),
                         "go-metric-observation"));

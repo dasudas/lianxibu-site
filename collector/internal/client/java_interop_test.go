@@ -74,6 +74,26 @@ func TestJavaInterop(t *testing.T) {
 		}
 		return
 	}
+	if mode == "negative" {
+		wire, err := os.ReadFile(os.Getenv("V02_FROZEN_FILE"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		bad := [][]byte{
+			[]byte(`{"observations":[` + string(wire) + `],"observations":[` + string(wire) + `]}`),
+			[]byte(`{"observations":[` + string(wire) + `],"unexpected":true}`),
+		}
+		for index, body := range bad {
+			if _, err := ParseStrict(body); err == nil && index == 0 {
+				t.Fatal("Go accepted a duplicate JSON field")
+			}
+			if _, err := c.request(ctx, http.MethodPost, "/observations", "", body); err == nil ||
+				err.Error() != "collector response status 400" {
+				t.Fatalf("Java accepted malformed Go wire: %v", err)
+			}
+		}
+		return
+	}
 	if mode == "stale" {
 		frozen, err := os.ReadFile(os.Getenv("V02_CLAIM_FILE"))
 		if err != nil {
