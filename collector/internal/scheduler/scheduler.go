@@ -26,6 +26,7 @@ type Store interface {
 	SavePage(context.Context, string, string, uint64, string, string, []outbox.Record) error
 }
 type Item struct {
+	Kind         string
 	SourceItemID string
 	EvidenceTime time.Time
 	Version      string
@@ -170,7 +171,11 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 			if item.SourceItemID == "" || item.EvidenceTime.IsZero() || len(item.Payload) == 0 {
 				return out, ErrUnusablePage
 			}
-			if !item.EvidenceTime.Before(start) && item.EvidenceTime.Before(end) &&
+			if item.Kind != "" && item.Kind != "article" && item.Kind != "catalog" && item.Kind != "metric" {
+				return out, ErrUnusablePage
+			}
+			catalog := item.Kind == "catalog" || item.Kind == "metric"
+			if (catalog || !item.EvidenceTime.Before(start) && item.EvidenceTime.Before(end)) &&
 				target.matches(item) && !seen[item.SourceItemID] {
 				record, err := s.adapter.Freeze(claim, item, s.now())
 				if err != nil {
@@ -178,6 +183,12 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 				}
 				if record.RunID != claim.Run.RunID || record.SourceID != claim.Run.SourceID || record.MemberID == "" {
 					return out, ErrUnusablePage
+				}
+				if catalog {
+					frozen, err := client.DecodeObservation(record.Payload)
+					if err != nil || frozen.Kind != item.Kind || frozen.RunID != record.RunID || frozen.SourceID != record.SourceID || frozen.MemberID != record.MemberID {
+						return out, ErrUnusablePage
+					}
 				}
 				already, err := s.store.HasMember(ctx, claim.Run.RunID, record.MemberID)
 				if err != nil {
