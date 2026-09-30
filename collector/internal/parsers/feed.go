@@ -49,6 +49,7 @@ type Article struct {
 type FeedAdapter struct {
 	sourceID, version string
 	format            fetcher.Format
+	onlyDevelopment   bool
 }
 
 func Ruanyifeng() *FeedAdapter {

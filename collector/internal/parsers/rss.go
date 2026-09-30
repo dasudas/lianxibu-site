@@ -101,6 +101,18 @@ func (a *FeedAdapter) parseRSS(c client.RunClaim, response fetcher.Result) (sche
 		raw, truncated := boundText(row.Description, 200000, 200*1024)
 		article.RawSelectedContent = raw
 		article.BodyTruncated = article.BodyTruncated || truncated
+		if a.onlyDevelopment {
+			if article.BodyTruncated {
+				page.Gaps = append(page.Gaps, "topic_summary_truncated")
+			}
+			summary := ""
+			if article.SourceSummary != nil {
+				summary = *article.SourceSummary
+			}
+			if !developmentTopic(article.Title, summary) {
+				continue
+			}
+		}
 		item.Payload, _ = json.Marshal(article)
 		if conflicts[link] {
 			continue
