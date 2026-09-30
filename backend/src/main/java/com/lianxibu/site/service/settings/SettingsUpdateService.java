@@ -28,6 +28,8 @@ public final class SettingsUpdateService implements SettingsService {
         void update(Current previous, PreferencesWrite command, String commandHash,
                     String actionKey, String actorId);
         void recordNoop(Current previous, String commandHash, String actionKey, String actorId);
+        /** Final technical receipt after settings/pause updates and business audit. */
+        void complete(Preferences result, String commandHash, String actionKey, String actorId);
         /** Append an ops_rule disposition in this transaction; never mutate earlier audit rows. */
         void recordOperationalChange(Current previous, PreferencesWrite command, String actionKey, String actorId);
         boolean publishedPackage(String packageId);
@@ -81,12 +83,14 @@ public final class SettingsUpdateService implements SettingsService {
                 command.operationalLimits().forEach(OperationalRulePolicy::compile);
             }
             store.update(current, command, hash, key, actorId);
-            if (operationalChange) store.recordOperationalChange(current, command, key, actorId);
             if (current.aiPaused() != command.aiPaused()) store.recordPauseIntent(command.aiPaused());
-            return new Preferences(current.revision() + 1,
+            if (operationalChange) store.recordOperationalChange(current, command, key, actorId);
+            Preferences result = new Preferences(current.revision() + 1,
                     List.copyOf(command.followKeywords()), List.copyOf(command.blockedKeywords()),
                     command.aiPaused(), command.defaultPackageId(),
                     List.copyOf(command.operationalLimits()));
+            store.complete(result, hash, key, actorId);
+            return result;
         });
     }
 

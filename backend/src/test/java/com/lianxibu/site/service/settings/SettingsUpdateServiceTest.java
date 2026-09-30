@@ -152,7 +152,9 @@ class SettingsUpdateServiceTest {
                     List.copyOf(command.blockedKeywords()), command.aiPaused(),
                     command.defaultPackageId(), List.copyOf(command.operationalLimits()), true);
             updates++;
-            receipt(key, hash);
+        }
+        @Override public void complete(SettingsService.Preferences result, String hash, String key, String actor) {
+            receipts.put(key, result); hashes.put(key, hash);
         }
         @Override public void recordNoop(Current previous, String hash, String key, String actor) {
             receipt(key, hash);
