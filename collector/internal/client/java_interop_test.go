@@ -42,6 +42,10 @@ func TestJavaInterop(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	mode := os.Getenv("V02_MODE")
+	if mode == "matrix" || mode == "takeover-prepare" || mode == "takeover" {
+		runJavaMatrix(t, c, ctx, mode)
+		return
+	}
 	if mode == "revoked" {
 		if _, err := c.Config(ctx); !errors.Is(err, ErrPermission) {
 			t.Fatalf("revoked Java credential was accepted: %v", err)
@@ -129,10 +133,22 @@ func TestJavaInterop(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		member := map[string]any{"member_id": observation.MemberID,
-			"source_item_id": "go-metric-item", "observation_id": observation.ID,
-			"payload_hash": observation.PayloadHash, "replaces_observation_id": nil}
-		members := []any{member}
+		catalogWire, err := os.ReadFile(os.Getenv("V02_CATALOG_FILE"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		catalog, err := DecodeObservation(catalogWire)
+		if err != nil {
+			t.Fatal(err)
+		}
+		members := []any{
+			map[string]any{"member_id": catalog.MemberID,
+				"source_item_id": catalog.SourceItemID, "observation_id": catalog.ID,
+				"payload_hash": catalog.PayloadHash, "replaces_observation_id": nil},
+			map[string]any{"member_id": observation.MemberID,
+				"source_item_id": observation.SourceItemID, "observation_id": observation.ID,
+				"payload_hash": observation.PayloadHash, "replaces_observation_id": nil},
+		}
 		partHash, err := Hash(ManifestPartHash, map[string]any{"run_id": claim.Run.RunID,
 			"part_no": 0, "members": members})
 		if err != nil {
@@ -175,13 +191,13 @@ func TestJavaInterop(t *testing.T) {
 			t.Fatal(err)
 		}
 		manifestHash, err := Hash(ManifestHash, map[string]any{"run_id": claim.Run.RunID,
-			"expected_count": 1, "parts": []any{map[string]any{"part_no": 0,
-				"part_hash": partHash, "member_count": 1}}})
+			"expected_count": 2, "parts": []any{map[string]any{"part_no": 0,
+				"part_hash": partHash, "member_count": 2}}})
 		if err != nil {
 			t.Fatal(err)
 		}
 		result := map[string]any{"run_id": claim.Run.RunID, "manifest_hash": manifestHash,
-			"part_count": 1, "expected_count": 1, "fetch_outcome": "succeeded",
+			"part_count": 1, "expected_count": 2, "fetch_outcome": "succeeded",
 			"coverage": map[string]any{"state": "complete", "missing_inputs": []any{},
 				"missing_dates": []any{}, "no_update_dates": []any{}}}
 		resultBusinessHash, err := Hash(ControlBusinessHash,
@@ -340,5 +356,58 @@ func TestJavaInterop(t *testing.T) {
 	if _, err := conflictDelivery.UploadOneBatch(ctx); !errors.Is(err, ErrIdentityConflict) ||
 		conflictQueue.quarantined != 1 || conflictQueue.retried != 0 {
 		t.Fatalf("Java hash conflict did not isolate the Go observation: %v", err)
+	}
+	var catalogRow map[string]any
+	for _, sample := range loadWireCases(t) {
+		if sample.Schema != "ObservationEnvelope" || !sample.Valid {
+			continue
+		}
+		candidate, err := ParseStrict(sample.Value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		value := candidate.(map[string]any)
+		if value["kind"] == "catalog" {
+			catalogRow = value
+			break
+		}
+	}
+	if catalogRow == nil {
+		t.Fatal("catalog contract fixture absent")
+	}
+	catalogRow["observation_id"] = "go-catalog-observation"
+	catalogRow["member_id"] = "go-catalog-member"
+	catalogRow["run_id"] = claim.Run.RunID
+	catalogRow["business_date"] = claim.Run.BusinessDate
+	catalogRow["source_id"] = claim.Run.SourceID
+	catalogRow["source_revision"] = claim.Run.ConfigVersion
+	catalogRow["source_item_id"] = "go-catalog-item"
+	catalogRow["retrieved_at"] = time.Now().UTC().Format("2006-01-02T15:04:05.000000Z")
+	catalogPayload := catalogRow["payload"].(map[string]any)
+	catalogPayload["parser_version"] = claim.Config.Config.ParserVersion
+	catalogPayload["config_version"] = claim.Config.ConfigVersion
+	delete(catalogRow, "payload_hash")
+	catalogHash, err := Hash(ObservationHash, catalogRow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	catalogRow["payload_hash"] = catalogHash
+	catalogWire, err := json.Marshal(catalogRow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(os.Getenv("V02_CATALOG_FILE"), catalogWire, 0600); err != nil {
+		t.Fatal(err)
+	}
+	catalogQueue := &memoryDeliveryQueue{observations: []FrozenObservation{{
+		RecordID: "go-catalog-row", RunID: claim.Run.RunID, MemberID: "go-catalog-member",
+		ObservationID: "go-catalog-observation", PayloadHash: catalogHash, Wire: catalogWire,
+	}}}
+	catalogDelivery, err := NewDelivery(c, catalogQueue)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count, err := catalogDelivery.UploadOneBatch(ctx); err != nil || count != 1 || catalogQueue.accepted != 1 {
+		t.Fatalf("Java catalog observation was not acknowledged by Go: %v", err)
 	}
 }

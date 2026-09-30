@@ -112,7 +112,10 @@ public final class ObservationPayloadPolicy {
         WireValues.object(config, CONFIG_FIELDS, CONFIG_FIELDS);
         String agent = optional(config.get("agent"), 256);
         String model = optional(config.get("model"), 256);
-        if ("configuration".equals(scope) && agent == null && model == null) invalid();
+        if ("configuration".equals(scope)) {
+            if ((agent == null || agent.isBlank()) && (model == null || model.isBlank())) invalid();
+            if ("skill".equals(category)) invalid();
+        }
         JsonNode skills = config.get("skills");
         if (!skills.isArray() || skills.size() > 100) invalid();
         Set<String> seen = new HashSet<>();

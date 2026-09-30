@@ -6,6 +6,7 @@ import com.lianxibu.site.domain.protocol.ManifestControl;
 import com.lianxibu.site.domain.protocol.ObservationEnvelope;
 import com.lianxibu.site.domain.protocol.WireValues;
 import com.lianxibu.site.service.identity.IdentityService;
+import com.lianxibu.site.service.articles.ObservationPayloadPolicy;
 import com.lianxibu.site.service.identity.NodeIdentityService;
 import com.lianxibu.site.service.identity.NodeIdentityService.Principal;
 import jakarta.servlet.http.HttpServletRequest;
@@ -212,6 +213,9 @@ public final class CollectorController {
                     Set<String> seen = new java.util.HashSet<>();
                     for (JsonNode item : list) {
                         var observation = ObservationEnvelope.fromJson(item);
+                        if (!"article".equals(observation.kind())) {
+                            ObservationPayloadPolicy.validate(observation.kind(), item.get("payload"));
+                        }
                         if (!seen.add(observation.observationId())) throw new IllegalArgumentException("duplicate observation ID");
                         if (!principal.sourceIds().contains(observation.sourceId())) throw new BoundaryFailure(403, "forbidden");
                     }
@@ -221,7 +225,13 @@ public final class CollectorController {
             }
         } catch (BoundaryFailure failure) { throw failure; }
         catch (WireValues.UnknownMember unknown) { throw protocol("unknown collector field"); }
-        catch (IllegalArgumentException invalid) { throw validation("invalid collector body"); }
+        catch (IllegalArgumentException invalid) {
+            if ("schema_not_supported".equals(invalid.getMessage())
+                    || "unknown observation kind".equals(invalid.getMessage())) {
+                throw new BoundaryFailure(409, "schema_not_supported");
+            }
+            throw validation("invalid collector body");
+        }
         return value;
     }
 

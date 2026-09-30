@@ -171,7 +171,7 @@ class CollectorRuntimeHttpTest {
             assertEquals(1L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
             goInterop("fresh");
             if (System.getenv("V02_GO_EXEC") != null) {
-                assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
+                assertEquals(3L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
                 assertEquals("receiving", jdbc.queryForObject(
                         "SELECT delivery_state FROM source_runs WHERE id=?", String.class, "fixture-go-run"));
                 assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts"
@@ -188,18 +188,40 @@ class CollectorRuntimeHttpTest {
                 goInterop("finalize");
                 assertEquals("complete", jdbc.queryForObject(
                         "SELECT delivery_state FROM source_runs WHERE id=?", String.class, "fixture-go-run"));
-                assertEquals(1L, jdbc.queryForObject(
+                assertEquals(2L, jdbc.queryForObject(
                         "SELECT expected_count FROM source_runs WHERE id=?", Long.class, "fixture-go-run"));
                 assertEquals(1L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts"
                                 + " WHERE run_id=? AND control_operation='manifest'",
                         Long.class, "fixture-go-run"));
                 goInterop("negative");
-                assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
+                assertEquals(3L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
                 assertEquals(1, jdbc.update("UPDATE request_receipts SET created_at=? WHERE observation_id=?",
                         Timestamp.from(Instant.now().minusSeconds(91L * 24 * 3600)),
                         "go-metric-observation"));
                 goInterop("replay");
-                assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
+                assertEquals(3L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
+                for (String fixture : List.of("partial", "pending", "excluded", "empty", "takeover")) {
+                    String id = fixture.equals("takeover") ? "go-takeover" : "go-matrix-" + fixture;
+                    jdbc.update("INSERT INTO source_runs(id,source_id,run_kind,business_date,generation,window_start,"
+                                    + "window_end,config_version,config_snapshot_json,activation_stage,revision,"
+                                    + "delivery_state,fetch_mode,collection_reason,fetch_state,analysis_state,accepted_count,"
+                                    + "excluded_count,pending_count,coverage_json,job_refs_json,claim_node_id,claim_token_hash,lease_until)"
+                                    + " SELECT ?,source_id,run_kind,business_date,?,window_start,window_end,config_version,"
+                                    + "config_snapshot_json,activation_stage,0,'receiving',fetch_mode,collection_reason,"
+                                    + "'running','waiting_input',0,0,0,'{}','[]','fixture-node',?,? FROM source_runs WHERE id=?",
+                            id, 10 + List.of("partial", "pending", "excluded", "empty", "takeover").indexOf(fixture),
+                            NodeTokens.digest("C".repeat(43)), Timestamp.from(Instant.now().plusSeconds(600)),
+                            "fixture-go-run");
+                }
+                goInterop("matrix");
+                assertEquals(15L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
+                assertEquals(0L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts WHERE observation_id LIKE 'negative-%'", Long.class));
+                goInterop("takeover-prepare");
+                jdbc.update("UPDATE source_runs SET lease_until=? WHERE id='go-takeover'",
+                        Timestamp.from(Instant.now().minusSeconds(1)));
+                goInterop("takeover");
+                assertEquals("empty_success", jdbc.queryForObject("SELECT delivery_state FROM source_runs WHERE id='go-takeover'", String.class));
+                assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts WHERE run_id='go-takeover' AND control_operation IN ('manifest','result')", Long.class));
             }
             ObjectNode article = null;
             for (JsonNode sample : examples.get("cases")) {
@@ -228,7 +250,7 @@ class CollectorRuntimeHttpTest {
                             + new String(CanonicalJson.bytes(article), StandardCharsets.UTF_8) + "]}"))
                     .build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(503, unreviewed.statusCode());
-            assertEquals(System.getenv("V02_GO_EXEC") == null ? 1L : 2L,
+            assertEquals(System.getenv("V02_GO_EXEC") == null ? 1L : 15L,
                     jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
             assertEquals(0L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts WHERE observation_id=?",
                     Long.class, "unreviewed-article"));
@@ -354,6 +376,8 @@ class CollectorRuntimeHttpTest {
         command.environment().put("V02_FROZEN_FILE", Path.of("target/v02-frozen-observation.json")
                 .toAbsolutePath().toString());
         command.environment().put("V02_CLAIM_FILE", Path.of("target/v02-frozen-claim.json")
+                .toAbsolutePath().toString());
+        command.environment().put("V02_CATALOG_FILE", Path.of("target/v02-frozen-catalog.json")
                 .toAbsolutePath().toString());
         command.environment().put("GOTOOLCHAIN", "local");
         command.environment().put("GOPROXY", "off");
