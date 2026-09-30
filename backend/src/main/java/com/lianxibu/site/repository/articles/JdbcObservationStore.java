@@ -111,7 +111,8 @@ public final class JdbcObservationStore {
                 observation.observationId(), nodeId,
                 HexFormat.of().parseHex(observation.payloadHash()),
                 nullableText(observation.wire().get("replaces_observation_id")), evidenceJson,
-                evidenceHash, articleId, revisionId, terminalState, receiptId, "pending",
+                evidenceHash, articleId, revisionId, terminalState, receiptId,
+                "needs_review".equals(projectionDecision) ? "needs_review" : "pending",
                 projectionDecision, order);
     }
 

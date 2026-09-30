@@ -34,10 +34,13 @@ public final class ObservationIngressService {
         Principal authorize(String bearer, String sourceId);
     }
     public interface ArticleWriter {
-        ArticleCompatibilityWriter.Result accept(ArticleCompatibilityWriter.Input input);
+        ArticleOutcome accept(ArticleCompatibilityWriter.Input input, LocalDate businessDate);
     }
+    public record ArticleOutcome(String articleId, String evidenceRevisionId,
+                                 String projectionDecision, long articleRevision) { }
     public record Ack(String observationId, String memberId, String status, String code,
-                      String receiptRef, Instant acceptedAt, String projectionDecision) { }
+                      String receiptRef, Instant acceptedAt, String projectionDecision,
+                      Long currentArticleRevision) { }
     public static final class IdentityConflict extends RuntimeException {
         public IdentityConflict() { super("observation identity conflict"); }
     }
@@ -68,10 +71,17 @@ public final class ObservationIngressService {
 
     public ObservationIngressService(JdbcObservationStore store, RunReader runs,
                                      SharedWriteExecutor writes, NodeIdentityService nodes,
-                                     ArticleCompatibilityWriter articles, Clock clock) {
+                                     ArticleCompatibilityWriter articles,
+                                     ArticleProjectionService projection, Clock clock) {
         this(store, runs, writes,
                 (bearer, sourceId) -> nodes.authorizeBearer(bearer, "observation:write", sourceId),
-                articles::accept, clock);
+                (input, day) -> {
+                    var compatibility = articles.accept(input);
+                    var decided = projection.decide(input, compatibility, day);
+                    return new ArticleOutcome(decided.articleId(),
+                            decided.evidenceRevisionId(), decided.projectionDecision(),
+                            decided.articleRevision());
+                }, clock);
     }
 
     /** Caller supplies the exact outbox bytes; no normalization or network work occurs under lock. */
@@ -103,7 +113,7 @@ public final class ObservationIngressService {
             if (prepared == null) {
                 return persist(context, currentNode.nodeId(), observation, null,
                         "rejected", "invalid_payload", null, null, null, null,
-                        null, false);
+                        null, null, false);
             }
             RunSnapshot run = runs.locked(observation.runId());
             if (run == null || !run.sourceId().equals(observation.sourceId())
@@ -112,12 +122,12 @@ public final class ObservationIngressService {
                     || !validFrozen(run, prepared)) {
                 return persist(context, currentNode.nodeId(), observation, null,
                         "blocked", "historical_config_unverifiable", null, null, null, null,
-                        prepared, false);
+                        null, prepared, false);
             }
             if (CLOSED.contains(run.deliveryState())) {
                 return persist(context, currentNode.nodeId(), observation, run.id(),
                         "rejected", "run_closed_unknown_observation", null, null, null, null,
-                        prepared, false);
+                        null, prepared, false);
             }
             var prior = store.member(run.id(), observation.memberId());
             JsonNode replaces = observation.wire().get("replaces_observation_id");
@@ -134,26 +144,29 @@ public final class ObservationIngressService {
             String articleId = null;
             String revisionId = null;
             String decision = null;
+            Long articleRevision = null;
             if ("article".equals(observation.kind())) {
-                var written = articles.accept(articleInput(observation, prepared));
+                var written = articles.accept(articleInput(observation, prepared),
+                        prepared.businessDate());
                 articleId = written.articleId();
-                revisionId = written.revisionId();
-                decision = written.inserted() ? "initialized" : "unchanged";
+                revisionId = written.evidenceRevisionId();
+                decision = written.projectionDecision();
+                articleRevision = written.articleRevision();
             }
             return persist(context, currentNode.nodeId(), observation, run.id(),
                     "accepted", "accepted", articleId, revisionId, decision,
-                    prepared.evidenceJson(), prepared, true);
+                    prepared.evidenceJson(), articleRevision, prepared, true);
         });
     }
 
     private Ack persist(ActionContext action, String nodeId, ObservationEnvelope observation,
                         String registeredRunId, String status, String code, String articleId,
                         String revisionId, String decision, String evidenceJson,
-                        Prepared prepared, boolean member) {
+                        Long articleRevision, Prepared prepared, boolean member) {
         Instant now = clock.instant();
         String receiptId = action.preallocatedResourceId();
         Ack ack = new Ack(observation.observationId(), observation.memberId(), status, code,
-                receiptId, "accepted".equals(status) ? now : null, decision);
+                receiptId, "accepted".equals(status) ? now : null, decision, articleRevision);
         store.saveReceipt(receiptId, nodeId, observation, registeredRunId, status,
                 json(ack, observation.runId()), now);
         if (member) {
@@ -184,7 +197,9 @@ public final class ObservationIngressService {
                 value.get("accepted_at").isNull() ? null
                         : Instant.parse(value.get("accepted_at").asText()),
                 value.get("projection_decision").isNull() ? null
-                        : value.get("projection_decision").asText());
+                        : value.get("projection_decision").asText(),
+                value.get("current_article_revision").isNull() ? null
+                        : value.get("current_article_revision").longValue());
     }
 
     private static boolean validFrozen(RunSnapshot run, Prepared prepared) {
@@ -263,6 +278,8 @@ public final class ObservationIngressService {
         else node.put("accepted_at", MICROS.format(ack.acceptedAt()));
         if (ack.projectionDecision() == null) node.putNull("projection_decision");
         else node.put("projection_decision", ack.projectionDecision());
+        if (ack.currentArticleRevision() == null) node.putNull("current_article_revision");
+        else node.put("current_article_revision", ack.currentArticleRevision());
         return new String(CanonicalJson.bytes(node), StandardCharsets.UTF_8);
     }
     private static String nullableText(JsonNode node) { return node.isNull() ? null : node.asText(); }

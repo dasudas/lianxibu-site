@@ -6,6 +6,7 @@ import com.lianxibu.site.domain.protocol.CanonicalJson;
 import com.lianxibu.site.domain.protocol.CanonicalJson.Domain;
 import com.lianxibu.site.repository.articles.JdbcObservationStore;
 import com.lianxibu.site.repository.articles.JdbcArticleWrites;
+import com.lianxibu.site.repository.articles.JdbcArticleProjection;
 import com.lianxibu.site.repository.jobs.JdbcSharedWriteEntry;
 import com.lianxibu.site.repository.sources.JdbcSourceRunStore;
 import com.lianxibu.site.repository.sources.JdbcSourceReads;
@@ -116,14 +117,16 @@ class ObservationIngressServiceTest {
             return row == null ? null : new ObservationIngressService.RunSnapshot(row.id(),
                     row.sourceId(), row.businessDate(), row.configVersion(),
                     row.configSnapshotJson(), row.activationStage(), row.deliveryState());
-        }, writes, nodes, input -> {
+        }, writes, nodes, (input, day) -> {
             boolean inserted = count("fixture_articles") == 0;
             if (inserted) {
                 jdbc.update("INSERT INTO fixture_articles VALUES(?,?)", "article-fixture", input.sourceItemId());
                 jdbc.update("INSERT INTO fixture_revisions VALUES(?,?)", "revision-fixture", "article-fixture");
             }
             if (writerFails) throw new IllegalStateException("injected revision failure");
-            return new ArticleCompatibilityWriter.Result("article-fixture", "revision-fixture", inserted, false);
+            return new ObservationIngressService.ArticleOutcome("article-fixture",
+                    "revision-fixture", input.title().startsWith("Disputed") ? "needs_review"
+                    : inserted ? "initialized" : "unchanged", 1);
         }, time);
     }
 
@@ -228,15 +231,35 @@ class ObservationIngressServiceTest {
             return row == null ? null : new ObservationIngressService.RunSnapshot(row.id(),
                     row.sourceId(), row.businessDate(), row.configVersion(),
                     row.configSnapshotJson(), row.activationStage(), row.deliveryState());
-        }, writes, nodes, writer::accept, time);
-        var ack = integrated.accept("node-fixture",
-                article("obs-real", "Real writer fixture", "run-fixture", "member-real"),
+        }, writes, nodes, (input, day) -> {
+            var compatible = writer.accept(input);
+            var projected = new ArticleProjectionService(new JdbcArticleProjection(db),
+                    List.of(new ArticleProjectionService.TrustedOrderRule("fixture:feed",
+                            "fixture-parser", "revision_time", "fixture-domain")), time)
+                    .decide(input, compatible, day);
+            return new ObservationIngressService.ArticleOutcome(projected.articleId(),
+                    projected.evidenceRevisionId(), projected.projectionDecision(),
+                    projected.articleRevision());
+        }, time);
+        var ack = integrated.accept("node-fixture", orderedArticle(
+                "obs-real", "Real writer fixture", "run-fixture", "member-real", null,
+                "2026-01-02T00:00:00.000000Z"),
                 action("obs-real"));
         assertEquals("accepted", ack.status());
+        assertEquals("initialized", ack.projectionDecision());
+        assertEquals(2L, ack.currentArticleRevision());
         assertEquals(1L, count("articles"));
         assertEquals(1L, count("article_revisions"));
         assertEquals(1L, count("source_run_items"));
         assertEquals(1L, count("request_receipts"));
+        var corrected = integrated.accept("node-fixture", orderedArticle(
+                "obs-real-next", "Newer title", "run-fixture", "member-real", "obs-real",
+                "2026-01-02T01:00:00.000000Z"), action("obs-real-next"));
+        assertEquals("promoted", corrected.projectionDecision());
+        assertEquals(3L, corrected.currentArticleRevision());
+        assertEquals(2L, count("article_revisions"));
+        assertEquals("Newer title", jdbc.queryForObject("SELECT title FROM articles", String.class));
+        assertEquals(2L, count("source_run_items"));
     }
 
     @Test void correctionPreservesOldEvidenceUntilManifestStarts() {
@@ -270,6 +293,16 @@ class ObservationIngressServiceTest {
         assertEquals(1L, count("source_run_items"));
         assertEquals(1L, count("request_receipts"));
         assertEquals(1L, count("fixture_revisions"));
+    }
+
+    @Test void disputedProjectionIsAcceptedButNotReadyForAnalysis() {
+        var ack = service.accept("node-fixture",
+                article("obs-dispute", "Disputed evidence", "run-fixture", "member-dispute"),
+                action("obs-dispute"));
+        assertEquals("accepted", ack.status());
+        assertEquals("needs_review", ack.projectionDecision());
+        assertEquals("needs_review", jdbc.queryForObject("SELECT state FROM source_run_items",
+                String.class));
     }
 
     @Test void catalogAndMetricContractVectorsPersistEvidenceWithoutArticle() throws Exception {
@@ -365,6 +398,19 @@ class ObservationIngressServiceTest {
         order.putNull("domain");
         order.putNull("value");
         order.putNull("evidence_ref");
+        root.put("payload_hash", CanonicalJson.hash(Domain.OBSERVATION, root));
+        return CanonicalJson.bytes(root);
+    }
+    private byte[] orderedArticle(String observationId, String title, String runId,
+                                  String memberId, String replaces, String sourceTime) {
+        ObjectNode root = ((ObjectNode) CanonicalJson.parse(
+                article(observationId, title, runId, memberId, replaces))).deepCopy();
+        ObjectNode order = (ObjectNode) root.get("payload").get("source_order");
+        order.put("basis", "revision_time");
+        order.put("domain", "fixture-domain");
+        order.put("value", sourceTime);
+        order.put("evidence_ref", "fixture-proof");
+        root.remove("payload_hash");
         root.put("payload_hash", CanonicalJson.hash(Domain.OBSERVATION, root));
         return CanonicalJson.bytes(root);
     }
