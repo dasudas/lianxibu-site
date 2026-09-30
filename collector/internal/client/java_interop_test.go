@@ -150,13 +150,16 @@ func TestJavaInterop(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		partQueue := &memoryDeliveryQueue{controlCurrent: true, control: &ControlAttempt{
+		partQueue := &memoryDeliveryQueue{controlCurrent: true, failControlAckOnce: true, control: &ControlAttempt{
 			ID: "go-part-attempt", BusinessID: "go-part", RunID: claim.Run.RunID,
 			Kind: "manifest", IdempotencyKey: "go-part", BusinessHash: partBusinessHash, Wire: partWire,
 		}}
 		partDelivery, err := NewDelivery(c, partQueue)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if _, err := partDelivery.DeliverOneControl(ctx); err == nil || partQueue.controlApplied {
+			t.Fatal("fictional local manifest ACK failure was not exercised")
 		}
 		if applied, err := partDelivery.DeliverOneControl(ctx); err != nil || !applied || !partQueue.controlApplied {
 			t.Fatalf("Go manifest was not durably acknowledged by Java: %v", err)
@@ -224,6 +227,27 @@ func TestJavaInterop(t *testing.T) {
 	}
 	if err := os.WriteFile(os.Getenv("V02_CLAIM_FILE"), claimBytes, 0600); err != nil {
 		t.Fatal(err)
+	}
+	renewA, err := PrepareLeaseAction("renew", claim, "go-renew-a", time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	aReceipt, err := c.SendLeaseAction(ctx, renewA)
+	if err != nil {
+		t.Fatal(err)
+	}
+	renewB, err := PrepareLeaseAction("renew", claim, "go-renew-b", time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	bReceipt, err := c.SendLeaseAction(ctx, renewB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bReplay, err := c.SendLeaseAction(ctx, renewB)
+	if err != nil || aReceipt.ReceiptRef == bReceipt.ReceiptRef ||
+		bReceipt.ReceiptRef != bReplay.ReceiptRef {
+		t.Fatalf("Java lease renewals did not preserve independent durable attempts: %v", err)
 	}
 	action, err := PrepareLeaseAction("ack", claim, "go-ack", time.Now())
 	if err != nil {

@@ -14,16 +14,17 @@ import (
 )
 
 type memoryDeliveryQueue struct {
-	observations   []FrozenObservation
-	control        *ControlAttempt
-	accepted       int
-	retried        int
-	quarantined    int
-	failAckOnce    bool
-	controlApplied bool
-	controlCurrent bool
-	stopped        bool
-	reconciled     bool
+	observations       []FrozenObservation
+	control            *ControlAttempt
+	accepted           int
+	retried            int
+	quarantined        int
+	failAckOnce        bool
+	failControlAckOnce bool
+	controlApplied     bool
+	controlCurrent     bool
+	stopped            bool
+	reconciled         bool
 }
 
 func (q *memoryDeliveryQueue) NextObservationBatch(context.Context, int, int) ([]FrozenObservation, error) {
@@ -50,6 +51,10 @@ func (q *memoryDeliveryQueue) NextControlAttempt(context.Context) (*ControlAttem
 }
 func (q *memoryDeliveryQueue) RetryControlAttempt(context.Context, ControlAttempt) error { return nil }
 func (q *memoryDeliveryQueue) ApplyControlReceipt(_ context.Context, a ControlAttempt, r ControlResult) (bool, error) {
+	if q.failControlAckOnce {
+		q.failControlAckOnce = false
+		return false, errors.New("fictional local control ACK commit failure")
+	}
 	if !q.controlCurrent {
 		return false, nil
 	}

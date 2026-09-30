@@ -174,6 +174,9 @@ class CollectorRuntimeHttpTest {
                 assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
                 assertEquals("receiving", jdbc.queryForObject(
                         "SELECT delivery_state FROM source_runs WHERE id=?", String.class, "fixture-go-run"));
+                assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts"
+                                + " WHERE run_id=? AND control_operation='renew'",
+                        Long.class, "fixture-go-run"));
                 byte[] originalClaimHash = jdbc.queryForObject(
                         "SELECT claim_token_hash FROM source_runs WHERE id=?", byte[].class, "fixture-go-run");
                 assertNotNull(originalClaimHash);
@@ -187,6 +190,9 @@ class CollectorRuntimeHttpTest {
                         "SELECT delivery_state FROM source_runs WHERE id=?", String.class, "fixture-go-run"));
                 assertEquals(1L, jdbc.queryForObject(
                         "SELECT expected_count FROM source_runs WHERE id=?", Long.class, "fixture-go-run"));
+                assertEquals(1L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts"
+                                + " WHERE run_id=? AND control_operation='manifest'",
+                        Long.class, "fixture-go-run"));
                 goInterop("negative");
                 assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
                 assertEquals(1, jdbc.update("UPDATE request_receipts SET created_at=? WHERE observation_id=?",
