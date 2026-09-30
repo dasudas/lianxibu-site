@@ -32,12 +32,14 @@ func configFixture(until string) map[string]any {
 	return map[string]any{"protocol_revision": "0.11", "valid_until": until, "next_cursor": nil,
 		"sources": []any{map[string]any{"source_id": "source", "config_version": 1, "activation_stage": "production",
 			"config": map[string]any{"adapter": "rss", "entry_urls": []string{"https://example.test/rss"},
-				"allowed_hosts": []string{"example.test"}, "valid_until": until, "auth_secret_ref": nil}}}}
+				"identity_rule": "guid", "window_rule": "published_at", "parser_version": "1", "max_items": 100,
+				"max_response_bytes": 1048576, "allowed_hosts": []string{"example.test"}, "valid_until": until, "auth_secret_ref": nil}}}}
 }
 func claimFixture(token string) map[string]any {
 	source := configFixture(later)["sources"].([]any)[0]
 	return map[string]any{"run": map[string]any{"run_id": "run-1", "source_id": "source",
-		"run_revision": 1, "config_version": 1, "fetch_mode": "daily_delta",
+		"run_revision": 1, "config_version": 1, "run_kind": "daily", "business_date": "2026-09-29",
+		"generation": 1, "collection_reason": "daily", "fetch_mode": "daily_delta",
 		"window_start": "2026-09-29T00:00:00.000000Z", "window_end": "2026-09-30T00:00:00.000000Z"},
 		"config": source, "claim_token": token, "lease_until": later, "current_lease_valid": true}
 }

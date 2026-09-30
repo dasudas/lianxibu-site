@@ -24,11 +24,16 @@ type SourceConfig struct {
 	ConfigVersion   uint64 `json:"config_version"`
 	ActivationStage string `json:"activation_stage"`
 	Config          struct {
-		Adapter       string   `json:"adapter"`
-		EntryURLs     []string `json:"entry_urls"`
-		AllowedHosts  []string `json:"allowed_hosts"`
-		ValidUntil    string   `json:"valid_until"`
-		AuthSecretRef *string  `json:"auth_secret_ref"`
+		Adapter          string   `json:"adapter"`
+		EntryURLs        []string `json:"entry_urls"`
+		IdentityRule     string   `json:"identity_rule"`
+		WindowRule       string   `json:"window_rule"`
+		ParserVersion    string   `json:"parser_version"`
+		MaxItems         uint64   `json:"max_items"`
+		MaxResponseBytes uint64   `json:"max_response_bytes"`
+		AllowedHosts     []string `json:"allowed_hosts"`
+		ValidUntil       string   `json:"valid_until"`
+		AuthSecretRef    *string  `json:"auth_secret_ref"`
 	} `json:"config"`
 }
 
@@ -46,18 +51,35 @@ func (c ConfigSnapshot) ValidAt(now time.Time) bool {
 
 type RunClaim struct {
 	Run struct {
-		RunID         string `json:"run_id"`
-		SourceID      string `json:"source_id"`
-		RunRevision   uint64 `json:"run_revision"`
-		ConfigVersion uint64 `json:"config_version"`
-		FetchMode     string `json:"fetch_mode"`
-		WindowStart   string `json:"window_start"`
-		WindowEnd     string `json:"window_end"`
+		RunID                string          `json:"run_id"`
+		SourceID             string          `json:"source_id"`
+		RunKind              string          `json:"run_kind"`
+		BusinessDate         string          `json:"business_date"`
+		Generation           uint64          `json:"generation"`
+		RunRevision          uint64          `json:"run_revision"`
+		ConfigVersion        uint64          `json:"config_version"`
+		FetchMode            string          `json:"fetch_mode"`
+		CollectionReason     string          `json:"collection_reason"`
+		WindowStart          string          `json:"window_start"`
+		WindowEnd            string          `json:"window_end"`
+		DeliveryState        string          `json:"delivery_state"`
+		FetchState           string          `json:"fetch_state"`
+		AnalysisState        string          `json:"analysis_state"`
+		Coverage             json.RawMessage `json:"coverage"`
+		ExpectedCount        *uint64         `json:"expected_count"`
+		AcceptedCount        uint64          `json:"accepted_count"`
+		ExcludedCount        uint64          `json:"excluded_count"`
+		PendingCount         uint64          `json:"pending_count"`
+		BarrierClosedAt      *string         `json:"barrier_closed_at"`
+		LateResultsAvailable bool            `json:"late_results_available"`
+		ResultBusinessHash   *string         `json:"result_business_hash"`
+		ManifestHash         *string         `json:"manifest_hash"`
 	} `json:"run"`
-	Config            SourceConfig `json:"config"`
-	ClaimToken        *string      `json:"claim_token"`
-	LeaseUntil        *string      `json:"lease_until"`
-	CurrentLeaseValid bool         `json:"current_lease_valid"`
+	Config            SourceConfig    `json:"config"`
+	TargetVersion     json.RawMessage `json:"target_version"`
+	ClaimToken        *string         `json:"claim_token"`
+	LeaseUntil        *string         `json:"lease_until"`
+	CurrentLeaseValid bool            `json:"current_lease_valid"`
 }
 
 type ClaimStore interface {
@@ -340,7 +362,10 @@ func (c ConfigSnapshot) validate(now time.Time) error {
 		if err != nil || !now.Before(until) {
 			return ErrConfigExpired
 		}
-		if source.Config.Adapter == "" || len(source.Config.EntryURLs) == 0 || len(source.Config.AllowedHosts) == 0 {
+		if source.Config.Adapter == "" || source.Config.IdentityRule == "" || source.Config.WindowRule == "" ||
+			source.Config.ParserVersion == "" || source.Config.MaxItems < 1 || source.Config.MaxItems > 100000 ||
+			source.Config.MaxResponseBytes < 1 || source.Config.MaxResponseBytes > 10485760 ||
+			len(source.Config.EntryURLs) == 0 || len(source.Config.AllowedHosts) == 0 {
 			return errors.New("incomplete source config")
 		}
 		for _, address := range source.Config.EntryURLs {
@@ -362,6 +387,23 @@ func (claim RunClaim) validate(now time.Time) error {
 	}
 	if claim.Run.SourceID != claim.Config.SourceID || claim.Run.ConfigVersion != claim.Config.ConfigVersion || claim.Run.RunRevision > maxSafeInteger {
 		return errors.New("claim/config identity mismatch")
+	}
+	if claim.Run.Generation > maxSafeInteger || claim.Run.ConfigVersion > maxSafeInteger ||
+		claim.Run.BusinessDate == "" || claim.Run.RunKind == "" || claim.Run.CollectionReason == "" {
+		return errors.New("incomplete frozen run")
+	}
+	if _, err := time.Parse("2006-01-02", claim.Run.BusinessDate); err != nil {
+		return err
+	}
+	if claim.Run.CollectionReason == "daily" && claim.Run.FetchMode != "daily_delta" {
+		return errors.New("daily run mode mismatch")
+	}
+	if (claim.Run.CollectionReason == "historical_backfill" || claim.Run.CollectionReason == "production_qualification") && claim.Run.FetchMode != "materialize" {
+		return errors.New("materialize run mode mismatch")
+	}
+	configUntil, err := microTime(claim.Config.Config.ValidUntil)
+	if err != nil || !now.Before(configUntil) {
+		return ErrConfigExpired
 	}
 	if claim.Run.FetchMode != "daily_delta" && claim.Run.FetchMode != "materialize" {
 		return errors.New("invalid fetch mode")
