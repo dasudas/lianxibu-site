@@ -70,6 +70,9 @@ func Simon() *FeedAdapter {
 func GitHubBlog() *FeedAdapter {
 	return &FeedAdapter{sourceID: "global-github-blog", version: "global-github-blog-v1", format: fetcher.RSS, encodedContent: true, preferRSSID: true}
 }
+func Cloudflare() *FeedAdapter {
+	return &FeedAdapter{sourceID: "global-cloudflare", version: "global-cloudflare-v1", format: fetcher.RSS, encodedContent: true, preferRSSID: true}
+}
 
 var _ scheduler.Adapter = (*FeedAdapter)(nil)
 
