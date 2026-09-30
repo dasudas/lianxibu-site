@@ -138,6 +138,22 @@ class SourceRunLeaseServiceTest {
         assertThrows(LeaseRejected.class, () -> service.scheduleDaily(sourceId, action("day-one")));
     }
 
+    @Test void explicitClaimScopeCannotClaimOrReplayOutsideRequestedSources() {
+        time.set("2026-01-02T16:10:00Z");
+        var run = service.scheduleDaily(sourceId, action("scoped-daily"));
+        assertNull(service.claimNext("node-a-bearer", false, List.of(), 10,
+                action("empty-claim")).runId());
+        assertThrows(LeaseRejected.class, () -> service.claimNext("node-a-bearer", false,
+                List.of("unassigned"), 10, action("foreign-source")));
+        var claim = service.claimNext("node-a-bearer", false, List.of(sourceId), 10,
+                action("scoped-claim"));
+        assertEquals(run.runId(), claim.runId());
+        assertEquals(claim.claimToken(), service.claimNext("node-a-bearer", false,
+                List.of(sourceId), 10, action("scoped-claim")).claimToken());
+        assertThrows(LeaseRejected.class, () -> service.claimNext("node-a-bearer", false,
+                List.of(sourceId), 1, action("scoped-claim")));
+    }
+
     @Test void backfillGenerationProbeAndConfigEdit() {
         time.set("2026-01-02T16:10:00Z");
         var base = service.scheduleDaily(sourceId, action("base"));

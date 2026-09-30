@@ -17,6 +17,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
         "SITE_DB_USER=fixture",
         "SITE_DB_PASSWORD=fixture",
         "SITE_NODE_TOKEN_SECRET_B64=eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg=",
+        "SITE_RUN_LEASE_KEY_B64=eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg=",
+        "SITE_RUN_LEASE_KEY_ID=fixture",
         "site.collector.enabled=true"
 })
 class CollectorSecurityConfigurationTest {

@@ -154,7 +154,7 @@ public final class CollectorController {
         if (runtime == null) throw unavailable();
         var result = runtime.execute(principal, bearer, operation, new CollectorGateway.Request(pathRun, pathMember,
                 pathProbe, query.cursor(), query.limit(), query.sourceId(), request.getHeader(HttpHeaders.IF_NONE_MATCH),
-                key, body));
+                key, body, raw));
         if (result == null) throw unavailable();
         if (result.status() == 304 && operation == Operation.CONFIG && result.data() == null) {
             return ResponseEntity.status(304).header(HttpHeaders.CACHE_CONTROL, "no-store")

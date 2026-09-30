@@ -13,7 +13,17 @@ public interface CollectorGateway {
 
     record Request(String runId, String memberId, String probeId, String cursor,
                    Integer limit, String sourceId, String ifNoneMatch,
-                   String idempotencyKey, JsonNode body) { }
+                   String idempotencyKey, JsonNode body, byte[] rawBody) {
+        public Request(String runId, String memberId, String probeId, String cursor,
+                       Integer limit, String sourceId, String ifNoneMatch,
+                       String idempotencyKey, JsonNode body) {
+            this(runId, memberId, probeId, cursor, limit, sourceId, ifNoneMatch,
+                    idempotencyKey, body, null);
+        }
+        public Request { rawBody = rawBody == null ? null : rawBody.clone(); }
+        @Override public byte[] rawBody() { return rawBody == null ? null : rawBody.clone(); }
+        @Override public String toString() { return "CollectorRequest[redacted]"; }
+    }
 
     record Result(int status, JsonNode data, String etag) { }
 

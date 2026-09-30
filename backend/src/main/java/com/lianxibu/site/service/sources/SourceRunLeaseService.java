@@ -11,6 +11,8 @@ import com.lianxibu.site.service.identity.NodeIdentityService;
 import com.lianxibu.site.service.jobs.SharedWriteExecutor;
 import com.lianxibu.site.service.jobs.SharedWriteExecutor.ActionContext;
 import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,6 +20,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.HexFormat;
+import java.util.List;
 import java.util.Set;
 
 /** Creates frozen source windows and fences each node claim/control action. */
@@ -197,6 +201,26 @@ public final class SourceRunLeaseService {
         String permission = probe ? "probe:claim" : "run:claim";
         String requestScope = probe ? "probe" : "run";
         Principal initial = nodes.authorize(bearer, permission, null);
+        return claimNext(bearer, probe, initial.sourceIds(), requestScope, action, initial);
+    }
+
+    /** Bound a wire claim request to its explicit source subset and stable action identity. */
+    public Claim claimNext(String bearer, boolean probe, List<String> requestedSources,
+                           int maxRuns, ActionContext action) {
+        String permission = probe ? "probe:claim" : "run:claim";
+        Principal initial = nodes.authorize(bearer, permission, null);
+        if (requestedSources == null || requestedSources.size() > 1000
+                || requestedSources.stream().anyMatch(source -> source == null || !initial.sourceIds().contains(source))
+                || Set.copyOf(requestedSources).size() != requestedSources.size()
+                || maxRuns < 1 || maxRuns > 10) throw new LeaseRejected();
+        List<String> ordered = requestedSources.stream().sorted().toList();
+        String requestScope = (probe ? "probe:" : "run:") + claimScope(ordered, maxRuns);
+        return claimNext(bearer, probe, ordered, requestScope, action, initial);
+    }
+
+    private Claim claimNext(String bearer, boolean probe, List<String> requestedSources,
+                            String requestScope, ActionContext action, Principal initial) {
+        String permission = probe ? "probe:claim" : "run:claim";
         return writes.execute(action, key -> {
             RunActionReceipt receipt = receipts.find(key);
             if (receipt == null) return null;
@@ -207,10 +231,12 @@ public final class SourceRunLeaseService {
             Row row = runs.byId(receipt.runId());
             if (row == null) throw new LeaseRejected();
             nodes.authorize(bearer, permission, row.sourceId());
+            if (!requestedSources.contains(row.sourceId())) throw new LeaseRejected();
             return claimReplay(row, receipt);
         }, context -> {
             Principal node = nodes.authorize(bearer, permission, null);
-            Row row = runs.claimable(node.sourceIds(), probe ? "probe" : "run", clock.instant());
+            if (!node.sourceIds().containsAll(requestedSources)) throw new LeaseRejected();
+            Row row = runs.claimable(requestedSources, probe ? "probe" : "run", clock.instant());
             if (row == null) return new Claim(null, null, null, null, 0,
                     null, null, null, null, null, false, 0);
             nodes.authorize(bearer, permission, row.sourceId());
@@ -226,6 +252,22 @@ public final class SourceRunLeaseService {
                     row.generation(), row.windowStart(), row.windowEnd(),
                     row.configSnapshotJson(), issued.token(), leaseUntil, true, claimed.revision());
         });
+    }
+
+    private static String claimScope(List<String> sources, int maxRuns) {
+        try {
+            MessageDigest hash = MessageDigest.getInstance("SHA-256");
+            hash.update((byte) maxRuns);
+            for (String source : sources) {
+                byte[] bytes = source.getBytes(StandardCharsets.UTF_8);
+                hash.update((byte) (bytes.length >>> 8));
+                hash.update((byte) bytes.length);
+                hash.update(bytes);
+            }
+            return HexFormat.of().formatHex(hash.digest());
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 unavailable", impossible);
+        }
     }
 
     public LeaseOutcome acknowledge(String bearer, String runId, String claimToken,
