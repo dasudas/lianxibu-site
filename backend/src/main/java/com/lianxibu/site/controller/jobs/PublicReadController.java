@@ -43,7 +43,7 @@ public final class PublicReadController {
     @GetMapping(path = "/capabilities", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Envelope<Capabilities>> capabilities(@RequestParam MultiValueMap<String, String> query) {
         if (!query.isEmpty()) throw new ProtocolError();
-        return success(new Capabilities("0.12", "0.14", List.of(), 50, 10));
+        return success(new Capabilities("0.12", "0.15", List.of(), 50, 10));
     }
 
     @GetMapping(path = "/home", produces = MediaType.APPLICATION_JSON_VALUE)

@@ -1,6 +1,8 @@
 package com.lianxibu.site.controller.settings;
 
 import java.util.List;
+import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /** Exact Preferences response, with contract-fixed read-only schedule and model. */
 public final class SettingsDtos {
@@ -11,7 +13,8 @@ public final class SettingsDtos {
     public record ErrorEnvelope(ErrorDetail error, Meta meta) { }
     public record OperationalRule(String rule_id, String warning_threshold, String critical_threshold,
                                   String recovery_threshold, String notification_secret_ref,
-                                  boolean notification_configured) { }
+                                  boolean notification_configured,
+                                  @JsonInclude(JsonInclude.Include.NON_NULL) Map<String, String> rule_parameters) { }
     public record Preferences(long revision, List<String> follow_keywords, List<String> blocked_keywords,
                               boolean ai_paused, String default_package_id, String model, String timezone,
                               String collection_time, String report_time, String ai_window_start,

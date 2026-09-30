@@ -112,6 +112,53 @@ class SettingsControllerTest {
                 .andExpect(jsonPath("$.error.code").value("revision_conflict"));
     }
 
+    @Test
+    void optionalOperationalFieldsRoundTripWithoutCoercion() throws Exception {
+        var rule = new SettingsService.OperationalRule("OPS-04", "15", "10", "15", null, false,
+                java.util.Map.of("protect_free_percent", "5"));
+        var prefs = new SettingsService.Preferences(2, List.of(), List.of(), true, null, List.of(rule));
+        when(service.write(eq(OWNER), any(), any(), any(), any())).thenReturn(prefs);
+        mvc.perform(write(put("/admin/preferences"), operationalBody("{\"protect_free_percent\":\"5\"}",
+                        ",\"operational_change_reason\":\"Fictional change\"")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.operational_limits[0].rule_parameters.protect_free_percent").value("5"));
+        verify(service).write(eq(OWNER), eq(new SettingsService.PreferencesWrite(1, List.of(), List.of(),
+                true, null, List.of(rule), "Fictional change")), any(), any(), any());
+        when(service.get(OWNER)).thenReturn(PREFS);
+        mvc.perform(auth(get("/admin/preferences"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.operational_limits[0].rule_parameters").doesNotExist());
+    }
+
+    @Test
+    void rejectsMalformedParameterMapsAndReasonBeforeService() throws Exception {
+        for (String parameters : List.of("null", "[]", "{\"bad-key\":\"5\"}",
+                "{\"protect_free_percent\":5}", "{\"protect_free_percent\":true}",
+                "{\"protect_free_percent\":\"-1\"}", "{\"protect_free_percent\":\"1e2\"}",
+                "{\"protect_free_percent\":\"15 / 3\"}", "{\"protect_free_percent\":null}")) {
+            mvc.perform(write(put("/admin/preferences"), operationalBody(parameters, "")))
+                    .andExpect(status().isUnprocessableEntity());
+        }
+        String excessive = java.util.stream.IntStream.range(0, 33)
+                .mapToObj(i -> "\"key_" + i + "\":\"1\"").collect(java.util.stream.Collectors.joining(",", "{", "}"));
+        mvc.perform(write(put("/admin/preferences"), operationalBody(excessive, "")))
+                .andExpect(status().isUnprocessableEntity());
+        for (String reason : List.of("null", "0", "\"\"", "\"" + "x".repeat(2049) + "\"")) {
+            mvc.perform(write(put("/admin/preferences"), operationalBody("{}", ",\"operational_change_reason\":" + reason)))
+                    .andExpect(status().isUnprocessableEntity());
+        }
+        mvc.perform(write(put("/admin/preferences"), operationalBody(
+                "{\"key\":\"1\",\"key\":\"2\"}", ""))).andExpect(status().isBadRequest());
+        verify(service, never()).write(any(), any(), any(), any(), any());
+    }
+
+    private static String operationalBody(String parameters, String reason) {
+        return "{\"expected_revision\":1,\"follow_keywords\":[],\"blocked_keywords\":[],"
+                + "\"ai_paused\":true,\"default_package_id\":null,\"operational_limits\":[{"
+                + "\"rule_id\":\"OPS-04\",\"warning_threshold\":\"15\",\"critical_threshold\":\"10\","
+                + "\"recovery_threshold\":\"15\",\"notification_secret_ref\":null,"
+                + "\"notification_configured\":false,\"rule_parameters\":" + parameters + "}]" + reason + "}";
+    }
+
     private static MockHttpServletRequestBuilder auth(MockHttpServletRequestBuilder request) {
         return request.cookie(new jakarta.servlet.http.Cookie("lianxibu_session", "fixture-session"));
     }

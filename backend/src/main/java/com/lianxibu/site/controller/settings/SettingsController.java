@@ -7,6 +7,8 @@ import com.lianxibu.site.service.identity.IdentityService.Actor;
 import com.lianxibu.site.service.settings.SettingsService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.ObjectProvider;
@@ -55,12 +57,13 @@ public final class SettingsController {
         if (key == null || !key.matches("[!-~]{1,128}")) throw validation("valid Idempotency-Key required");
         JsonNode value = parse(raw);
         fields(value, Set.of("expected_revision", "follow_keywords", "blocked_keywords", "ai_paused",
-                "default_package_id", "operational_limits"));
+                "default_package_id", "operational_limits"), Set.of("operational_change_reason"));
         var command = new SettingsService.PreferencesWrite(number(value.get("expected_revision")),
                 keywords(value.get("follow_keywords")), keywords(value.get("blocked_keywords")),
                 bool(value.get("ai_paused")),
                 value.get("default_package_id").isNull() ? null : id(value.get("default_package_id")),
-                rules(value.get("operational_limits")));
+                rules(value.get("operational_limits")), value.has("operational_change_reason")
+                        ? text(value.get("operational_change_reason"), 1, 2048) : null);
         return success(preferences(service().write(actor, command, key, csrf, origin)));
     }
 
@@ -117,8 +120,12 @@ public final class SettingsController {
         return value;
     }
     private static void fields(JsonNode node, Set<String> required) {
+        fields(node, required, Set.of());
+    }
+    private static void fields(JsonNode node, Set<String> required, Set<String> optional) {
         if (node == null || !node.isObject()) throw validation("object required");
-        for (var field : node.properties()) if (!required.contains(field.getKey())) throw protocol("unknown field");
+        for (var field : node.properties()) if (!required.contains(field.getKey())
+                && !optional.contains(field.getKey())) throw protocol("unknown field");
         for (String field : required) if (!node.has(field)) throw validation("required field missing");
     }
     private static List<String> keywords(JsonNode node) {
@@ -133,15 +140,28 @@ public final class SettingsController {
         Set<String> fields = Set.of("rule_id", "warning_threshold", "critical_threshold",
                 "recovery_threshold", "notification_secret_ref", "notification_configured");
         for (JsonNode item : node) {
-            fields(item, fields);
+            fields(item, fields, Set.of("rule_parameters"));
             values.add(new SettingsService.OperationalRule(text(item.get("rule_id"), 1, 64),
                     decimal(item.get("warning_threshold")), decimal(item.get("critical_threshold")),
                     decimal(item.get("recovery_threshold")),
                     item.get("notification_secret_ref").isNull() ? null
                             : text(item.get("notification_secret_ref"), 1, 128),
-                    bool(item.get("notification_configured"))));
+                    bool(item.get("notification_configured")),
+                    item.has("rule_parameters") ? parameters(item.get("rule_parameters")) : null));
         }
         return List.copyOf(values);
+    }
+    private static Map<String, String> parameters(JsonNode node) {
+        if (node == null || !node.isObject() || node.size() > 32) throw validation("invalid rule parameters");
+        Map<String, String> result = new LinkedHashMap<>();
+        for (var field : node.properties()) {
+            String name = field.getKey();
+            if (name.length() > 64 || !name.matches("[a-z][a-z0-9_]*")) throw validation("invalid parameter name");
+            String value = text(field.getValue(), 1, 30);
+            if (!value.matches("(0|[1-9][0-9]*)(\\.[0-9]{1,8})?")) throw validation("invalid parameter decimal");
+            result.put(name, value);
+        }
+        return Map.copyOf(result);
     }
     private static String decimal(JsonNode node) {
         String value = text(node, 1, 30);
@@ -174,7 +194,7 @@ public final class SettingsController {
                 value.aiPaused(), value.defaultPackageId(), "deepseek-flash", "Asia/Shanghai", "00:10",
                 "05:00", "01:00", "07:00", value.operationalLimits().stream().map(v ->
                         new SettingsDtos.OperationalRule(v.ruleId(), v.warningThreshold(), v.criticalThreshold(),
-                                v.recoveryThreshold(), v.notificationSecretRef(), v.notificationConfigured()))
+                                v.recoveryThreshold(), v.notificationSecretRef(), v.notificationConfigured(), v.ruleParameters()))
                         .toList());
     }
     private static <T> ResponseEntity<SettingsDtos.Envelope<T>> success(T data) {
