@@ -49,7 +49,9 @@ type catalogPending struct {
 
 var _ scheduler.Adapter = (*RepositoryCatalogAdapter)(nil)
 var _ scheduler.CompletedCursor = (*RepositoryCatalogAdapter)(nil)
+var _ scheduler.NotFoundAdapter = (*RepositoryCatalogAdapter)(nil)
 
+func (a *RepositoryCatalogAdapter) AllowNotFound() bool { return true }
 func Agents() *RepositoryCatalogAdapter {
 	return &RepositoryCatalogAdapter{pending: map[string]catalogPending{}}
 }

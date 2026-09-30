@@ -124,7 +124,11 @@ func TestAgentFreezeRejectsIdentityAndRepoMismatch(t *testing.T) {
 	}
 }
 
-type agentFixtureFetch struct{ requests []string }
+type agentFixtureFetch struct {
+	requests       []string
+	missingLicense bool
+	missingRepo    bool
+}
 
 func (f *agentFixtureFetch) Fetch(_ context.Context, r fetcher.Request) (fetcher.Result, error) {
 	f.requests = append(f.requests, r.URL)
@@ -140,7 +144,16 @@ func (f *agentFixtureFetch) Fetch(_ context.Context, r fetcher.Request) (fetcher
 	case strings.Contains(r.URL, "/readme?"):
 		body = fmt.Sprintf(`{"type":"file","path":"README.md","encoding":"base64","content":%q}`, base64.StdEncoding.EncodeToString([]byte("# Fictional pinned README")))
 	}
-	return fetcher.Result{StatusCode: 200, FinalURL: r.URL, Body: []byte(body)}, nil
+	status := 200
+	if f.missingLicense && strings.Contains(r.URL, "/license?") {
+		status = 404
+		body = `{"message":"Not Found"}`
+	}
+	if f.missingRepo && r.URL == "https://api.github.com/repos/openai/codex" {
+		status = 404
+		body = `{"message":"Not Found"}`
+	}
+	return fetcher.Result{StatusCode: status, FinalURL: r.URL, Body: []byte(body)}, nil
 }
 func TestAgentSQLiteFixedCommitOldStockAndTerminalResume(t *testing.T) {
 	c := agentClaim("openai/codex")
@@ -191,5 +204,35 @@ func TestAgentSQLiteFixedCommitOldStockAndTerminalResume(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("raw file SHA-256 replaced by normalized text hash")
+	}
+}
+
+func TestAgentOptionalLicense404AndRequiredRepo404(t *testing.T) {
+	for _, missingRepo := range []bool{false, true} {
+		t.Run(fmt.Sprint(missingRepo), func(t *testing.T) {
+			c := agentClaim("openai/codex")
+			now := func() time.Time { return time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC) }
+			store, err := outbox.Open(filepath.Join(t.TempDir(), "missing.db"), "fictional-node", now)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer store.Close()
+			if err = store.PersistClaim(c); err != nil {
+				t.Fatal(err)
+			}
+			fetch := &agentFixtureFetch{missingLicense: true, missingRepo: missingRepo}
+			run, _ := scheduler.New(fetch, store, Agents(), now, 10, time.Minute)
+			out, err := run.Run(context.Background(), c)
+			count, _ := store.ObservationCount(context.Background(), c.Run.RunID)
+			if missingRepo {
+				if err == nil || count != 0 || len(fetch.requests) != 1 {
+					t.Fatal("missing identity accepted")
+				}
+				return
+			}
+			if err != nil || !out.Finished || count != 1 || !strings.Contains(strings.Join(out.CoverageGaps, " "), "missing_license") {
+				t.Fatal("optional missing license stopped run", out, err)
+			}
+		})
 	}
 }
