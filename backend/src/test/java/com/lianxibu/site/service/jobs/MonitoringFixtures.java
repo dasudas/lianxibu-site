@@ -2,8 +2,8 @@ package com.lianxibu.site.service.jobs;
 import com.lianxibu.site.service.settings.SettingsService;
 import java.util.List;
 import java.util.Map;
-final class MonitoringFixtures {
-    static List<SettingsService.OperationalRule> complete() { return List.of(
+public final class MonitoringFixtures {
+    public static List<SettingsService.OperationalRule> complete() { return List.of(
         new SettingsService.OperationalRule("OPS-01", "7200", "604800", "7200", null, false, Map.ofEntries(Map.entry("warning_hold_seconds", "600"), Map.entry("wall_warning_seconds", "172800"), Map.entry("recovery_hold_seconds", "1200"), Map.entry("sample_interval_seconds", "60"), Map.entry("warning_reminder_seconds", "14400"), Map.entry("critical_reminder_seconds", "1800"), Map.entry("maximum_silence_seconds", "7200"), Map.entry("resolved_retention_seconds", "604800"))),
         new SettingsService.OperationalRule("OPS-02", "300", "900", "3", null, false, Map.ofEntries(Map.entry("warning_sample_count", "2"), Map.entry("reconciliation_required", "1"), Map.entry("sample_interval_seconds", "60"), Map.entry("warning_reminder_seconds", "14400"), Map.entry("critical_reminder_seconds", "1800"), Map.entry("maximum_silence_seconds", "7200"), Map.entry("resolved_retention_seconds", "604800"))),
         new SettingsService.OperationalRule("OPS-03", "60", "3", "180", null, false, Map.ofEntries(Map.entry("recovery_retry_seconds", "60"), Map.entry("sample_interval_seconds", "60"), Map.entry("warning_reminder_seconds", "14400"), Map.entry("critical_reminder_seconds", "1800"), Map.entry("maximum_silence_seconds", "7200"), Map.entry("resolved_retention_seconds", "604800"))),

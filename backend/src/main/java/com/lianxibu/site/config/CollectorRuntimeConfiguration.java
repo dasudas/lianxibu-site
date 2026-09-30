@@ -37,8 +37,33 @@ import org.springframework.transaction.PlatformTransactionManager;
 @ConditionalOnProperty(name = "site.collector.enabled", havingValue = "true")
 public class CollectorRuntimeConfiguration {
     @Bean
+    OperationalScopeCatalog operationalScopes(@Value("${SITE_OPERATIONAL_SCOPES:}") String location) {
+        return OperationalScopeCatalog.load(location);
+    }
+
+    @Bean
+    OperationalInputGate operationalInputGate(DataSource dataSource, PlatformTransactionManager tx,
+                                               OperationalScopeCatalog scopes) {
+        if(scopes.scopes()==null)return new OperationalInputGate(null);
+        Clock clock=Clock.systemUTC();
+        var settings=new com.lianxibu.site.service.settings.SettingsJdbcStore(
+                new com.lianxibu.site.repository.settings.JdbcSettingsWrites(dataSource),id->false,
+                change->{throw new IllegalStateException("read-only operational configuration");},clock);
+        var summaries=new com.lianxibu.site.service.jobs.OperationalJdbcStore(
+                new com.lianxibu.site.repository.jobs.JdbcOperationalSummaries(dataSource),
+                new com.lianxibu.site.repository.jobs.JdbcJobRecords(dataSource),clock);
+        var snapshotRead=new org.springframework.transaction.support.TransactionTemplate(tx);
+        snapshotRead.setReadOnly(true);
+        snapshotRead.setIsolationLevel(org.springframework.transaction.TransactionDefinition.ISOLATION_REPEATABLE_READ);
+        return new OperationalInputGate(new com.lianxibu.site.service.jobs.OperationalAdmissionService(
+                ()->snapshotRead.execute(ignored->new com.lianxibu.site.service.jobs.OperationalAdmissionService.Snapshot(
+                        settings.operationalConfiguration(),summaries.views().stream().map(com.lianxibu.site.service.jobs.OperationalJdbcStore.View::state).toList())),
+                scopes.scopes(),clock));
+    }
+
+    @Bean
     SourceRunLeaseService collectorLeases(DataSource dataSource, PlatformTransactionManager tx,
-                                          NodeIdentityService nodes,
+                                          NodeIdentityService nodes, OperationalInputGate inputGate,
                                           @Value("${SITE_RUN_LEASE_KEY_B64:}") String encoded,
                                           @Value("${SITE_RUN_LEASE_KEY_ID:}") String keyId) {
         byte[] key;
@@ -51,7 +76,7 @@ public class CollectorRuntimeConfiguration {
         return new SourceRunLeaseService(new JdbcSourceRunStore(dataSource),
                 new JdbcSourceAdmission(dataSource), writes,
                 new RunLeaseTokenCodec(new SecretKeySpec(key, "AES"), keyId, new SecureRandom()),
-                nodes, new JdbcSourceRunReceipts(dataSource, clock), clock);
+                nodes::authorizeBearer, new JdbcSourceRunReceipts(dataSource, clock), clock,inputGate::newRunAllowed);
     }
 
     @Bean
@@ -70,7 +95,7 @@ public class CollectorRuntimeConfiguration {
     @Bean
     ObservationIngressService collectorObservations(DataSource dataSource, PlatformTransactionManager tx,
                                                      NodeIdentityService nodes, RunManifestService manifests,
-                                                     CollectorReviewCatalog review) {
+                                                     CollectorReviewCatalog review, OperationalInputGate inputGate) {
         Clock clock = Clock.systemUTC();
         var writes = new SharedWriteExecutor(new JdbcSharedWriteEntry(dataSource), tx);
         var runs = new JdbcSourceRunStore(dataSource);
@@ -84,7 +109,11 @@ public class CollectorRuntimeConfiguration {
             return row == null ? null : new ObservationIngressService.RunSnapshot(row.id(),
                     row.sourceId(), row.businessDate(), row.configVersion(), row.configSnapshotJson(),
                     row.activationStage(), row.deliveryState(), row.windowStart(), row.windowEnd());
-        }, writes, nodes, articles, projection, manifests::recomputeAfterMember, clock);
+        }, writes, (bearer,sourceId)->nodes.authorizeBearer(bearer,"observation:write",sourceId),
+                (input,day)->{
+                    var compatible=articles.accept(input);var decided=projection.decide(input,compatible,day);
+                    return new ObservationIngressService.ArticleOutcome(decided.articleId(),decided.evidenceRevisionId(),decided.projectionDecision(),decided.articleRevision());
+                }, manifests::recomputeAfterMember, clock,inputGate::uploadAllowed);
     }
 
     @Bean

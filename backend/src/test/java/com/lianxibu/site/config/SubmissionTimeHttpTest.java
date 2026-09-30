@@ -36,7 +36,7 @@ import javax.sql.DataSource;
         "SITE_NODE_TOKEN_SECRET_B64=eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg=",
         "SITE_RUN_LEASE_KEY_B64=eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg=",
         "SITE_RUN_LEASE_KEY_ID=fixture","site.collector.enabled=true"})
-@Import(SubmissionTimeHttpTest.ReviewedFixture.class)
+@Import({SubmissionTimeHttpTest.ReviewedFixture.class,OperationalTestFixture.class})
 @EnabledIfEnvironmentVariable(named="V10_GO_EXEC",matches=".+")
 class SubmissionTimeHttpTest {
     private static final String TOKEN="A".repeat(43);

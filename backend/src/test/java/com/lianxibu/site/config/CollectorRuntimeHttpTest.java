@@ -36,6 +36,7 @@ import tools.jackson.databind.JsonNode;
         "SITE_RUN_LEASE_KEY_ID=fixture",
         "site.collector.enabled=true"
 })
+@org.springframework.context.annotation.Import(OperationalTestFixture.class)
 class CollectorRuntimeHttpTest {
     private static final String TOKEN = "A".repeat(43);
     @Autowired JdbcTemplate jdbc;
