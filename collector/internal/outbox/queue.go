@@ -17,7 +17,9 @@ func (s *Store) NextObservationBatch(ctx context.Context, limit, maxBytes int) (
 	var batch []client.FrozenObservation
 	err := s.write(ctx, func(conn *sql.Conn) error {
 		rows, err := conn.QueryContext(ctx, `SELECT id,run_id,member_id,observation_id,payload,payload_hash
-FROM outbox WHERE record_kind='observation' AND state='pending' AND next_retry_at<=? ORDER BY id LIMIT ?`, micros(s.now()), limit)
+FROM outbox WHERE record_kind='observation' AND state='pending' AND next_retry_at<=?
+AND NOT EXISTS(SELECT 1 FROM source_state s WHERE s.record_kind='run' AND s.state_key=outbox.run_id AND json_extract(s.payload,'$.retention') IS NOT NULL)
+ORDER BY id LIMIT ?`, micros(s.now()), limit)
 		if err != nil {
 			return err
 		}

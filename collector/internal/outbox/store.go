@@ -50,8 +50,9 @@ type Record struct {
 }
 
 type RunState struct {
-	Frozen client.RunClaim `json:"frozen"`
-	Cursor string          `json:"cursor"`
+	Frozen    client.RunClaim `json:"frozen"`
+	Cursor    string          `json:"cursor"`
+	Retention *RetentionMark  `json:"retention,omitempty"`
 }
 
 func Open(path, nodeID string, now func() time.Time) (*Store, error) {
@@ -161,6 +162,9 @@ func (s *Store) PersistClaim(claim client.RunClaim) error {
 			if json.Unmarshal(oldPayload, &state) != nil || !sameFrozen(state.Frozen, claim) {
 				return ErrConflict
 			}
+			if state.Retention != nil {
+				return ErrStaleRun
+			}
 			if sameToken && oldLease != micros(lease) {
 				return ErrConflict
 			}
@@ -248,7 +252,7 @@ func (s *Store) SavePage(ctx context.Context, runID, token string, expectedRevis
 			return err
 		}
 		var state RunState
-		if json.Unmarshal(payload, &state) != nil || revision != expectedRevision || state.Cursor != before || string(claimToken) != token || micros(s.now()) >= lease {
+		if json.Unmarshal(payload, &state) != nil || state.Retention != nil || revision != expectedRevision || state.Cursor != before || string(claimToken) != token || micros(s.now()) >= lease {
 			return ErrStaleRun
 		}
 		for _, record := range records {
