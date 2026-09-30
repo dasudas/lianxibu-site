@@ -179,6 +179,18 @@ class ResultApplicationServiceTest {
         assertThrows(ResultApplicationService.Rejected.class,
                 () -> ResultApplicationService.validate(input(Stage.DAILY_REPORT),
                         signed.replace(INPUT_HASH, "b".repeat(64))));
+        Input regular = input(Stage.DAILY_REPORT);
+        Input malformedPeriod = new Input(regular.rootId(), regular.attemptId(),
+                regular.stage(), regular.generation(), regular.inputHash(),
+                regular.expectedRootRevision(), regular.expectedContentRevision(),
+                regular.itemIds(), regular.candidatesByItem(),
+                regular.eligibleHighValueItems(), regular.allowedCitationIds(),
+                regular.versionEligibleItems(), regular.targetEntityId(),
+                "2026-09-29T16:00:00Z", regular.periodEnd());
+        assertThrows(ResultApplicationService.Rejected.class,
+                () -> ResultApplicationService.validate(malformedPeriod,
+                        raw(report.replace("2026-09-29T16:00:00.000000Z",
+                                "2026-09-29T16:00:00Z"))));
     }
 
     @Test void successfulReportReplacesBodyToDraftExactlyOnceAndReplayNeedsNoAi() {

@@ -186,7 +186,7 @@ public final class ResultApplicationService {
             keys(item, "item_id", "category", "decision", "candidate_entity_id",
                     "reason", "confidence", "suggested_title", "suggested_summary",
                     "reanalyze_recommended");
-            String id = text(item, "item_id", 1, 64);
+            String id = identifier(item, "item_id");
             if (!seen.add(id) || !expectedCategory.equals(item.path("category").asText()))
                 throw new Rejected();
             String decision = item.path("decision").asText();
@@ -196,6 +196,7 @@ public final class ResultApplicationService {
             if ("existing".equals(decision)) {
                 if (!candidate.isTextual() || !input.candidatesByItem()
                         .getOrDefault(id, Set.of()).contains(candidate.asText())) throw new Rejected();
+                identifier(item, "candidate_entity_id");
             } else if (!candidate.isNull()) throw new Rejected();
             text(item, "reason", 1, 2048);
             if (!item.path("confidence").isTextual() || !item.path("confidence").asText()
@@ -216,7 +217,7 @@ public final class ResultApplicationService {
         Map<String, Boolean> high = new HashMap<>();
         for (JsonNode item : items) {
             keys(item, "item_id", "category", "high_value", "reason");
-            String id = text(item, "item_id", 1, 64);
+            String id = identifier(item, "item_id");
             if (high.putIfAbsent(id, item.path("high_value").booleanValue()) != null
                     || !item.path("high_value").isBoolean()
                     || !CATEGORIES.contains(item.path("category").asText())) throw new Rejected();
@@ -226,7 +227,8 @@ public final class ResultApplicationService {
         JsonNode selected = array(payload, "selected_item_ids", 0, 5);
         Set<String> unique = new HashSet<>();
         for (JsonNode id : selected) {
-            if (!id.isTextual() || !unique.add(id.asText())
+            if (!id.isTextual() || !validIdentifier(id.asText())
+                    || !unique.add(id.asText())
                     || !Boolean.TRUE.equals(high.get(id.asText()))
                     || !input.eligibleHighValueItems().contains(id.asText())) throw new Rejected();
         }
@@ -236,7 +238,7 @@ public final class ResultApplicationService {
         JsonNode body = payload.path("body");
         keys(body, "title", "sections", "citation_ids", "category", "entity_id");
         if (!category(input.stage()).equals(body.path("category").asText())
-                || !input.targetEntityId().equals(body.path("entity_id").asText()))
+                || !input.targetEntityId().equals(identifier(body, "entity_id")))
             throw new Rejected();
         contentBody(input, body);
     }
@@ -254,16 +256,18 @@ public final class ResultApplicationService {
         if (!expectedType.equals(body.path("type").asText())
                 || !"Asia/Shanghai".equals(body.path("timezone").asText())
                 || !input.periodStart().equals(body.path("period_start").asText())
-                || !input.periodEnd().equals(body.path("period_end").asText()))
+                || !input.periodEnd().equals(body.path("period_end").asText())
+                || !validDateTime(body.path("period_start").asText())
+                || !validDateTime(body.path("period_end").asText()))
             throw new Rejected();
         if (!body.path("learning_task").isNull()) {
             if (input.stage() != Stage.DAILY_REPORT) throw new Rejected();
             JsonNode learning = body.path("learning_task");
             keys(learning, "package_id", "object_kind", "object_id", "title", "reason");
-            text(learning, "package_id", 1, 64);
+            identifier(learning, "package_id");
             if (!Set.of("node", "question", "project")
                     .contains(learning.path("object_kind").asText())) throw new Rejected();
-            text(learning, "object_id", 1, 64);
+            identifier(learning, "object_id");
             text(learning, "title", 1, 512);
             text(learning, "reason", 1, 2048);
         }
@@ -286,7 +290,8 @@ public final class ResultApplicationService {
     }
     private static void citations(Input input, JsonNode list) {
         for (JsonNode citation : list)
-            if (!citation.isTextual() || !input.allowedCitationIds().contains(citation.asText()))
+            if (!citation.isTextual() || !validIdentifier(citation.asText())
+                    || !input.allowedCitationIds().contains(citation.asText()))
                 throw new Rejected();
     }
     private static String expectedKind(Stage stage) {
@@ -314,9 +319,26 @@ public final class ResultApplicationService {
     }
     private static String text(JsonNode object, String key, int minimum, int maximum) {
         JsonNode value = object.path(key);
-        if (!value.isTextual() || value.asText().length() < minimum
-                || value.asText().length() > maximum) throw new Rejected();
+        if (!value.isTextual()) throw new Rejected();
+        int points = value.asText().codePointCount(0, value.asText().length());
+        if (points < minimum || points > maximum) throw new Rejected();
         return value.asText();
+    }
+    private static String identifier(JsonNode object, String key) {
+        String value = text(object, key, 1, 64);
+        if (!validIdentifier(value)) throw new Rejected();
+        return value;
+    }
+    private static boolean validIdentifier(String value) {
+        return value != null && value.codePointCount(0, value.length()) >= 1
+                && value.codePointCount(0, value.length()) <= 64
+                && value.codePoints().noneMatch(point -> point <= 0x1f || point == 0x7f);
+    }
+    private static boolean validDateTime(String value) {
+        if (value == null || !value.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}T"
+                + "[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z")) return false;
+        try { java.time.Instant.parse(value); return true; }
+        catch (RuntimeException invalid) { return false; }
     }
     private static JsonNode array(JsonNode object, String key, int minimum, int maximum) {
         JsonNode value = object.path(key);
