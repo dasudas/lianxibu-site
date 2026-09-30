@@ -42,7 +42,7 @@ public final class ObservationPayloadPolicy {
 
     private static void article(JsonNode value, boolean v012, String sourceId) {
         String title = required(value.get("title"), 512);
-        if (title.length() > 512) invalid();
+
         https(value.get("source_url"));
         utc(value.get("published_at"));
         utc(value.get("updated_at"));
@@ -60,8 +60,6 @@ public final class ObservationPayloadPolicy {
         }
         String summary = optional(value.get("source_summary"), 16384);
         String body = optional(value.get("body_text"), 50000);
-        if (summary != null && summary.length() > 16384
-                || body != null && body.length() > 50000) invalid();
         if (!value.get("body_text").isNull()
                 && value.get("body_text").asText().getBytes(StandardCharsets.UTF_8).length > 204800) invalid();
         oneOf(value.get("content_status"), Set.of("full", "partial", "unavailable"));

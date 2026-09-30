@@ -204,10 +204,10 @@ public final class ArticleCompatibilityWriter {
     private static void validate(Input input) {
         if (input == null || blank(input.sourceId()) || input.sourceId().length() > 80
                 || blank(input.sourceItemId()) || bytes(input.sourceItemId()) > 4096
-                || blank(input.title()) || input.title().length() > 512
+                || blank(input.title()) || input.title().codePointCount(0,input.title().length()) > 512
                 || blank(input.sourceUrl()) || input.sourceUrl().length() > 2000
-                || input.summary() != null && input.summary().length() > 16384
-                || input.body() != null && (input.body().length() > 50000 || bytes(input.body()) > 204800)
+                || input.summary() != null && input.summary().codePointCount(0,input.summary().length()) > 16384
+                || input.body() != null && (input.body().codePointCount(0,input.body().length()) > 50000 || bytes(input.body()) > 204800)
                 || !Set.of("published", "updated", "submitted", "unknown").contains(input.timeBasis())
                 || !Set.of("full", "partial", "unavailable").contains(input.contentStatus())
                 || blank(input.parserVersion()) || input.parserVersion().length() > 64

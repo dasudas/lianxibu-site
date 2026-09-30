@@ -107,6 +107,22 @@ class ArticleCompatibilityWriterTest {
         assertEquals(published,jdbc.queryForObject("SELECT published_at FROM article_revisions WHERE id=?",Timestamp.class,result.revisionId()).toInstant());
         assertEquals(updated,jdbc.queryForObject("SELECT updated_at FROM article_revisions WHERE id=?",Timestamp.class,result.revisionId()).toInstant());
     }
+    @Test void articleCharacterLimitsCountCodePointsAndKeepByteLimit() {
+        // H2 VARCHAR measures UTF-16 units; production MySQL utf8mb4 measures characters.
+        jdbc.execute("ALTER TABLE articles ALTER COLUMN title VARCHAR(1024)");
+        jdbc.execute("ALTER TABLE article_revisions ALTER COLUMN title VARCHAR(1024)");
+        String symbol=new String(Character.toChars(0x1F600));
+        var value=new Input("fixture:feed","unicode-item",symbol.repeat(512),
+                "https://example.invalid/article",null,null,symbol.repeat(50000),"unknown",
+                "full",false,"fixture-parser",1,null);
+        var saved=writer(List.of()).accept(value);
+        assertEquals(symbol.repeat(512),jdbc.queryForObject("SELECT title FROM articles WHERE id=?",String.class,saved.articleId()));
+        assertThrows(IllegalArgumentException.class,()->writer(List.of()).accept(new Input("fixture:feed","too-long",symbol.repeat(513),
+                "https://example.invalid/article",null,null,null,"unknown","unavailable",false,"fixture-parser",1,null)));
+        assertThrows(IllegalArgumentException.class,()->writer(List.of()).accept(new Input("fixture:feed","body-too-long","Title",
+                "https://example.invalid/article",null,null,symbol.repeat(50001),"unknown","full",false,"fixture-parser",1,null)));
+        assertEquals(1L,jdbc.queryForObject("SELECT COUNT(*) FROM articles",Long.class));
+    }
     @Test void submittedEvidenceNeverBecomesArticlePublication() {
         var writer=writer(List.of());
         var submitted=Instant.parse("2026-09-30T00:00:00Z");
