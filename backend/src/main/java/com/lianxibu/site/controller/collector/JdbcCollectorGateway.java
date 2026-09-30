@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
@@ -245,7 +246,7 @@ public final class JdbcCollectorGateway implements CollectorGateway {
         data.put("protocol_revision", "0.11");
         ArrayNode sources = data.putArray("sources");
         String cursor = request.cursor();
-        Instant expiry = clock.instant().plusSeconds(60);
+        Instant expiry = clock.instant().truncatedTo(ChronoUnit.MINUTES).plusSeconds(60);
         String next = null;
         if (!principal.sourceIds().isEmpty()) {
             String placeholders = String.join(",", java.util.Collections.nCopies(principal.sourceIds().size(), "?"));

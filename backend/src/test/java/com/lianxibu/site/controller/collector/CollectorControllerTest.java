@@ -66,7 +66,7 @@ class CollectorControllerTest {
         route(get(prefix + "/runs/fixture/manifest"), Operation.MANIFEST_READ);
         route(write(put(prefix + "/runs/fixture/manifest"), validWire("ManifestControl"), true), Operation.MANIFEST_WRITE);
         route(write(put(prefix + "/runs/fixture/result"), control("{\"run_id\":\"fixture\",\"manifest_hash\":\"" + "a".repeat(64)
-                + "\",\"part_count\":0,\"expected_count\":0,\"fetch_outcome\":\"success\",\"coverage\":{}}", true), true), Operation.RUN_RESULT);
+                + "\",\"part_count\":0,\"expected_count\":0,\"fetch_outcome\":\"succeeded\",\"coverage\":{\"state\":\"complete\",\"missing_inputs\":[],\"missing_dates\":[],\"no_update_dates\":[]}}", true), true), Operation.RUN_RESULT);
         route(write(post(prefix + "/runs/fixture/members/fixture/actions"), control("{\"run_id\":\"fixture\",\"member_id\":\"fixture\",\"expected_member_revision\":0,\"action\":\"seal\",\"reason\":\"fixture\"}", true), true), Operation.MEMBER_SEAL);
         route(write(post(prefix + "/observations"), "{\"observations\":[" + validWire("ObservationEnvelope") + "]}", false), Operation.OBSERVATIONS);
         route(write(post(prefix + "/heartbeat"), "{\"observed_at\":\"2026-09-30T08:00:00.000000Z\",\"pending_observations\":0,\"pending_controls\":0,\"quarantined\":0,\"outbox_bytes\":1,\"free_bytes\":100,\"oldest_pending_at\":null}", false), Operation.HEARTBEAT);

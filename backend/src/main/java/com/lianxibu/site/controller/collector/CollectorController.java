@@ -244,8 +244,11 @@ public final class CollectorController {
             WireValues.sha256(business.get("manifest_hash"));
             WireValues.nonnegativeInteger(business.get("part_count"));
             WireValues.nonnegativeInteger(business.get("expected_count"));
-            WireValues.text(business.get("fetch_outcome"));
-            if (!business.get("coverage").isObject()) throw new IllegalArgumentException("coverage required");
+            if (!Set.of("succeeded", "failed", "partial")
+                    .contains(WireValues.text(business.get("fetch_outcome")))) {
+                throw new IllegalArgumentException("invalid fetch outcome");
+            }
+            coverage(business.get("coverage"));
         } else if (businessFields.contains("expected_member_revision")) {
             WireValues.nonnegativeInteger(business.get("expected_member_revision"));
             if (!"seal".equals(WireValues.text(business.get("action"))) ||
@@ -410,12 +413,21 @@ public final class CollectorController {
         WireValues.object(run,fields,fields);
         WireValues.id(run.get("run_id"),false);
         WireValues.id(run.get("source_id"),true);
+        coverage(run.get("coverage"));
+    }
+
+    private static void coverage(JsonNode raw) {
         Set<String> coverage=Set.of("state","missing_inputs","missing_dates","no_update_dates");
-        JsonNode value=WireValues.object(run.get("coverage"),coverage,coverage);
+        JsonNode value=WireValues.object(raw,coverage,coverage);
+        if (!Set.of("complete","partial","no_input").contains(WireValues.text(value.get("state")))) {
+            throw new IllegalArgumentException("invalid coverage state");
+        }
         if (!value.get("missing_inputs").isArray() || !value.get("missing_dates").isArray() ||
                 !value.get("no_update_dates").isArray()) throw new IllegalArgumentException("invalid coverage");
         Set<String> missing=Set.of("kind","id","business_date","reason");
         for (JsonNode item:value.get("missing_inputs")) WireValues.object(item,missing,missing);
+        for (JsonNode item:value.get("missing_dates")) WireValues.text(item);
+        for (JsonNode item:value.get("no_update_dates")) WireValues.text(item);
     }
 
     private static void scopedSources(JsonNode value, Principal principal) {
