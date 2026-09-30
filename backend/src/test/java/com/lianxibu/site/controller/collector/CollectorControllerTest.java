@@ -50,8 +50,8 @@ class CollectorControllerTest {
         when(runtime.getIfAvailable()).thenReturn(gateway);
         when(identity.authorizeBearer(anyString(), anyString(), nullable(String.class)))
                 .thenReturn(new NodeIdentityService.Principal("node", List.of("fixture"), List.of(), 1));
-        when(gateway.execute(any(), any(), any())).thenAnswer(call ->
-                new CollectorGateway.Result(200, response(call.getArgument(1)), null));
+        when(gateway.execute(any(), anyString(), any(), any())).thenAnswer(call ->
+                new CollectorGateway.Result(200, response(call.getArgument(2)), null));
         mvc = MockMvcBuilders.standaloneSetup(new CollectorController(nodes, runtime)).build();
     }
 
@@ -79,7 +79,7 @@ class CollectorControllerTest {
         String path = "/api/collector/v1/run-claims";
         mvc.perform(write(post(path), "{\"source_ids\":[],\"required_features\":[],\"max_runs\":1}", true))
                 .andExpect(status().isUnauthorized());
-        verify(gateway, never()).execute(any(), any(), any());
+        verify(gateway, never()).execute(any(), anyString(), any(), any());
 
         mvc.perform(auth(write(post(path), "{\"source_ids\":[\"other\"],\"required_features\":[],\"max_runs\":1}", true)))
                 .andExpect(status().isForbidden());
@@ -91,7 +91,7 @@ class CollectorControllerTest {
                 .andExpect(status().isUnprocessableEntity());
         mvc.perform(auth(write(put("/api/collector/v1/runs/fixture/claim"), control("{\"run_id\":\"different\",\"action\":\"ack\"}", false), true)))
                 .andExpect(status().isUnprocessableEntity());
-        verify(gateway, never()).execute(any(), any(), any());
+        verify(gateway, never()).execute(any(), anyString(), any(), any());
 
         when(identity.authorizeBearer(anyString(), anyString(), nullable(String.class)))
                 .thenThrow(new IdentityService.Rejected(IdentityService.Refusal.FORBIDDEN, null));
@@ -100,27 +100,27 @@ class CollectorControllerTest {
 
         when(identity.authorizeBearer(anyString(), anyString(), nullable(String.class)))
                 .thenReturn(new NodeIdentityService.Principal("node", List.of("fixture"), List.of(), 1));
-        doThrow(new CollectorGateway.Refused(409, "stale_claim")).when(gateway).execute(any(), any(), any());
+        doThrow(new CollectorGateway.Refused(409, "stale_claim")).when(gateway).execute(any(), anyString(), any(), any());
         mvc.perform(auth(write(put("/api/collector/v1/runs/fixture/claim"), control("{\"run_id\":\"fixture\",\"action\":\"ack\"}", false), true)))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.error.code").value("stale_claim"));
 
         reset(gateway);
         ObjectNode unsafe = (ObjectNode) response(Operation.CLAIM_ACTION);
         unsafe.putNull("receipt_ref");
-        when(gateway.execute(any(),any(),any())).thenReturn(new CollectorGateway.Result(200,unsafe,null));
+        when(gateway.execute(any(),anyString(),any(),any())).thenReturn(new CollectorGateway.Result(200,unsafe,null));
         mvc.perform(auth(write(put("/api/collector/v1/runs/fixture/claim"), control("{\"run_id\":\"fixture\",\"action\":\"ack\"}", false), true)))
                 .andExpect(status().isServiceUnavailable());
 
         reset(gateway);
         ObjectNode incomplete = (ObjectNode) response(Operation.OBSERVATIONS);
         incomplete.putArray("acks");
-        when(gateway.execute(any(),any(),any())).thenReturn(new CollectorGateway.Result(200,incomplete,null));
+        when(gateway.execute(any(),anyString(),any(),any())).thenReturn(new CollectorGateway.Result(200,incomplete,null));
         mvc.perform(auth(write(post("/api/collector/v1/observations"),
                 "{\"observations\":[" + validWire("ObservationEnvelope") + "]}",false)))
                 .andExpect(status().isServiceUnavailable());
 
         reset(gateway);
-        when(gateway.execute(any(),any(),any())).thenThrow(new RuntimeException("private service detail"));
+        when(gateway.execute(any(),anyString(),any(),any())).thenThrow(new RuntimeException("private service detail"));
         mvc.perform(auth(get("/api/collector/v1/config"))).andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.error.message").value("temporarily_unavailable"));
     }
@@ -128,11 +128,11 @@ class CollectorControllerTest {
     @Test
     void emptyProbeAndCachedConfigUseBodylessContractStatuses() throws Exception {
         reset(gateway);
-        when(gateway.execute(any(),any(),any())).thenReturn(new CollectorGateway.Result(304,null,"\"fixture-etag\""));
+        when(gateway.execute(any(),anyString(),any(),any())).thenReturn(new CollectorGateway.Result(304,null,"\"fixture-etag\""));
         mvc.perform(auth(get("/api/collector/v1/config").header("If-None-Match","\"fixture-etag\"")))
                 .andExpect(status().isNotModified());
         reset(gateway);
-        when(gateway.execute(any(),any(),any())).thenReturn(new CollectorGateway.Result(204,null,null));
+        when(gateway.execute(any(),anyString(),any(),any())).thenReturn(new CollectorGateway.Result(204,null,null));
         mvc.perform(auth(write(post("/api/collector/v1/probe-claims"),
                 "{\"source_ids\":[],\"required_features\":[]}",true)))
                 .andExpect(status().isNoContent());
@@ -140,10 +140,10 @@ class CollectorControllerTest {
 
     private void route(MockHttpServletRequestBuilder request, Operation operation) throws Exception {
         reset(gateway);
-        when(gateway.execute(any(), any(), any())).thenAnswer(call ->
-                new CollectorGateway.Result(200, response(call.getArgument(1)), null));
+        when(gateway.execute(any(), anyString(), any(), any())).thenAnswer(call ->
+                new CollectorGateway.Result(200, response(call.getArgument(2)), null));
         mvc.perform(auth(request)).andExpect(status().isOk()).andExpect(jsonPath("$.meta.request_id").exists());
-        verify(gateway).execute(any(), org.mockito.ArgumentMatchers.eq(operation), any());
+        verify(gateway).execute(any(), anyString(), org.mockito.ArgumentMatchers.eq(operation), any());
     }
 
     private static MockHttpServletRequestBuilder auth(MockHttpServletRequestBuilder request) {

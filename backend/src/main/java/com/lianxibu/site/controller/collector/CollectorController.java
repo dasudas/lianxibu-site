@@ -152,7 +152,7 @@ public final class CollectorController {
         JsonNode body = body(raw, operation, pathRun, pathMember, pathProbe, principal);
         CollectorGateway runtime = gateway.getIfAvailable();
         if (runtime == null) throw unavailable();
-        var result = runtime.execute(principal, operation, new CollectorGateway.Request(pathRun, pathMember,
+        var result = runtime.execute(principal, bearer, operation, new CollectorGateway.Request(pathRun, pathMember,
                 pathProbe, query.cursor(), query.limit(), query.sourceId(), request.getHeader(HttpHeaders.IF_NONE_MATCH),
                 key, body));
         if (result == null) throw unavailable();

@@ -19,6 +19,8 @@ management:
       exposure:
         include: health
 site:
+  collector:
+    enabled: false
   execution:
     enabled: false
   scheduler:

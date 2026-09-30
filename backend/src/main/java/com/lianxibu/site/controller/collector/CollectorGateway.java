@@ -17,7 +17,8 @@ public interface CollectorGateway {
 
     record Result(int status, JsonNode data, String etag) { }
 
-    Result execute(Principal principal, Operation operation, Request request);
+    /** Bearer is passed only in memory for service reauthorization inside each write transaction. */
+    Result execute(Principal principal, String bearer, Operation operation, Request request);
 
     /** Safe business failure from the runtime adapter, without secret or payload text. */
     final class Refused extends RuntimeException {
