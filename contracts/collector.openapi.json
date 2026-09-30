@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lianxibu collector API",
-    "version": "0.13",
-    "description": "Design contract. Protocol revision 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
+    "version": "0.14",
+    "description": "Design contract. Observation revisions 0.11/0.12; config/control 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "servers": [
@@ -3991,10 +3991,10 @@
         "type": "object",
         "properties": {
           "protocol_revision": {
-            "const": "0.11"
+            "const": "0.12"
           },
           "contract_version": {
-            "const": "0.13"
+            "const": "0.14"
           },
           "supported_features": {
             "type": "array",
@@ -9092,6 +9092,208 @@
         ],
         "additionalProperties": false
       },
+      "ArticlePayloadV012": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "source_url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "format": "uri",
+            "pattern": "^https://"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "time_basis": {
+            "type": "string",
+            "enum": [
+              "published",
+              "updated",
+              "submitted",
+              "unknown"
+            ]
+          },
+          "source_summary": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 16384
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "body_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 50000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "content_status": {
+            "type": "string",
+            "enum": [
+              "full",
+              "partial",
+              "unavailable"
+            ]
+          },
+          "body_truncated": {
+            "type": "boolean"
+          },
+          "parser_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "config_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "source_order": {
+            "$ref": "#/components/schemas/SourceOrder"
+          },
+          "submitted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "title",
+          "source_url",
+          "published_at",
+          "updated_at",
+          "time_basis",
+          "source_summary",
+          "body_text",
+          "content_status",
+          "body_truncated",
+          "parser_version",
+          "config_version",
+          "source_order",
+          "submitted_at"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "time_basis": {
+                  "const": "submitted"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "submitted_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                },
+                "published_at": {
+                  "type": "null"
+                },
+                "updated_at": {
+                  "type": "null"
+                },
+                "source_order": {
+                  "properties": {
+                    "basis": {
+                      "const": "unknown"
+                    }
+                  }
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "submitted_at": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "time_basis": {
+                  "const": "published"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "published_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "time_basis": {
+                  "const": "updated"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "updated_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                }
+              }
+            }
+          }
+        ]
+      },
       "ObservationEnvelope": {
         "oneOf": [
           {
@@ -9366,6 +9568,307 @@
               "payload"
             ],
             "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "protocol_revision": {
+                "const": "0.12"
+              },
+              "observation_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "member_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "business_date": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "source_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "source_revision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "source_item_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+              },
+              "replaces_observation_id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "payload_hash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "kind": {
+                "const": "article"
+              },
+              "payload": {
+                "$ref": "#/components/schemas/ArticlePayloadV012"
+              }
+            },
+            "required": [
+              "protocol_revision",
+              "observation_id",
+              "member_id",
+              "run_id",
+              "business_date",
+              "source_id",
+              "source_revision",
+              "source_item_id",
+              "retrieved_at",
+              "replaces_observation_id",
+              "payload_hash",
+              "kind",
+              "payload"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "protocol_revision": {
+                "const": "0.12"
+              },
+              "observation_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "member_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "business_date": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "source_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "source_revision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "source_item_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+              },
+              "replaces_observation_id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "payload_hash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "kind": {
+                "const": "catalog"
+              },
+              "payload": {
+                "$ref": "#/components/schemas/catalog"
+              }
+            },
+            "required": [
+              "protocol_revision",
+              "observation_id",
+              "member_id",
+              "run_id",
+              "business_date",
+              "source_id",
+              "source_revision",
+              "source_item_id",
+              "retrieved_at",
+              "replaces_observation_id",
+              "payload_hash",
+              "kind",
+              "payload"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "protocol_revision": {
+                "const": "0.12"
+              },
+              "observation_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "member_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "run_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "business_date": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "source_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "source_revision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "source_item_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+              },
+              "replaces_observation_id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "payload_hash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "kind": {
+                "const": "metric"
+              },
+              "payload": {
+                "$ref": "#/components/schemas/metric"
+              }
+            },
+            "required": [
+              "protocol_revision",
+              "observation_id",
+              "member_id",
+              "run_id",
+              "business_date",
+              "source_id",
+              "source_revision",
+              "source_item_id",
+              "retrieved_at",
+              "replaces_observation_id",
+              "payload_hash",
+              "kind",
+              "payload"
+            ],
+            "additionalProperties": false
+          }
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "article"
+                },
+                "payload": {
+                  "required": [
+                    "time_basis"
+                  ],
+                  "properties": {
+                    "time_basis": {
+                      "const": "submitted"
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "source_id": {
+                  "const": "global-hn"
+                }
+              }
+            }
           }
         ]
       },

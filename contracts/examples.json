@@ -54,8 +54,8 @@
       "request": null,
       "response": {
         "data": {
-          "protocol_revision": "0.11",
-          "contract_version": "0.13",
+          "protocol_revision": "0.12",
+          "contract_version": "0.14",
           "supported_features": [],
           "max_page_size": 50,
           "max_observations": 10

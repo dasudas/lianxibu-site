@@ -1,0 +1,383 @@
+{
+  "scope": "Fictional offline dual-version time fixtures",
+  "cases": [
+    {
+      "name": "legacy_article",
+      "value": {
+        "protocol_revision": "0.11",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "fixture",
+        "source_revision": 0,
+        "source_item_id": "fixture",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "a3fa56725962f8717930944bac8ff71c0b5dde3c5960d9561b4b5b7e94b4cf52",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "updated_at": null,
+          "time_basis": "published",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "fixture",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "name": "submitted_hn",
+      "value": {
+        "protocol_revision": "0.12",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "global-hn",
+        "source_revision": 0,
+        "source_item_id": "fictional-hn-1",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "134f703d51c0bbc88468668b2853fb0d3645133e620f9a6115fa4503dbc9fda3",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "updated_at": null,
+          "time_basis": "submitted",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "global-hn-v1",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          },
+          "submitted_at": "2026-09-30T00:00:00.000000Z"
+        }
+      },
+      "valid": true
+    },
+    {
+      "name": "old_extra",
+      "value": {
+        "protocol_revision": "0.11",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "fixture",
+        "source_revision": 0,
+        "source_item_id": "fixture",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "9c138e8a16b43ad1c9d31b06396f8316a5e003ff3c8cac31090a0d3dc4ddfa3e",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "updated_at": null,
+          "time_basis": "published",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "fixture",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          },
+          "submitted_at": null
+        }
+      },
+      "valid": false
+    },
+    {
+      "name": "new_missing",
+      "value": {
+        "protocol_revision": "0.12",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "global-hn",
+        "source_revision": 0,
+        "source_item_id": "fictional-hn-1",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "25bd0ee6d7e313edafbf7293cf115dfa6df539ffb4ba866eee300cb92f1551b0",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "updated_at": null,
+          "time_basis": "submitted",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "global-hn-v1",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "name": "unknown_version",
+      "value": {
+        "protocol_revision": "0.99",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "global-hn",
+        "source_revision": 0,
+        "source_item_id": "fictional-hn-1",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "e4f8f1f9700bc5ce368d28c07f574025a769ef12ac766ccfaa3f2035ce089caf",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "updated_at": null,
+          "time_basis": "submitted",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "global-hn-v1",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          },
+          "submitted_at": "2026-09-30T00:00:00.000000Z"
+        }
+      },
+      "valid": false
+    },
+    {
+      "name": "wrong_source",
+      "value": {
+        "protocol_revision": "0.12",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "fictional-other",
+        "source_revision": 0,
+        "source_item_id": "fictional-hn-1",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "15ea2a5d7f6604bc3d644cfd88ccb26c1bd4f08bc793d78ca0994f5cad9ad053",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "updated_at": null,
+          "time_basis": "submitted",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "global-hn-v1",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          },
+          "submitted_at": "2026-09-30T00:00:00.000000Z"
+        }
+      },
+      "valid": false
+    },
+    {
+      "name": "forged_publish",
+      "value": {
+        "protocol_revision": "0.12",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "global-hn",
+        "source_revision": 0,
+        "source_item_id": "fictional-hn-1",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "b8cf5cff3d4acd95ab45bf94011612a9d9b870a86fd0e55d539d2dea4b6b3d40",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": "2026-09-30T00:00:00.000000Z",
+          "updated_at": null,
+          "time_basis": "submitted",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "global-hn-v1",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          },
+          "submitted_at": "2026-09-30T00:00:00.000000Z"
+        }
+      },
+      "valid": false
+    },
+    {
+      "name": "missing_time",
+      "value": {
+        "protocol_revision": "0.12",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "global-hn",
+        "source_revision": 0,
+        "source_item_id": "fictional-hn-1",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "9812b67869cfab7abc3fa777934fd894ddb0664fdc669799e6d1a4d04991463d",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "updated_at": null,
+          "time_basis": "submitted",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "global-hn-v1",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          },
+          "submitted_at": null
+        }
+      },
+      "valid": false
+    },
+    {
+      "name": "unknown_basis",
+      "value": {
+        "protocol_revision": "0.12",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "global-hn",
+        "source_revision": 0,
+        "source_item_id": "fictional-hn-1",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "39387bee785736d1de10ec163b1cfaf34077ae28884eef68d4ca1aaa981f81b0",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": null,
+          "updated_at": null,
+          "time_basis": "fetched",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "global-hn-v1",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          },
+          "submitted_at": "2026-09-30T00:00:00.000000Z"
+        }
+      },
+      "valid": false
+    },
+    {
+      "name": "normal_v012",
+      "value": {
+        "protocol_revision": "0.12",
+        "observation_id": "fixture",
+        "member_id": "fixture",
+        "run_id": "fixture",
+        "business_date": "2026-09-27",
+        "source_id": "fictional-source",
+        "source_revision": 0,
+        "source_item_id": "fictional-hn-1",
+        "retrieved_at": "2026-09-27T00:00:00.000000Z",
+        "replaces_observation_id": null,
+        "payload_hash": "a4b0de3fae28d14d65aad71bdc95c205fcd88043785d9c49d53ec4dcaf77fcfd",
+        "kind": "article",
+        "payload": {
+          "title": "fixture",
+          "source_url": "https://example.com/evidence",
+          "published_at": "2026-09-30T00:00:00.000000Z",
+          "updated_at": null,
+          "time_basis": "published",
+          "source_summary": null,
+          "body_text": null,
+          "content_status": "full",
+          "body_truncated": false,
+          "parser_version": "global-hn-v1",
+          "config_version": 0,
+          "source_order": {
+            "basis": "unknown",
+            "domain": null,
+            "value": null,
+            "evidence_ref": null
+          },
+          "submitted_at": null
+        }
+      },
+      "valid": true
+    }
+  ]
+}
