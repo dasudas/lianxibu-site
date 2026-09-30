@@ -162,7 +162,7 @@ func validateObservation(value any) (Observation, error) {
 	if err != nil {
 		return Observation{}, err
 	}
-	if envelope["protocol_revision"] != "0.11" {
+	if envelope["protocol_revision"] != "0.11" && envelope["protocol_revision"] != "0.12" {
 		return Observation{}, errors.New("schema_not_supported")
 	}
 	id, err := wireID(envelope["observation_id"], false)
@@ -207,7 +207,7 @@ func validateObservation(value any) (Observation, error) {
 	}
 	switch kind {
 	case "article":
-		err = validateArticlePayload(payload)
+		err = validateArticlePayload(payload, envelope["protocol_revision"].(string), sourceID)
 	case "catalog":
 		err = ValidateCatalogPayload(payload)
 	case "metric":
@@ -236,10 +236,38 @@ func validateObservation(value any) (Observation, error) {
 		SourceItemID: sourceItemID, Kind: kind, PayloadHash: hash}, nil
 }
 
-func validateArticlePayload(payload map[string]any) error {
+func validateArticlePayload(payload map[string]any, protocol, sourceID string) error {
 	fields := []string{"title", "source_url", "published_at", "updated_at", "time_basis", "source_summary", "body_text", "content_status", "body_truncated", "parser_version", "config_version", "source_order"}
+	if protocol == "0.12" {
+		fields = append(fields, "submitted_at")
+	}
 	if _, err := object(payload, fields...); err != nil {
 		return err
+	}
+	if protocol == "0.12" {
+		if err := optionalTime(payload["submitted_at"]); err != nil {
+			return err
+		}
+		switch payload["time_basis"] {
+		case "submitted":
+			order, ok := payload["source_order"].(map[string]any)
+			if sourceID != "global-hn" || payload["submitted_at"] == nil || payload["published_at"] != nil || payload["updated_at"] != nil || !ok || order["basis"] != "unknown" {
+				return errors.New("invalid submitted time")
+			}
+		case "published", "updated":
+			if payload["submitted_at"] != nil || payload[payload["time_basis"].(string)+"_at"] == nil {
+				return errors.New("missing source time")
+			}
+		case "unknown":
+			if payload["submitted_at"] != nil {
+				return errors.New("unexpected submitted time")
+			}
+		default:
+			return errors.New("unknown source time basis")
+		}
+		if payload["content_status"] != "full" && payload["content_status"] != "partial" && payload["content_status"] != "unavailable" {
+			return errors.New("unknown content status")
+		}
 	}
 	if _, err := wireString(payload["title"], 1, 512); err != nil {
 		return err
@@ -254,8 +282,19 @@ func validateArticlePayload(payload map[string]any) error {
 	}
 	for _, field := range []string{"source_summary", "body_text"} {
 		if payload[field] != nil {
-			if _, err := wireString(payload[field], 0, 200000); err != nil {
+			limit := 200000
+			if protocol == "0.12" {
+				if field == "source_summary" {
+					limit = 16384
+				} else {
+					limit = 50000
+				}
+			}
+			if _, err := wireString(payload[field], 0, limit); err != nil {
 				return err
+			}
+			if protocol == "0.12" && field == "body_text" && len(payload[field].(string)) > 200*1024 {
+				return errors.New("body too large")
 			}
 		}
 	}

@@ -281,7 +281,7 @@ func (s *Store) SavePage(ctx context.Context, runID, token string, expectedRevis
 }
 
 func insertRecord(ctx context.Context, conn *sql.Conn, r Record, now int64) error {
-	if r.ID == "" || !validDigest(r.RecordKey) || r.MemberID == "" || r.ObservationID == "" || len(r.Payload) == 0 || r.ProtocolRevision != "0.11" || r.HashVersion != 1 || !validDigest(r.PayloadHash) {
+	if r.ID == "" || !validDigest(r.RecordKey) || r.MemberID == "" || r.ObservationID == "" || len(r.Payload) == 0 || (r.ProtocolRevision != "0.11" && r.ProtocolRevision != "0.12") || r.HashVersion != 1 || !validDigest(r.PayloadHash) {
 		return ErrConflict
 	}
 	_, err := conn.ExecContext(ctx, `INSERT INTO outbox(id,record_kind,record_key,source_id,run_id,member_id,observation_id,payload,payload_hash,protocol_revision,hash_version,next_retry_at,created_at,replaces_observation_id)
