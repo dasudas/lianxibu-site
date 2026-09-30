@@ -15,10 +15,13 @@ import (
 )
 
 type rssItem struct {
-	Title       string `xml:"title"`
-	Link        string `xml:"link"`
-	Published   string `xml:"pubDate"`
-	Description string `xml:"description"`
+	ID          string   `xml:"guid"`
+	Title       string   `xml:"title"`
+	Link        string   `xml:"link"`
+	Published   string   `xml:"pubDate"`
+	Description string   `xml:"description"`
+	Content     string   `xml:"http://purl.org/rss/1.0/modules/content/ encoded"`
+	Creators    []string `xml:"http://purl.org/dc/elements/1.1/ creator"`
 }
 type rssFeed struct {
 	XMLName  xml.Name `xml:"rss"`
@@ -90,6 +93,15 @@ func (a *FeedAdapter) parseRSS(c client.RunClaim, response fetcher.Result) (sche
 			continue
 		}
 		entry := atomEntry{ID: link, Title: atomText{Type: "html", Text: row.Title}, Published: at.Format(time.RFC3339Nano), Links: []atomLink{{Rel: "alternate", Href: link}}, Summary: atomText{Type: "html", Text: row.Description}}
+		if a.preferRSSID && strings.TrimSpace(row.ID) != "" {
+			entry.ID = row.ID
+		}
+		if a.encodedContent {
+			entry.Content = atomText{Type: "html", Text: row.Content}
+			for _, author := range row.Creators {
+				entry.Authors = append(entry.Authors, atomAuthor{Name: author})
+			}
+		}
 		item, gaps, err := a.atomItem(c, entry, base)
 		page.Gaps = append(page.Gaps, gaps...)
 		if err != nil {
@@ -98,7 +110,11 @@ func (a *FeedAdapter) parseRSS(c client.RunClaim, response fetcher.Result) (sche
 		var article Article
 		json.Unmarshal(item.Payload, &article)
 		article.RawPublished = row.Published
-		raw, truncated := boundText(row.Description, 200000, 200*1024)
+		selected := row.Description
+		if a.encodedContent && row.Content != "" {
+			selected = row.Content
+		}
+		raw, truncated := boundText(selected, 200000, 200*1024)
 		article.RawSelectedContent = raw
 		article.BodyTruncated = article.BodyTruncated || truncated
 		if a.onlyDevelopment {
@@ -114,18 +130,19 @@ func (a *FeedAdapter) parseRSS(c client.RunClaim, response fetcher.Result) (sche
 			}
 		}
 		item.Payload, _ = json.Marshal(article)
-		if conflicts[link] {
+		id := item.SourceItemID
+		if conflicts[id] {
 			continue
 		}
-		if old, exists := rows[link]; exists {
+		if old, exists := rows[id]; exists {
 			if !bytes.Equal(old.Payload, item.Payload) {
-				delete(rows, link)
-				conflicts[link] = true
+				delete(rows, id)
+				conflicts[id] = true
 				page.Gaps = append(page.Gaps, "conflicting_entry_identity")
 			}
 			continue
 		}
-		rows[link] = item
+		rows[id] = item
 	}
 	keys := make([]string, 0, len(rows))
 	for key := range rows {

@@ -51,6 +51,8 @@ type FeedAdapter struct {
 	format            fetcher.Format
 	onlyDevelopment   bool
 	summaryAsBody     bool
+	encodedContent    bool
+	preferRSSID       bool
 }
 
 func Ruanyifeng() *FeedAdapter {
@@ -64,6 +66,9 @@ func Cnblogs() *FeedAdapter {
 }
 func Simon() *FeedAdapter {
 	return &FeedAdapter{sourceID: "global-simon", version: "global-simon-v1", format: fetcher.Atom, summaryAsBody: true}
+}
+func GitHubBlog() *FeedAdapter {
+	return &FeedAdapter{sourceID: "global-github-blog", version: "global-github-blog-v1", format: fetcher.RSS, encodedContent: true, preferRSSID: true}
 }
 
 var _ scheduler.Adapter = (*FeedAdapter)(nil)
@@ -97,17 +102,18 @@ type atomLink struct {
 	Href string `xml:"href,attr"`
 	Type string `xml:"type,attr"`
 }
+type atomAuthor struct {
+	Name string `xml:"http://www.w3.org/2005/Atom name"`
+}
 type atomEntry struct {
-	ID        string     `xml:"http://www.w3.org/2005/Atom id"`
-	Title     atomText   `xml:"http://www.w3.org/2005/Atom title"`
-	Published string     `xml:"http://www.w3.org/2005/Atom published"`
-	Updated   string     `xml:"http://www.w3.org/2005/Atom updated"`
-	Links     []atomLink `xml:"http://www.w3.org/2005/Atom link"`
-	Content   atomText   `xml:"http://www.w3.org/2005/Atom content"`
-	Summary   atomText   `xml:"http://www.w3.org/2005/Atom summary"`
-	Authors   []struct {
-		Name string `xml:"http://www.w3.org/2005/Atom name"`
-	} `xml:"http://www.w3.org/2005/Atom author"`
+	ID         string       `xml:"http://www.w3.org/2005/Atom id"`
+	Title      atomText     `xml:"http://www.w3.org/2005/Atom title"`
+	Published  string       `xml:"http://www.w3.org/2005/Atom published"`
+	Updated    string       `xml:"http://www.w3.org/2005/Atom updated"`
+	Links      []atomLink   `xml:"http://www.w3.org/2005/Atom link"`
+	Content    atomText     `xml:"http://www.w3.org/2005/Atom content"`
+	Summary    atomText     `xml:"http://www.w3.org/2005/Atom summary"`
+	Authors    []atomAuthor `xml:"http://www.w3.org/2005/Atom author"`
 	Categories []struct {
 		Term string `xml:"term,attr"`
 	} `xml:"http://www.w3.org/2005/Atom category"`
