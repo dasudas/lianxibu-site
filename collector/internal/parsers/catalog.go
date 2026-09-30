@@ -21,26 +21,28 @@ import (
 )
 
 type RepositoryCatalogAdapter struct {
-	mu      sync.Mutex
-	pending map[string]catalogPending
+	category, version string
+	mu                sync.Mutex
+	pending           map[string]catalogPending
 }
 type catalogCursor struct {
-	Run          string   `json:"run"`
-	Source       string   `json:"source"`
-	Config       uint64   `json:"config"`
-	Entry        string   `json:"entry"`
-	Step         int      `json:"step"`
-	RepositoryID int64    `json:"repository_id"`
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	Branch       string   `json:"branch"`
-	Tag          string   `json:"tag"`
-	Published    string   `json:"published"`
-	Commit       string   `json:"commit"`
-	Updated      string   `json:"updated"`
-	LicensePath  string   `json:"license_path"`
-	LicenseHash  string   `json:"license_hash"`
-	Gaps         []string `json:"gaps"`
+	Run          string          `json:"run"`
+	Source       string          `json:"source"`
+	Config       uint64          `json:"config"`
+	Entry        string          `json:"entry"`
+	Step         int             `json:"step"`
+	RepositoryID int64           `json:"repository_id"`
+	Name         string          `json:"name"`
+	Description  string          `json:"description"`
+	Branch       string          `json:"branch"`
+	Tag          string          `json:"tag"`
+	Published    string          `json:"published"`
+	Commit       string          `json:"commit"`
+	Updated      string          `json:"updated"`
+	LicensePath  string          `json:"license_path"`
+	LicenseHash  string          `json:"license_hash"`
+	Gaps         []string        `json:"gaps"`
+	Aggregate    json.RawMessage `json:"aggregate,omitempty"`
 }
 type catalogPending struct {
 	state catalogCursor
@@ -53,10 +55,16 @@ var _ scheduler.NotFoundAdapter = (*RepositoryCatalogAdapter)(nil)
 
 func (a *RepositoryCatalogAdapter) AllowNotFound() bool { return true }
 func Agents() *RepositoryCatalogAdapter {
-	return &RepositoryCatalogAdapter{pending: map[string]catalogPending{}}
+	return &RepositoryCatalogAdapter{category: "agent", version: "github-agent-v1", pending: map[string]catalogPending{}}
 }
-func agentEntry(c client.RunClaim) (string, string, error) {
-	if c.Run.RunID == "" || c.Run.SourceID == "" || c.Config.SourceID != c.Run.SourceID || c.Run.ConfigVersion != c.Config.ConfigVersion || c.Config.Config.ParserVersion != "github-agent-v1" || len(c.Config.Config.EntryURLs) != 1 {
+func Workflows() *RepositoryCatalogAdapter {
+	return &RepositoryCatalogAdapter{category: "workflow", version: "github-workflow-v1", pending: map[string]catalogPending{}}
+}
+func workflowDocument(repo string) string {
+	return map[string]string{"github/spec-kit": "spec-driven.md", "Fission-AI/OpenSpec": "docs/workflows.md", "bmad-code-org/BMAD-METHOD": "docs/start/build-your-first-change.md", "obra/superpowers": "docs/README.opencode.md"}[repo]
+}
+func (a *RepositoryCatalogAdapter) entry(c client.RunClaim) (string, string, error) {
+	if a == nil || (a.category != "agent" && a.category != "workflow") || c.Run.RunID == "" || c.Run.SourceID == "" || c.Config.SourceID != c.Run.SourceID || c.Run.ConfigVersion != c.Config.ConfigVersion || c.Config.Config.ParserVersion != a.version || len(c.Config.Config.EntryURLs) != 1 {
 		return "", "", ErrSourceConfig
 	}
 	entry := c.Config.Config.EntryURLs[0]
@@ -72,9 +80,13 @@ func agentEntry(c client.RunClaim) (string, string, error) {
 	if u.Path != "/repos/"+repo {
 		return "", "", ErrSourceConfig
 	}
-	switch repo {
-	case "openai/codex", "anthropics/claude-code", "google-gemini/gemini-cli":
-	default:
+	if a.category == "agent" {
+		switch repo {
+		case "openai/codex", "anthropics/claude-code", "google-gemini/gemini-cli":
+		default:
+			return "", "", ErrSourceConfig
+		}
+	} else if workflowDocument(repo) == "" {
 		return "", "", ErrSourceConfig
 	}
 	return entry, repo, nil
@@ -83,18 +95,41 @@ func (a *RepositoryCatalogAdapter) state(c client.RunClaim, cursor string) (cata
 	if a == nil {
 		return catalogCursor{}, ErrSourceConfig
 	}
-	entry, _, err := agentEntry(c)
+	entry, _, err := a.entry(c)
 	if err != nil {
 		return catalogCursor{}, err
 	}
 	if cursor == "" {
-		return catalogCursor{Run: c.Run.RunID, Source: c.Run.SourceID, Config: c.Run.ConfigVersion, Entry: entry, Gaps: []string{"missing_author_report"}}, nil
+		gaps := []string{}
+		if a.category == "agent" {
+			gaps = append(gaps, "missing_author_report")
+		}
+		return catalogCursor{Run: c.Run.RunID, Source: c.Run.SourceID, Config: c.Run.ConfigVersion, Entry: entry, Gaps: gaps}, nil
 	}
 	var state catalogCursor
 	d := json.NewDecoder(strings.NewReader(cursor))
 	d.DisallowUnknownFields()
-	if len(cursor) > 16384 || checkedJSON([]byte(cursor)) != nil || d.Decode(&state) != nil || state.Run != c.Run.RunID || state.Source != c.Run.SourceID || state.Config != c.Run.ConfigVersion || state.Entry != entry || state.Step < 1 || state.Step > 5 || state.RepositoryID <= 0 || state.RepositoryID > 9007199254740991 || !repoPart(state.Branch) || len(state.Name) > 2048 || len(state.Description) > 8192 || len(state.Tag) > 100 || state.Tag != "" && !repoPart(state.Tag) || len(state.Gaps) > 32 {
+	maximum, lastStep := 16384, 5
+	if a.category == "workflow" {
+		maximum = 768 * 1024
+		lastStep = 6
+	}
+	if len(cursor) > maximum || checkedJSON([]byte(cursor)) != nil || d.Decode(&state) != nil || state.Run != c.Run.RunID || state.Source != c.Run.SourceID || state.Config != c.Run.ConfigVersion || state.Entry != entry || state.Step < 1 || state.Step > lastStep || state.RepositoryID <= 0 || state.RepositoryID > 9007199254740991 || !repoPart(state.Branch) || len(state.Name) > 2048 || len(state.Description) > 8192 || len(state.Tag) > 100 || state.Tag != "" && !repoPart(state.Tag) || len(state.Gaps) > 32 {
 		return catalogCursor{}, ErrSourceConfig
+	}
+	if a.category == "workflow" && state.Step >= 5 {
+		parsed, err := client.ParseStrict(state.Aggregate)
+		if err != nil {
+			return catalogCursor{}, ErrSourceConfig
+		}
+		payload, ok := parsed.(map[string]any)
+		if !ok || client.ValidateCatalogPayload(payload) != nil || payload["category"] != "workflow" || payload["parser_version"] != a.version || payload["config_version"] != json.Number(strconv.FormatUint(c.Run.ConfigVersion, 10)) {
+			return catalogCursor{}, ErrSourceConfig
+		}
+		_, repo, _ := a.entry(c)
+		if payload["identity"].(map[string]any)["key"] != strconv.FormatInt(state.RepositoryID, 10) || payload["source_url"] != "https://github.com/"+repo {
+			return catalogCursor{}, ErrSourceConfig
+		}
 	}
 	if state.Published != "" {
 		if _, e := parseSourceTime(state.Published); e != nil {
@@ -114,7 +149,7 @@ func (a *RepositoryCatalogAdapter) state(c client.RunClaim, cursor string) (cata
 	}
 	for _, gap := range state.Gaps {
 		switch gap {
-		case "missing_author_report", "missing_license", "no_formal_release", "release_scan_limit", "missing_readme", "document_truncated", "summary_truncated":
+		case "missing_author_report", "missing_license", "no_formal_release", "release_scan_limit", "missing_readme", "missing_workflow_document", "document_truncated", "summary_truncated":
 		default:
 			return catalogCursor{}, ErrSourceConfig
 		}
@@ -143,16 +178,22 @@ func catalogPath(value string) bool {
 	}
 	return true
 }
+func (a *RepositoryCatalogAdapter) finalStep() int {
+	if a.category == "workflow" {
+		return 6
+	}
+	return 5
+}
 func (a *RepositoryCatalogAdapter) Completed(c client.RunClaim, cursor string) (bool, []string, error) {
 	state, err := a.state(c, cursor)
 	if err != nil {
 		return false, nil, err
 	}
-	return state.Step == 5, append([]string(nil), state.Gaps...), nil
+	return state.Step == a.finalStep(), append([]string(nil), state.Gaps...), nil
 }
 func (a *RepositoryCatalogAdapter) Request(c client.RunClaim, cursor string) (fetcher.Request, error) {
 	state, err := a.state(c, cursor)
-	if err != nil || state.Step == 5 {
+	if err != nil || state.Step == a.finalStep() {
 		return fetcher.Request{}, ErrSourceConfig
 	}
 	target := state.Entry
@@ -169,6 +210,9 @@ func (a *RepositoryCatalogAdapter) Request(c client.RunClaim, cursor string) (fe
 		target += "/license?ref=" + state.Commit
 	case 4:
 		target += "/readme?ref=" + state.Commit
+	case 5:
+		_, repo, _ := a.entry(c)
+		target += "/contents/" + workflowDocument(repo) + "?ref=" + state.Commit
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -200,7 +244,7 @@ func catalogFile(raw []byte) (string, []byte, string, error) {
 	return value.Path, data, value.License.SPDX, nil
 }
 func (a *RepositoryCatalogAdapter) Parse(c client.RunClaim, response fetcher.Result) (scheduler.Page, error) {
-	entry, repo, err := agentEntry(c)
+	entry, repo, err := a.entry(c)
 	if err != nil || a == nil {
 		return scheduler.Page{}, ErrSourceConfig
 	}
@@ -212,7 +256,7 @@ func (a *RepositoryCatalogAdapter) Parse(c client.RunClaim, response fetcher.Res
 	}
 	state := pending.state
 	items := []scheduler.Item{}
-	if response.StatusCode != 200 && !(response.StatusCode == 404 && (state.Step == 1 || state.Step == 3 || state.Step == 4)) {
+	if response.StatusCode != 200 && !(response.StatusCode == 404 && (state.Step == 1 || state.Step == 3 || state.Step == 4 || state.Step == 5 && a.category == "workflow")) {
 		return scheduler.Page{}, ErrSourceDocument
 	}
 	switch state.Step {
@@ -343,27 +387,76 @@ func (a *RepositoryCatalogAdapter) Parse(c client.RunClaim, response fetcher.Res
 		if fileEvidence != nil {
 			evidence = append(evidence, fileEvidence)
 		}
-		payload := map[string]any{"schema_version": "1", "parser_version": "github-agent-v1", "config_version": json.Number(strconv.FormatUint(c.Run.ConfigVersion, 10)), "category": "agent", "identity": map[string]any{"namespace": "github_repository", "key": strconv.FormatInt(state.RepositoryID, 10)}, "title": state.Name, "source_url": "https://github.com/" + repo, "version": catalogNullable(state.Tag), "published_at": catalogNullable(state.Published), "updated_at": state.Updated, "summary": catalogNullable(state.Description), "document_text": document, "truncated": truncated, "evidence": evidence}
+		payload := map[string]any{"schema_version": "1", "parser_version": a.version, "config_version": json.Number(strconv.FormatUint(c.Run.ConfigVersion, 10)), "category": a.category, "identity": map[string]any{"namespace": "github_repository", "key": strconv.FormatInt(state.RepositoryID, 10)}, "title": state.Name, "source_url": "https://github.com/" + repo, "version": catalogNullable(state.Tag), "published_at": catalogNullable(state.Published), "updated_at": state.Updated, "summary": catalogNullable(state.Description), "document_text": document, "truncated": truncated, "evidence": evidence}
 		if err := client.ValidateCatalogPayload(payload); err != nil {
 			return scheduler.Page{}, err
 		}
 		raw, _ := json.Marshal(payload)
+		at, _ := parseSourceTime(state.Updated)
+		if a.category == "workflow" {
+			state.Aggregate = raw
+		} else {
+			items = append(items, scheduler.Item{Kind: "catalog", SourceItemID: strconv.FormatInt(state.RepositoryID, 10), EvidenceTime: at, Version: state.Commit, VersionTime: at, EvidenceRef: "https://github.com/" + repo + "/tree/" + state.Commit, Payload: raw})
+		}
+	case 5:
+		if a.category != "workflow" {
+			return scheduler.Page{}, ErrSourceConfig
+		}
+		parsed, e := client.ParseStrict(state.Aggregate)
+		if e != nil {
+			return scheduler.Page{}, e
+		}
+		payload, ok := parsed.(map[string]any)
+		if !ok {
+			return scheduler.Page{}, ErrSourceDocument
+		}
+		if response.StatusCode == 404 {
+			state.Gaps = hnGap(state.Gaps, "missing_workflow_document")
+		} else {
+			path, data, _, err := catalogFile(response.Body)
+			if err != nil || path != workflowDocument(repo) {
+				return scheduler.Page{}, ErrSourceDocument
+			}
+			var rendered bytes.Buffer
+			if goldmark.Convert(data, &rendered) != nil {
+				return scheduler.Page{}, ErrSourceDocument
+			}
+			text := strings.Join(strings.Fields(htmlText(rendered.String())), " ")
+			old, _ := payload["document_text"].(string)
+			merged, truncated := boundText(strings.TrimSpace(old+"\n["+path+"]\n"+text), 120000, 120*1024)
+			payload["document_text"] = merged
+			if truncated {
+				payload["truncated"] = true
+				state.Gaps = hnGap(state.Gaps, "document_truncated")
+			}
+			hash := sha256.Sum256(data)
+			payload["evidence"] = append(payload["evidence"].([]any), catalogEvidence("https://github.com/"+repo+"/blob/"+state.Commit+"/"+path, state.Commit, path, hex.EncodeToString(hash[:]), "metadata"))
+		}
+		if client.ValidateCatalogPayload(payload) != nil {
+			return scheduler.Page{}, ErrSourceDocument
+		}
+		raw, _ := json.Marshal(payload)
+		state.Aggregate = raw
 		at, _ := parseSourceTime(state.Updated)
 		items = append(items, scheduler.Item{Kind: "catalog", SourceItemID: strconv.FormatInt(state.RepositoryID, 10), EvidenceTime: at, Version: state.Commit, VersionTime: at, EvidenceRef: "https://github.com/" + repo + "/tree/" + state.Commit, Payload: raw})
 	default:
 		return scheduler.Page{}, ErrSourceConfig
 	}
 	state.Step++
+	maximum := 16384
+	if a.category == "workflow" {
+		maximum = 768 * 1024
+	}
 	cursor, e := json.Marshal(state)
-	if e != nil || len(cursor) > 16384 {
+	if e != nil || len(cursor) > maximum {
 		return scheduler.Page{}, ErrSourceDocument
 	}
-	if state.Step == 5 {
+	if state.Step == a.finalStep() {
 		a.mu.Lock()
 		delete(a.pending, c.Run.RunID)
 		a.mu.Unlock()
 	}
-	return scheduler.Page{Items: items, NextCursor: string(cursor), End: state.Step == 5, Gaps: append([]string(nil), state.Gaps...)}, nil
+	return scheduler.Page{Items: items, NextCursor: string(cursor), End: state.Step == a.finalStep(), Gaps: append([]string(nil), state.Gaps...)}, nil
 }
 func catalogNullable(value string) any {
 	if value == "" {
@@ -375,7 +468,7 @@ func catalogEvidence(link string, revision, path, hash any, kind string) map[str
 	return map[string]any{"url": link, "revision": revision, "path": path, "file_hash": hash, "evidence_type": kind}
 }
 func (a *RepositoryCatalogAdapter) Freeze(c client.RunClaim, item scheduler.Item, at time.Time) (outbox.Record, error) {
-	_, repo, configErr := agentEntry(c)
+	_, repo, configErr := a.entry(c)
 	if configErr != nil {
 		return outbox.Record{}, configErr
 	}
@@ -391,7 +484,7 @@ func (a *RepositoryCatalogAdapter) Freeze(c client.RunClaim, item scheduler.Item
 		return outbox.Record{}, ErrSourceDocument
 	}
 	identity := value["identity"].(map[string]any)
-	if value["category"] != "agent" || value["parser_version"] != "github-agent-v1" || value["config_version"] != json.Number(strconv.FormatUint(c.Run.ConfigVersion, 10)) || identity["key"] != item.SourceItemID || value["source_url"] != "https://github.com/"+repo {
+	if value["category"] != a.category || value["parser_version"] != a.version || value["config_version"] != json.Number(strconv.FormatUint(c.Run.ConfigVersion, 10)) || identity["key"] != item.SourceItemID || value["source_url"] != "https://github.com/"+repo {
 		return outbox.Record{}, ErrSourceConfig
 	}
 	var random [16]byte
