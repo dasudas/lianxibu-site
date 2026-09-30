@@ -46,6 +46,7 @@ class ObservationIngressServiceTest {
     private JdbcSourceRunStore runs;
     private ObservationIngressService service;
     private boolean writerFails;
+    private boolean uploadAllowed=true;
 
     @BeforeEach void setup() {
         db = new JdbcDataSource();
@@ -127,7 +128,7 @@ class ObservationIngressServiceTest {
             return new ObservationIngressService.ArticleOutcome("article-fixture",
                     "revision-fixture", input.title().startsWith("Disputed") ? "needs_review"
                     : inserted ? "initialized" : "unchanged", 1);
-        }, time);
+        }, time, () -> uploadAllowed);
     }
 
     @Test void hnSubmissionPersistsSeparatelyAndDuplicateDoesNotReclassify() {
@@ -146,7 +147,7 @@ class ObservationIngressServiceTest {
             var baseline=writer.accept(input);
             var selected=new ArticleProjectionService(new JdbcArticleProjection(db),List.of(),time).decide(input,baseline,day);
             return new ObservationIngressService.ArticleOutcome(selected.articleId(),selected.evidenceRevisionId(),selected.projectionDecision(),selected.articleRevision());
-        },time);
+        },time, () -> true);
         byte[] raw=hn("hn-accepted","2026-01-02T00:00:00.000000Z");
         assertEquals("accepted",integrated.accept("node-fixture",raw,action("hn-accepted")).status());
         assertNull(jdbc.queryForObject("SELECT published_at FROM articles",java.sql.Timestamp.class));
@@ -195,6 +196,21 @@ class ObservationIngressServiceTest {
         root.remove("payload_hash");root.put("payload_hash",CanonicalJson.hash(Domain.OBSERVATION,root));
         return CanonicalJson.bytes(root);
     }
+    @Test void capacityRejectsNewObservationsButKeepsFrozenBytesAndPermanentAckReplay() {
+        byte[] raw=article("before-guard","Fictional title","run-fixture","before-member");
+        assertEquals("accepted",service.accept("node-fixture",raw,action("before-guard")).status());
+        uploadAllowed=false;
+        assertEquals("duplicate",service.accept("node-fixture",raw,action("before-guard")).status());
+        ObjectNode pendingWire=(ObjectNode)CanonicalJson.parse(article("guarded-new","Fictional pending","run-fixture","pending-member"));
+        pendingWire.put("source_item_id","fictional-distinct-item");pendingWire.remove("payload_hash");pendingWire.put("payload_hash",CanonicalJson.hash(Domain.OBSERVATION,pendingWire));
+        byte[] pending=CanonicalJson.bytes(pendingWire);
+        byte[] exact=pending.clone();
+        assertThrows(ObservationIngressService.CapacityGuarded.class,()->service.accept("node-fixture",pending,action("guarded-new")));
+        assertArrayEquals(exact,pending);assertEquals(1L,count("request_receipts"));assertEquals(1L,count("source_run_items"));assertEquals(1L,count("fixture_revisions"));
+        uploadAllowed=true;assertEquals("accepted",service.accept("node-fixture",pending,action("guarded-new")).status());
+        assertEquals(2L,count("request_receipts"));assertEquals(2L,count("source_run_items"));
+    }
+
     @Test void articleRevisionEvidenceAndPermanentAckCommitTogether() {
         byte[] raw = article("obs-one", "Title", "run-fixture", "member-one");
         var accepted = service.accept("node-fixture", raw, action("obs-one"));
@@ -325,7 +341,7 @@ class ObservationIngressServiceTest {
             return new ObservationIngressService.ArticleOutcome(projected.articleId(),
                     projected.evidenceRevisionId(), projected.projectionDecision(),
                     projected.articleRevision());
-        }, time);
+        }, time, () -> true);
         var ack = integrated.accept("node-fixture", orderedArticle(
                 "obs-real", "Real writer fixture", "run-fixture", "member-real", null,
                 "2026-01-02T00:00:00.000000Z"),

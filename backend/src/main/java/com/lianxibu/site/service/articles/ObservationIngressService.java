@@ -53,6 +53,9 @@ public final class ObservationIngressService {
     public static final class IdentityConflict extends RuntimeException {
         public IdentityConflict() { super("observation identity conflict"); }
     }
+    public static final class CapacityGuarded extends RuntimeException {
+        public CapacityGuarded() { super("capacity_guard"); }
+    }
     private static final Set<String> CLOSED = Set.of("complete", "partial", "no_usable_input", "empty_success");
     private static final DateTimeFormatter MICROS = new DateTimeFormatterBuilder()
             .appendInstant(6).toFormatter();
@@ -63,18 +66,31 @@ public final class ObservationIngressService {
     private final ArticleWriter articles;
     private final Clock clock;
     private final RunFinalizer finalizer;
+    private final java.util.function.BooleanSupplier uploadAllowed;
 
     public ObservationIngressService(JdbcObservationStore store, RunReader runs,
                                      SharedWriteExecutor writes, NodeAuthorizer nodes,
                                      ArticleWriter articles, Clock clock) {
-        this(store, runs, writes, nodes, articles, ignored -> { }, clock);
+        this(store, runs, writes, nodes, articles, ignored -> { }, clock, () -> false);
+    }
+    public ObservationIngressService(JdbcObservationStore store, RunReader runs,
+                                     SharedWriteExecutor writes, NodeAuthorizer nodes,
+                                     ArticleWriter articles, Clock clock,
+                                     java.util.function.BooleanSupplier uploadAllowed) {
+        this(store,runs,writes,nodes,articles,ignored -> { },clock,uploadAllowed);
     }
 
     public ObservationIngressService(JdbcObservationStore store, RunReader runs,
                                      SharedWriteExecutor writes, NodeAuthorizer nodes,
                                      ArticleWriter articles, RunFinalizer finalizer, Clock clock) {
+        this(store,runs,writes,nodes,articles,finalizer,clock,() -> false);
+    }
+    public ObservationIngressService(JdbcObservationStore store, RunReader runs,
+                                     SharedWriteExecutor writes, NodeAuthorizer nodes,
+                                     ArticleWriter articles, RunFinalizer finalizer, Clock clock,
+                                     java.util.function.BooleanSupplier uploadAllowed) {
         if (store == null || runs == null || writes == null || nodes == null
-                || articles == null || finalizer == null || clock == null) {
+                || articles == null || finalizer == null || clock == null || uploadAllowed == null) {
             throw new IllegalArgumentException("observation dependencies required");
         }
         this.store = store;
@@ -84,6 +100,7 @@ public final class ObservationIngressService {
         this.articles = articles;
         this.clock = clock;
         this.finalizer = finalizer;
+        this.uploadAllowed = uploadAllowed;
     }
 
     public ObservationIngressService(JdbcObservationStore store, RunReader runs,
@@ -135,6 +152,7 @@ public final class ObservationIngressService {
             Receipt existing = store.receipt(currentNode.nodeId(), observation.sourceId(),
                     observation.observationId());
             if (existing != null) return replay(existing, observation, currentNode.nodeId());
+            if (!uploadAllowed.getAsBoolean()) throw new CapacityGuarded();
             if (prepared == null) {
                 return persist(context, currentNode.nodeId(), observation, null,
                         "rejected", "invalid_payload", null, null, null, null,
