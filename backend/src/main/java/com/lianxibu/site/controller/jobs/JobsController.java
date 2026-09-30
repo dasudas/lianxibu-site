@@ -139,6 +139,19 @@ public final class JobsController {
                 new JobsDtos.Meta(requestId())));
     }
 
+    @ExceptionHandler(JobsService.OpsRejected.class)
+    public ResponseEntity<JobsDtos.ErrorEnvelope> operationalFailure(JobsService.OpsRejected error) {
+        int status = switch (error.refusal()) {
+            case NOT_FOUND -> 404;
+            case CONFIGURATION_UNKNOWN -> 503;
+            default -> 409;
+        };
+        String code = error.refusal().name().toLowerCase(java.util.Locale.ROOT);
+        var response = ResponseEntity.status(status).header(HttpHeaders.CACHE_CONTROL, "no-store");
+        if (status == 503) response.header(HttpHeaders.RETRY_AFTER, "1");
+        return response.body(new JobsDtos.ErrorEnvelope(new JobsDtos.ErrorDetail(code, code), new JobsDtos.Meta(requestId())));
+    }
+
     private Actor owner(String cookie) {
         if (cookie == null || cookie.isBlank()) throw new BoundaryFailure(401, "unauthenticated", "session required");
         IdentityService auth = identity.getIfAvailable();

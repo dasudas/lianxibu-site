@@ -8,6 +8,12 @@ import tools.jackson.databind.JsonNode;
 
 /** Owner-only job and alert contract port. Business admission and persistence follow later. */
 public interface JobsService {
+    enum OpsRefusal { REVISION_CONFLICT, RECOVERY_CONDITION_UNMET, IDENTITY_CONFLICT, NOT_FOUND, CONFIGURATION_UNKNOWN }
+    final class OpsRejected extends RuntimeException {
+        private final OpsRefusal refusal;
+        public OpsRejected(OpsRefusal refusal) { super(refusal.name()); this.refusal = refusal; }
+        public OpsRefusal refusal() { return refusal; }
+    }
     record MissingInput(String kind, String id, LocalDate businessDate, String reason) { }
     record Coverage(String state, List<MissingInput> missingInputs, List<LocalDate> missingDates,
                     List<LocalDate> noUpdateDates) { }
