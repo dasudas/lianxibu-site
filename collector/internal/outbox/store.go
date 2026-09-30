@@ -303,6 +303,21 @@ func (s *Store) Run(ctx context.Context, id string) (RunState, uint64, error) {
 	return state, revision, err
 }
 
+func (s *Store) ObservationCount(ctx context.Context, runID string) (int, error) {
+	var count int
+	err := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM outbox WHERE record_kind='observation' AND run_id=?", runID).Scan(&count)
+	return count, err
+}
+
+func (s *Store) HasMember(ctx context.Context, runID, memberID string) (bool, error) {
+	var exists int
+	err := s.db.QueryRowContext(ctx, "SELECT 1 FROM outbox WHERE record_kind='observation' AND run_id=? AND member_id=? LIMIT 1", runID, memberID).Scan(&exists)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
 func (s *Store) Record(ctx context.Context, id string) (Record, string, error) {
 	var r Record
 	var state string
