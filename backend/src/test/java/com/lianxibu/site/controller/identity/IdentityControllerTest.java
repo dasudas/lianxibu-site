@@ -45,6 +45,10 @@ class IdentityControllerTest {
         service = mock(IdentityService.class);
         ObjectProvider<IdentityService> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(service);
+        when(service.authorizeWrite("fixture-session", "fixture-csrf", "https://site.example.invalid"))
+                .thenReturn(OWNER);
+        when(service.authorizeWrite("fixture-session", "fixture", "https://site.example.invalid"))
+                .thenReturn(OWNER);
         mvc = MockMvcBuilders.standaloneSetup(new IdentityController(provider)).build();
     }
 
@@ -204,4 +208,39 @@ class IdentityControllerTest {
                 .andExpect(jsonPath("$.error.code").value("temporarily_unavailable"));
         verifyNoInteractions(service);
     }
+    @Test
+    void nodeWritesRequireSessionBoundCsrfAndTrustedOrigin() throws Exception {
+        var cookie = new jakarta.servlet.http.Cookie("lianxibu_session", "fixture-session");
+        mvc.perform(post("/admin/collector-nodes").contentType(MediaType.APPLICATION_JSON)
+                        .cookie(cookie).header("X-CSRF-Token", "wrong-csrf")
+                        .header("Origin", "https://site.example.invalid")
+                        .header("Idempotency-Key", "fixture-key")
+                        .content("{\"name\":\"Fixture\",\"source_ids\":[],\"permissions\":[]}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/admin/collector-nodes").contentType(MediaType.APPLICATION_JSON)
+                        .cookie(cookie).header("X-CSRF-Token", "fixture-csrf")
+                        .header("Origin", "https://wrong.example.invalid")
+                        .header("Idempotency-Key", "fixture-key")
+                        .content("{\"name\":\"Fixture\",\"source_ids\":[],\"permissions\":[]}"))
+                .andExpect(status().isForbidden());
+        verify(service, never()).createNode(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void expiredNodeReplayReturnsSafeReferences() throws Exception {
+        when(service.createNode(any(), any(), any(), any(), any()))
+                .thenThrow(new IdentityService.Rejected(IdentityService.Refusal.IDENTITY_CONFLICT,
+                        null, "idempotency_result_expired", "fixture-operation", "fixture-node"));
+        mvc.perform(post("/admin/collector-nodes").contentType(MediaType.APPLICATION_JSON)
+                        .cookie(new jakarta.servlet.http.Cookie("lianxibu_session", "fixture-session"))
+                        .header("X-CSRF-Token", "fixture-csrf")
+                        .header("Origin", "https://site.example.invalid")
+                        .header("Idempotency-Key", "fixture-key")
+                        .content("{\"name\":\"Fixture\",\"source_ids\":[],\"permissions\":[]}"))
+                .andExpect(status().isConflict())
+                .andExpect(header().string("X-Operation-Ref", "fixture-operation"))
+                .andExpect(header().string("X-Result-Resource-Ref", "fixture-node"))
+                .andExpect(jsonPath("$.error.code").value("idempotency_result_expired"));
+    }
+
 }

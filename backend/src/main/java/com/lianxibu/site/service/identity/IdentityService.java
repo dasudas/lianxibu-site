@@ -12,13 +12,29 @@ public interface IdentityService {
     final class Rejected extends RuntimeException {
         private final Refusal refusal;
         private final String retryAfter;
+        private final String code;
+        private final String operationRef;
+        private final String resultResourceRef;
         public Rejected(Refusal refusal, String retryAfter) {
+            this(refusal, retryAfter, null, null, null);
+        }
+        public Rejected(Refusal refusal, String retryAfter, String code) {
+            this(refusal, retryAfter, code, null, null);
+        }
+        public Rejected(Refusal refusal, String retryAfter, String code,
+                        String operationRef, String resultResourceRef) {
             super(refusal.name());
             this.refusal = refusal;
             this.retryAfter = retryAfter;
+            this.code = code;
+            this.operationRef = operationRef;
+            this.resultResourceRef = resultResourceRef;
         }
         public Refusal refusal() { return refusal; }
         public String retryAfter() { return retryAfter; }
+        public String code() { return code; }
+        public String operationRef() { return operationRef; }
+        public String resultResourceRef() { return resultResourceRef; }
     }
 
     record Actor(String userId, String role) { }

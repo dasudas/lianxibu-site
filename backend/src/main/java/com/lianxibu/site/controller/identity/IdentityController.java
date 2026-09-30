@@ -104,8 +104,7 @@ public final class IdentityController {
             @RequestHeader(name = "X-CSRF-Token", required = false) String csrf,
             @RequestHeader(name = "Origin", required = false) String origin,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
-        Actor actor = owner(sessionCookie);
-        requireWriteHeaders(csrf, origin);
+        Actor actor = ownerWrite(sessionCookie, csrf, origin);
         idempotencyKey(idempotencyKey);
         JsonNode request = request(body, Set.of("name", "source_ids", "permissions"));
         var command = new NodeCreateCommand(string(request, "name", 1, 100, false),
@@ -125,8 +124,7 @@ public final class IdentityController {
             @RequestHeader(name = "X-CSRF-Token", required = false) String csrf,
             @RequestHeader(name = "Origin", required = false) String origin,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
-        Actor actor = owner(sessionCookie);
-        requireWriteHeaders(csrf, origin);
+        Actor actor = ownerWrite(sessionCookie, csrf, origin);
         idempotencyKey(idempotencyKey);
         validIdentity(id, 64);
         JsonNode request = request(body, Set.of("expected_revision", "action", "reason"),
@@ -169,8 +167,17 @@ public final class IdentityController {
             case RATE_LIMITED -> 429;
             case TEMPORARILY_UNAVAILABLE -> 503;
         };
-        String code = rejection.refusal().name().toLowerCase(java.util.Locale.ROOT);
+        String code = rejection.code() != null ? rejection.code()
+                : rejection.refusal().name().toLowerCase(java.util.Locale.ROOT);
         var response = ResponseEntity.status(status).header(HttpHeaders.CACHE_CONTROL, "no-store");
+        if (status == 409 && "idempotency_result_expired".equals(code)) {
+            if (rejection.operationRef() != null) {
+                response.header("X-Operation-Ref", rejection.operationRef());
+            }
+            if (rejection.resultResourceRef() != null) {
+                response.header("X-Result-Resource-Ref", rejection.resultResourceRef());
+            }
+        }
         if (status == 429 || status == 503) {
             String retryAfter = rejection.retryAfter();
             response.header(HttpHeaders.RETRY_AFTER,
@@ -198,6 +205,15 @@ public final class IdentityController {
     private Actor owner(String sessionCookie) {
         Actor actor = authenticate(sessionCookie);
         if (!"owner".equals(actor.role())) throw new BoundaryFailure(403, "forbidden", "owner role required");
+        return actor;
+    }
+
+    private Actor ownerWrite(String sessionCookie, String csrf, String origin) {
+        requireWriteHeaders(csrf, origin);
+        Actor actor = service().authorizeWrite(sessionCookie, csrf, origin);
+        if (actor == null || !"owner".equals(actor.role())) {
+            throw new BoundaryFailure(403, "forbidden", "owner role required");
+        }
         return actor;
     }
 
