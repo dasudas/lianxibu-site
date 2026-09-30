@@ -35,6 +35,7 @@ type Article struct {
 	SourceURL          string
 	PublishedAt        *string
 	UpdatedAt          *string
+	SubmittedAt        *string `json:",omitempty"`
 	TimeBasis          string
 	SourceSummary      *string
 	BodyText           *string
@@ -469,6 +470,16 @@ func (a *FeedAdapter) Freeze(c client.RunClaim, item scheduler.Item, at time.Tim
 		order = map[string]any{"basis": "revision_time", "domain": c.Run.SourceID, "value": *article.UpdatedAt, "evidence_ref": article.SourceURL}
 	}
 	payload := map[string]any{"title": article.Title, "source_url": article.SourceURL, "published_at": article.PublishedAt, "updated_at": article.UpdatedAt, "time_basis": article.TimeBasis, "source_summary": article.SourceSummary, "body_text": article.BodyText, "content_status": article.ContentStatus, "body_truncated": article.BodyTruncated, "parser_version": a.version, "config_version": c.Run.ConfigVersion, "source_order": order}
+	protocol := "0.11"
+	if a.sourceID == "global-hn" {
+		if article.SubmittedAt == nil || article.PublishedAt != nil || article.UpdatedAt != nil || article.TimeBasis != "submitted" {
+			return outbox.Record{}, ErrSourceDocument
+		}
+		protocol = "0.12"
+		payload["submitted_at"] = *article.SubmittedAt
+	} else if article.SubmittedAt != nil {
+		return outbox.Record{}, ErrSourceDocument
+	}
 	// Canonical values use nil/string, never Go pointer types.
 	for key, value := range map[string]*string{"published_at": article.PublishedAt, "updated_at": article.UpdatedAt, "source_summary": article.SourceSummary, "body_text": article.BodyText} {
 		if value == nil {
@@ -477,7 +488,7 @@ func (a *FeedAdapter) Freeze(c client.RunClaim, item scheduler.Item, at time.Tim
 			payload[key] = *value
 		}
 	}
-	row := map[string]any{"protocol_revision": "0.11", "observation_id": id, "member_id": member, "run_id": c.Run.RunID, "business_date": c.Run.BusinessDate, "source_id": c.Run.SourceID, "source_revision": c.Run.ConfigVersion, "source_item_id": item.SourceItemID, "kind": "article", "retrieved_at": wireTime(at), "replaces_observation_id": nil, "payload": payload}
+	row := map[string]any{"protocol_revision": protocol, "observation_id": id, "member_id": member, "run_id": c.Run.RunID, "business_date": c.Run.BusinessDate, "source_id": c.Run.SourceID, "source_revision": c.Run.ConfigVersion, "source_item_id": item.SourceItemID, "kind": "article", "retrieved_at": wireTime(at), "replaces_observation_id": nil, "payload": payload}
 	hash, err := client.Hash(client.ObservationHash, row)
 	if err != nil {
 		return outbox.Record{}, err
@@ -494,5 +505,5 @@ func (a *FeedAdapter) Freeze(c client.RunClaim, item scheduler.Item, at time.Tim
 	if err != nil {
 		return outbox.Record{}, err
 	}
-	return outbox.Record{ID: id, Kind: "observation", RecordKey: key, SourceID: c.Run.SourceID, RunID: c.Run.RunID, MemberID: member, ObservationID: id, Payload: wire, PayloadHash: hash, ProtocolRevision: "0.11", HashVersion: 1}, nil
+	return outbox.Record{ID: id, Kind: "observation", RecordKey: key, SourceID: c.Run.SourceID, RunID: c.Run.RunID, MemberID: member, ObservationID: id, Payload: wire, PayloadHash: hash, ProtocolRevision: protocol, HashVersion: 1}, nil
 }
