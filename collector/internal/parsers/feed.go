@@ -46,10 +46,16 @@ type Article struct {
 	Authors            []string
 	Tags               []string
 }
-type FeedAdapter struct{ sourceID, version string }
+type FeedAdapter struct {
+	sourceID, version string
+	format            fetcher.Format
+}
 
 func Ruanyifeng() *FeedAdapter {
-	return &FeedAdapter{sourceID: "cn-ruanyifeng", version: "cn-ruanyifeng-v1"}
+	return &FeedAdapter{sourceID: "cn-ruanyifeng", version: "cn-ruanyifeng-v1", format: fetcher.Atom}
+}
+func Solidot() *FeedAdapter {
+	return &FeedAdapter{sourceID: "cn-solidot", version: "cn-solidot-v1", format: fetcher.RSS}
 }
 
 var _ scheduler.Adapter = (*FeedAdapter)(nil)
@@ -69,7 +75,7 @@ func (a *FeedAdapter) Request(c client.RunClaim, cursor string) (fetcher.Request
 	if err != nil {
 		return fetcher.Request{}, err
 	}
-	return fetcher.Request{SourceID: c.Run.SourceID, URL: checked, AllowedHosts: append([]string(nil), c.Config.Config.AllowedHosts...), Format: fetcher.Atom, MinInterval: time.Second}, nil
+	return fetcher.Request{SourceID: c.Run.SourceID, URL: checked, AllowedHosts: append([]string(nil), c.Config.Config.AllowedHosts...), Format: a.format, MinInterval: time.Second}, nil
 }
 
 type atomText struct {
@@ -152,6 +158,9 @@ func (a *FeedAdapter) Parse(c client.RunClaim, response fetcher.Result) (schedul
 	}
 	if response.StatusCode != 200 || checkedXML(response.Body) != nil {
 		return scheduler.Page{}, ErrSourceDocument
+	}
+	if a.format == fetcher.RSS {
+		return a.parseRSS(c, response)
 	}
 	var feed atomFeed
 	if xml.Unmarshal(response.Body, &feed) != nil || len(feed.Entries) > 1000 {
