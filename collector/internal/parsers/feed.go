@@ -50,6 +50,7 @@ type FeedAdapter struct {
 	sourceID, version string
 	format            fetcher.Format
 	onlyDevelopment   bool
+	summaryAsBody     bool
 }
 
 func Ruanyifeng() *FeedAdapter {
@@ -60,6 +61,9 @@ func Solidot() *FeedAdapter {
 }
 func Cnblogs() *FeedAdapter {
 	return &FeedAdapter{sourceID: "cn-cnblogs", version: "cn-cnblogs-v1", format: fetcher.Atom}
+}
+func Simon() *FeedAdapter {
+	return &FeedAdapter{sourceID: "global-simon", version: "global-simon-v1", format: fetcher.Atom, summaryAsBody: true}
 }
 
 var _ scheduler.Adapter = (*FeedAdapter)(nil)
@@ -229,6 +233,9 @@ func (a *FeedAdapter) Parse(c client.RunClaim, response fetcher.Result) (schedul
 	return page, nil
 }
 func (a *FeedAdapter) atomItem(c client.RunClaim, e atomEntry, base string) (scheduler.Item, []string, error) {
+	if a.summaryAsBody && e.Content.Src == "" && e.Content.Text == "" && e.Content.Inner == "" && e.Summary.Type == "html" && e.Summary.Src == "" {
+		e.Content = e.Summary
+	}
 	fail := func(code string) (scheduler.Item, []string, error) {
 		return scheduler.Item{}, []string{code}, ErrSourceDocument
 	}
