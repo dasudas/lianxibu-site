@@ -57,7 +57,11 @@ public final class RecordReadService implements RecordsService {
     private static Record project(Row row) {
         String kind = row.objectKind();
         String latestAnswer = "question".equals(kind) ? row.responseText() : null;
-        String latestSubmission = "project".equals(kind) ? row.artifactUrl() : null;
+        // New writes keep the general artifact and latest project submission separately;
+        // legacy project records stored the submission in artifact_url.
+        String latestSubmission = "project".equals(kind)
+                ? row.responseText() != null && row.responseText().startsWith("https://")
+                    ? row.responseText() : row.artifactUrl() : null;
         boolean article = "article".equals(kind);
         return new Record("article".equals(kind) ? null : row.packageId(), kind, row.objectId(),
                 row.revision(), row.status().isEmpty() ? "not_started" : row.status(),
