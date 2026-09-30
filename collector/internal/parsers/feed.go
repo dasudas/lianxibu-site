@@ -57,6 +57,9 @@ func Ruanyifeng() *FeedAdapter {
 func Solidot() *FeedAdapter {
 	return &FeedAdapter{sourceID: "cn-solidot", version: "cn-solidot-v1", format: fetcher.RSS}
 }
+func Cnblogs() *FeedAdapter {
+	return &FeedAdapter{sourceID: "cn-cnblogs", version: "cn-cnblogs-v1", format: fetcher.Atom}
+}
 
 var _ scheduler.Adapter = (*FeedAdapter)(nil)
 
