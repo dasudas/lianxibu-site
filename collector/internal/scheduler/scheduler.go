@@ -44,6 +44,11 @@ type Adapter interface {
 	Parse(client.RunClaim, fetcher.Result) (Page, error)
 	Freeze(client.RunClaim, Item, time.Time) (outbox.Record, error)
 }
+
+// CompletedCursor proves a persisted source snapshot is exhausted without refetching it.
+type CompletedCursor interface {
+	Completed(client.RunClaim, string) (bool, []string, error)
+}
 type Outcome struct {
 	Cursor       string
 	Pages        int
@@ -110,6 +115,17 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 	for out.Pages < s.maxPages && s.now().Before(deadline) {
 		if !s.now().Before(lease) {
 			return out, outbox.ErrStaleRun
+		}
+		if resumed, ok := s.adapter.(CompletedCursor); ok {
+			finished, gaps, err := resumed.Completed(claim, out.Cursor)
+			if err != nil {
+				return out, err
+			}
+			if finished {
+				out.Finished = true
+				out.CoverageGaps = append(out.CoverageGaps, gaps...)
+				return out, nil
+			}
 		}
 		request, err := s.adapter.Request(claim, out.Cursor)
 		if err != nil {
