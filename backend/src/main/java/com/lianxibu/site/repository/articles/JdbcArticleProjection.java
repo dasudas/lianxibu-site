@@ -23,7 +23,8 @@ public final class JdbcArticleProjection {
                            String title, String summary, String body, Instant sourceTime,
                            String timeBasis, String contentStatus, boolean bodyTruncated,
                            String parserVersion, long configVersion, String orderJson,
-                           String qualificationEventsJson, Instant now) { }
+                           String qualificationEventsJson, Instant now,
+                           Instant publishedAt, Instant updatedAt, Instant submittedAt) { }
     private final JdbcTemplate jdbc;
 
     public JdbcArticleProjection(DataSource source) {
@@ -51,13 +52,14 @@ public final class JdbcArticleProjection {
         jdbc.update("INSERT INTO article_revisions(id,created_at,revision,article_id,revision_no,"
                         + "content_hash,title,source_summary,body_text,source_time,time_basis,"
                         + "content_status,body_truncated,parser_version,config_version,"
-                        + "qualification_events_json,source_order_json,legacy_flag)"
-                        + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        + "qualification_events_json,source_order_json,legacy_flag,published_at,updated_at,submitted_at)"
+                        + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 value.id(), Timestamp.from(value.now()), 0, value.articleId(), value.revisionNo(),
                 value.contentHash(), value.title(), value.summary(), value.body(),
                 time(value.sourceTime()), value.timeBasis(), value.contentStatus(),
                 value.bodyTruncated() ? 1 : 0, value.parserVersion(), value.configVersion(),
-                value.qualificationEventsJson(), value.orderJson(), 0);
+                value.qualificationEventsJson(), value.orderJson(), 0,
+                time(value.publishedAt()), time(value.updatedAt()), time(value.submittedAt()));
     }
 
     public boolean advanceWatermark(Current old, String orderJson) {
@@ -67,13 +69,13 @@ public final class JdbcArticleProjection {
     }
 
     public boolean promote(Current old, String revisionId, String orderJson, String title,
-                           String summary, String body, Instant sourceTime, byte[] hash,
+                           String summary, String body, Instant publishedAt, byte[] hash,
                            String factsJson, Instant now) {
         return jdbc.update("UPDATE articles SET title=?,summary=?,body_text=?,published_at=?,"
                         + "facts_json=?,content_hash=?,latest_revision_id=?,projection_order_json=?,"
                         + "revision=revision+1,updated_at=? WHERE id=? AND revision=?"
                         + " AND latest_revision_id=?",
-                title, summary, body, time(sourceTime), factsJson, hash, revisionId, orderJson,
+                title, summary, body, time(publishedAt), factsJson, hash, revisionId, orderJson,
                 Timestamp.from(now), old.id(), old.revision(), old.selectedRevisionId()) == 1;
     }
 
@@ -83,7 +85,7 @@ public final class JdbcArticleProjection {
                         + "facts_json=?,content_hash=?,latest_revision_id=?,projection_order_json=?,"
                         + "revision=revision+1,updated_at=? WHERE id=? AND revision=?"
                         + " AND latest_revision_id=?",
-                target.title(), target.summary(), target.body(), time(target.sourceTime()),
+                target.title(), target.summary(), target.body(), time(target.publishedAt()),
                 factsJson, target.contentHash(), target.id(), target.orderJson(), Timestamp.from(now),
                 articleId, expectedRevision, selectedRevisionId) == 1;
     }
@@ -92,13 +94,19 @@ public final class JdbcArticleProjection {
         List<Revision> rows = jdbc.query("SELECT id,article_id,revision_no,content_hash,title,"
                         + "source_summary,body_text,source_time,time_basis,content_status,"
                         + "body_truncated,parser_version,config_version,source_order_json,"
-                        + "qualification_events_json,created_at FROM article_revisions WHERE id=?",
+                        + "qualification_events_json,created_at,published_at,updated_at,submitted_at"
+                        + " FROM article_revisions WHERE id=?",
                 (rs, ignored) -> new Revision(rs.getString(1), rs.getString(2), rs.getLong(3),
                         rs.getBytes(4), rs.getString(5), rs.getString(6), rs.getString(7),
                         rs.getTimestamp(8) == null ? null : rs.getTimestamp(8).toInstant(),
                         rs.getString(9), rs.getString(10), rs.getInt(11) == 1,
                         rs.getString(12), rs.getLong(13), rs.getString(14), rs.getString(15),
-                        rs.getTimestamp(16).toInstant()), revisionId);
+                        rs.getTimestamp(16).toInstant(),
+                        rs.getTimestamp(17) != null ? rs.getTimestamp(17).toInstant()
+                                : "published".equals(rs.getString(9)) && rs.getTimestamp(8) != null
+                                    ? rs.getTimestamp(8).toInstant() : null,
+                        rs.getTimestamp(18) == null ? null : rs.getTimestamp(18).toInstant(),
+                        rs.getTimestamp(19) == null ? null : rs.getTimestamp(19).toInstant()), revisionId);
         return rows.isEmpty() ? null : rows.getFirst();
     }
 

@@ -75,6 +75,70 @@ class ArticleProjectionServiceTest {
                 new DataSourceTransactionManager(db), () -> 25, ignored -> { });
     }
 
+    @Test void submittedEvidenceAndManualReviewNeverPublishSubmissionTime() {
+        var submitted=Instant.parse("2026-01-03T03:00:00Z");
+        var hn=new Input("global-hn","fictional-item","Title","https://example.invalid/hn",
+                null,"Summary","HN evidence","submitted","full",false,"global-hn-v1",1,
+                "{\"basis\":\"unknown\",\"domain\":null,\"value\":null,\"evidence_ref\":null}",null,submitted);
+        var candidate=writes.execute(new ActionContext("hn-candidate","hn-candidate",null),
+                ignored->null,ignored->service.decide(hn,new Result("article-one","revision-one",false,false),DAY));
+        assertEquals("needs_review",candidate.projectionDecision());
+        var evidence=store.byId(candidate.evidenceRevisionId());
+        assertEquals(submitted,evidence.sourceTime());
+        assertNull(evidence.publishedAt());
+        assertEquals(submitted,evidence.submittedAt());
+        var manual=writes.execute(new ActionContext("hn-manual","hn-manual",null),
+                ignored->null,ignored->service.confirmPromote("fixture-owner","hn-manual",
+                        "article-one",candidate.evidenceRevisionId(),1,"reviewed submission"));
+        assertNull(jdbc.queryForObject("SELECT published_at FROM articles WHERE id='article-one'",java.sql.Timestamp.class));
+        assertEquals(submitted,store.byId(manual.currentRevisionId()).submittedAt());
+        assertEquals(submitted,store.byId(manual.currentRevisionId()).sourceTime());
+    }
+
+    @Test void automaticPromotionPreservesActualPublicationAndSeparateUpdate() {
+        var promoted=decide("separate-times","New material","2026-01-03T03:00:00.000000Z");
+        assertEquals("promoted",promoted.projectionDecision());
+        var published=Instant.parse("2026-01-02T00:00:00Z");
+        var updated=Instant.parse("2026-01-03T03:00:00Z");
+        var revision=store.byId(promoted.currentRevisionId());
+        assertEquals(published,revision.publishedAt());
+        assertEquals(updated,revision.updatedAt());
+        assertEquals(updated,revision.sourceTime());
+        assertEquals(published,jdbc.queryForObject("SELECT published_at FROM articles WHERE id='article-one'",java.sql.Timestamp.class).toInstant());
+    }
+
+    @Test void historicalUpdatedEvidenceCannotInventPublicationOnManualReview() {
+        var manual=writes.execute(new ActionContext("historical-time","historical-time",null),
+                ignored->null,ignored->service.confirmPromote("fixture-owner","historical-time",
+                        "article-one","revision-one",1,"reviewed historical evidence"));
+        assertNull(jdbc.queryForObject("SELECT published_at FROM articles WHERE id='article-one'",java.sql.Timestamp.class));
+        assertNull(store.byId(manual.currentRevisionId()).publishedAt());
+        assertEquals(Instant.parse("2026-01-03T00:00:00Z"),store.byId(manual.currentRevisionId()).sourceTime());
+    }
+    @Test void updateOnlyEvidenceQualifiesWithoutCreatingPublication() {
+        jdbc.update("UPDATE article_revisions SET source_time=NULL,time_basis='unknown' WHERE id='revision-one'");
+        jdbc.update("UPDATE articles SET published_at=NULL WHERE id='article-one'");
+        var updated=Instant.parse("2026-01-03T03:00:00Z");
+        var incoming=new Input("fixture:feed","item-one","Title","https://example.invalid/article",
+                null,"Summary","Body B","updated","full",false,"fixture-parser",1,
+                order("2026-01-03T03:00:00.000000Z"),updated,null);
+        var result=writes.execute(new ActionContext("update-only","update-only",null),
+                ignored->null,ignored->service.decide(incoming,new Result("article-one","revision-one",false,false),DAY));
+        assertEquals("promoted",result.projectionDecision());
+        assertEquals("time_qualified",result.reason());
+        assertEquals(updated,store.byId(result.currentRevisionId()).sourceTime());
+        assertNull(jdbc.queryForObject("SELECT published_at FROM articles WHERE id='article-one'",java.sql.Timestamp.class));
+    }
+
+    @Test void historicalPublishedBasisConservativelyRetainsPublication() {
+        jdbc.update("UPDATE article_revisions SET time_basis='published' WHERE id='revision-one'");
+        var manual=writes.execute(new ActionContext("historical-published","historical-published",null),
+                ignored->null,ignored->service.confirmPromote("fixture-owner","historical-published",
+                        "article-one","revision-one",1,"reviewed published evidence"));
+        var published=Instant.parse("2026-01-03T00:00:00Z");
+        assertEquals(published,store.byId(manual.currentRevisionId()).publishedAt());
+        assertEquals(published,jdbc.queryForObject("SELECT published_at FROM articles WHERE id='article-one'",java.sql.Timestamp.class).toInstant());
+    }
     @Test void newerDifferentBodyPromotesAndOlderArrivalStaysHistorical() {
         var newer = decide("newer", "Body C", "2026-01-03T02:00:00.000000Z");
         assertEquals("promoted", newer.projectionDecision());

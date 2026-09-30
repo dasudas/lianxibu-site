@@ -87,7 +87,7 @@ public final class ArticleProjectionService {
         Order waterline = verified(input.sourceId(), selected.parserVersion(), current.orderJson());
         Integer comparison = compare(incoming, waterline);
         if (sameBody) {
-            boolean qualifiedTime = selected.sourceTime() == null && input.publishedAt() != null
+            boolean qualifiedTime = selected.sourceTime() == null && input.sourceTime() != null
                     && !"unknown".equals(input.timeBasis())
                     && (comparison == null && waterline == null && incoming != null
                         || comparison != null && comparison > 0);
@@ -150,7 +150,8 @@ public final class ArticleProjectionService {
                 store.nextRevisionNo(articleId), evidence.contentHash(), evidence.title(),
                 evidence.summary(), evidence.body(), evidence.sourceTime(), evidence.timeBasis(),
                 evidence.contentStatus(), evidence.bodyTruncated(), evidence.parserVersion(),
-                evidence.configVersion(), evidence.orderJson(), "[]", now);
+                evidence.configVersion(), evidence.orderJson(), "[]", now,
+                evidence.publishedAt(), evidence.updatedAt(), evidence.submittedAt());
         store.append(reviewed);
         if (!store.manualPromote(articleId, expectedArticleRevision,
                 current.selectedRevisionId(), reviewed, facts(reviewed), now)) {
@@ -170,9 +171,10 @@ public final class ArticleProjectionService {
                 ? events("time_qualified".equals(reason) ? "time_qualified" : "material_update",
                     reason, businessDate, now) : "[]";
         Revision revision = new Revision(id, current.id(), store.nextRevisionNo(current.id()),
-                hash, input.title(), input.summary(), input.body(), input.publishedAt(),
+                hash, input.title(), input.summary(), input.body(), input.sourceTime(),
                 input.timeBasis(), input.contentStatus(), input.bodyTruncated(),
-                input.parserVersion(), input.configVersion(), input.sourceOrderJson(), events, now);
+                input.parserVersion(), input.configVersion(), input.sourceOrderJson(), events, now,
+                input.publishedAt(), input.updatedAt(), input.submittedAt());
         store.append(revision);
         if ("promoted".equals(decision)) {
             if (!store.promote(current, id, input.sourceOrderJson(), input.title(),
@@ -235,6 +237,9 @@ public final class ArticleProjectionService {
         value.put("time_basis", revision.timeBasis());
         value.put("content_status", revision.contentStatus());
         value.put("body_truncated", revision.bodyTruncated());
+        value.put("published_at", revision.publishedAt() == null ? null : MICROS.format(revision.publishedAt()));
+        value.put("updated_at", revision.updatedAt() == null ? null : MICROS.format(revision.updatedAt()));
+        value.put("submitted_at", revision.submittedAt() == null ? null : MICROS.format(revision.submittedAt()));
         if (revision.orderJson() == null) value.putNull("source_order");
         else value.set("source_order", CanonicalJson.parse(revision.orderJson()));
         return new String(CanonicalJson.bytes(value), StandardCharsets.UTF_8);
