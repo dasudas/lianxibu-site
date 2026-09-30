@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lianxibu collector API",
-    "version": "0.14",
+    "version": "0.15",
     "description": "Design contract. Observation revisions 0.11/0.12; config/control 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -3994,7 +3994,7 @@
             "const": "0.12"
           },
           "contract_version": {
-            "const": "0.14"
+            "const": "0.15"
           },
           "supported_features": {
             "type": "array",
@@ -6624,10 +6624,17 @@
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
           },
           "observed_value": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 30,
-            "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 30,
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "threshold": {
             "type": "string",
@@ -6707,6 +6714,22 @@
           },
           "notification_configured": {
             "type": "boolean"
+          },
+          "rule_parameters": {
+            "type": "object",
+            "maxProperties": 32,
+            "propertyNames": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 30,
+              "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+            }
           }
         },
         "required": [
@@ -6857,6 +6880,11 @@
             },
             "minItems": 0,
             "maxItems": 20
+          },
+          "operational_change_reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
           }
         },
         "required": [

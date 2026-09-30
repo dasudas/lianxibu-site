@@ -1,0 +1,474 @@
+{
+  "contract_version": "0.15",
+  "cases": [
+    {
+      "name": "complete-capacity-config",
+      "schema": "OperationalRule",
+      "valid": true,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "warning_hold_seconds": "600",
+          "critical_hold_seconds": "300",
+          "protect_free_percent": "5",
+          "recovery_hold_seconds": "1800",
+          "owner_confirmation_required": "1",
+          "sample_interval_seconds": "60",
+          "warning_reminder_seconds": "14400",
+          "critical_reminder_seconds": "1800",
+          "maximum_silence_seconds": "7200",
+          "resolved_retention_seconds": "604800"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "legacy-rule-readable-but-not-ready",
+      "schema": "OperationalRule",
+      "valid": true,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "decimal",
+      "schema": "OperationalRule",
+      "valid": true,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "warning_hold_seconds": "600",
+          "critical_hold_seconds": "300",
+          "protect_free_percent": "0.5",
+          "recovery_hold_seconds": "1800",
+          "owner_confirmation_required": "1",
+          "sample_interval_seconds": "60",
+          "warning_reminder_seconds": "14400",
+          "critical_reminder_seconds": "1800",
+          "maximum_silence_seconds": "7200",
+          "resolved_retention_seconds": "604800"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "zero",
+      "schema": "OperationalRule",
+      "valid": true,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "warning_hold_seconds": "600",
+          "critical_hold_seconds": "300",
+          "protect_free_percent": "0",
+          "recovery_hold_seconds": "1800",
+          "owner_confirmation_required": "1",
+          "sample_interval_seconds": "60",
+          "warning_reminder_seconds": "14400",
+          "critical_reminder_seconds": "1800",
+          "maximum_silence_seconds": "7200",
+          "resolved_retention_seconds": "604800"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "invalid-parameter-number",
+      "schema": "OperationalRule",
+      "valid": false,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "warning_hold_seconds": "600",
+          "critical_hold_seconds": "300",
+          "protect_free_percent": 5,
+          "recovery_hold_seconds": "1800",
+          "owner_confirmation_required": "1",
+          "sample_interval_seconds": "60",
+          "warning_reminder_seconds": "14400",
+          "critical_reminder_seconds": "1800",
+          "maximum_silence_seconds": "7200",
+          "resolved_retention_seconds": "604800"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "invalid-parameter-negative",
+      "schema": "OperationalRule",
+      "valid": false,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "warning_hold_seconds": "600",
+          "critical_hold_seconds": "300",
+          "protect_free_percent": "-1",
+          "recovery_hold_seconds": "1800",
+          "owner_confirmation_required": "1",
+          "sample_interval_seconds": "60",
+          "warning_reminder_seconds": "14400",
+          "critical_reminder_seconds": "1800",
+          "maximum_silence_seconds": "7200",
+          "resolved_retention_seconds": "604800"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "invalid-parameter-exponent",
+      "schema": "OperationalRule",
+      "valid": false,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "warning_hold_seconds": "600",
+          "critical_hold_seconds": "300",
+          "protect_free_percent": "1e2",
+          "recovery_hold_seconds": "1800",
+          "owner_confirmation_required": "1",
+          "sample_interval_seconds": "60",
+          "warning_reminder_seconds": "14400",
+          "critical_reminder_seconds": "1800",
+          "maximum_silence_seconds": "7200",
+          "resolved_retention_seconds": "604800"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "invalid-parameter-expression",
+      "schema": "OperationalRule",
+      "valid": false,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "warning_hold_seconds": "600",
+          "critical_hold_seconds": "300",
+          "protect_free_percent": "15 / 3",
+          "recovery_hold_seconds": "1800",
+          "owner_confirmation_required": "1",
+          "sample_interval_seconds": "60",
+          "warning_reminder_seconds": "14400",
+          "critical_reminder_seconds": "1800",
+          "maximum_silence_seconds": "7200",
+          "resolved_retention_seconds": "604800"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "invalid-parameter-bool",
+      "schema": "OperationalRule",
+      "valid": false,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "warning_hold_seconds": "600",
+          "critical_hold_seconds": "300",
+          "protect_free_percent": true,
+          "recovery_hold_seconds": "1800",
+          "owner_confirmation_required": "1",
+          "sample_interval_seconds": "60",
+          "warning_reminder_seconds": "14400",
+          "critical_reminder_seconds": "1800",
+          "maximum_silence_seconds": "7200",
+          "resolved_retention_seconds": "604800"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "invalid-parameter-null",
+      "schema": "OperationalRule",
+      "valid": false,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "warning_hold_seconds": "600",
+          "critical_hold_seconds": "300",
+          "protect_free_percent": null,
+          "recovery_hold_seconds": "1800",
+          "owner_confirmation_required": "1",
+          "sample_interval_seconds": "60",
+          "warning_reminder_seconds": "14400",
+          "critical_reminder_seconds": "1800",
+          "maximum_silence_seconds": "7200",
+          "resolved_retention_seconds": "604800"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "invalid-parameter-overlong",
+      "schema": "OperationalRule",
+      "valid": false,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "warning_hold_seconds": "600",
+          "critical_hold_seconds": "300",
+          "protect_free_percent": "1111111111111111111111111111111",
+          "recovery_hold_seconds": "1800",
+          "owner_confirmation_required": "1",
+          "sample_interval_seconds": "60",
+          "warning_reminder_seconds": "14400",
+          "critical_reminder_seconds": "1800",
+          "maximum_silence_seconds": "7200",
+          "resolved_retention_seconds": "604800"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "too-many-parameters",
+      "schema": "OperationalRule",
+      "valid": false,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "key_0": "1",
+          "key_1": "1",
+          "key_2": "1",
+          "key_3": "1",
+          "key_4": "1",
+          "key_5": "1",
+          "key_6": "1",
+          "key_7": "1",
+          "key_8": "1",
+          "key_9": "1",
+          "key_10": "1",
+          "key_11": "1",
+          "key_12": "1",
+          "key_13": "1",
+          "key_14": "1",
+          "key_15": "1",
+          "key_16": "1",
+          "key_17": "1",
+          "key_18": "1",
+          "key_19": "1",
+          "key_20": "1",
+          "key_21": "1",
+          "key_22": "1",
+          "key_23": "1",
+          "key_24": "1",
+          "key_25": "1",
+          "key_26": "1",
+          "key_27": "1",
+          "key_28": "1",
+          "key_29": "1",
+          "key_30": "1",
+          "key_31": "1",
+          "key_32": "1"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "invalid-parameter-key",
+      "schema": "OperationalRule",
+      "valid": false,
+      "value": {
+        "rule_id": "OPS-04",
+        "warning_threshold": "15",
+        "critical_threshold": "10",
+        "recovery_threshold": "15",
+        "rule_parameters": {
+          "bad-key": "1"
+        },
+        "notification_secret_ref": null,
+        "notification_configured": false
+      }
+    },
+    {
+      "name": "legacy-write-shape-semantic-reason-still-required-on-change",
+      "schema": "PreferencesWrite",
+      "valid": true,
+      "value": {
+        "expected_revision": 0,
+        "follow_keywords": [],
+        "blocked_keywords": [],
+        "ai_paused": true,
+        "default_package_id": null,
+        "operational_limits": [
+          {
+            "rule_id": "OPS-04",
+            "warning_threshold": "15",
+            "critical_threshold": "10",
+            "recovery_threshold": "15",
+            "rule_parameters": {
+              "warning_hold_seconds": "600",
+              "critical_hold_seconds": "300",
+              "protect_free_percent": "5",
+              "recovery_hold_seconds": "1800",
+              "owner_confirmation_required": "1",
+              "sample_interval_seconds": "60",
+              "warning_reminder_seconds": "14400",
+              "critical_reminder_seconds": "1800",
+              "maximum_silence_seconds": "7200",
+              "resolved_retention_seconds": "604800"
+            },
+            "notification_secret_ref": null,
+            "notification_configured": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "write-with-change-reason",
+      "schema": "PreferencesWrite",
+      "valid": true,
+      "value": {
+        "expected_revision": 0,
+        "follow_keywords": [],
+        "blocked_keywords": [],
+        "ai_paused": true,
+        "default_package_id": null,
+        "operational_limits": [
+          {
+            "rule_id": "OPS-04",
+            "warning_threshold": "15",
+            "critical_threshold": "10",
+            "recovery_threshold": "15",
+            "rule_parameters": {
+              "warning_hold_seconds": "600",
+              "critical_hold_seconds": "300",
+              "protect_free_percent": "5",
+              "recovery_hold_seconds": "1800",
+              "owner_confirmation_required": "1",
+              "sample_interval_seconds": "60",
+              "warning_reminder_seconds": "14400",
+              "critical_reminder_seconds": "1800",
+              "maximum_silence_seconds": "7200",
+              "resolved_retention_seconds": "604800"
+            },
+            "notification_secret_ref": null,
+            "notification_configured": false
+          }
+        ],
+        "operational_change_reason": "Fictional controlled configuration change"
+      }
+    },
+    {
+      "name": "blank-present-reason",
+      "schema": "PreferencesWrite",
+      "valid": false,
+      "value": {
+        "expected_revision": 0,
+        "follow_keywords": [],
+        "blocked_keywords": [],
+        "ai_paused": true,
+        "default_package_id": null,
+        "operational_limits": [
+          {
+            "rule_id": "OPS-04",
+            "warning_threshold": "15",
+            "critical_threshold": "10",
+            "recovery_threshold": "15",
+            "rule_parameters": {
+              "warning_hold_seconds": "600",
+              "critical_hold_seconds": "300",
+              "protect_free_percent": "5",
+              "recovery_hold_seconds": "1800",
+              "owner_confirmation_required": "1",
+              "sample_interval_seconds": "60",
+              "warning_reminder_seconds": "14400",
+              "critical_reminder_seconds": "1800",
+              "maximum_silence_seconds": "7200",
+              "resolved_retention_seconds": "604800"
+            },
+            "notification_secret_ref": null,
+            "notification_configured": false
+          }
+        ],
+        "operational_change_reason": ""
+      }
+    },
+    {
+      "name": "unknown-observation-is-null",
+      "schema": "Alert",
+      "valid": true,
+      "value": {
+        "alert_id": "fictional-alert",
+        "rule_id": "OPS-10",
+        "resource_key": "fictional-resource",
+        "revision": 0,
+        "level": "critical",
+        "state": "active",
+        "first_seen_at": "2026-10-01T00:00:00.000000Z",
+        "last_seen_at": "2026-10-01T00:00:00.000000Z",
+        "observed_value": null,
+        "threshold": "600",
+        "acknowledged": false,
+        "next_reminder_at": null
+      }
+    },
+    {
+      "name": "known-zero-is-distinct",
+      "schema": "Alert",
+      "valid": true,
+      "value": {
+        "alert_id": "fictional-alert",
+        "rule_id": "OPS-10",
+        "resource_key": "fictional-resource",
+        "revision": 0,
+        "level": "critical",
+        "state": "active",
+        "first_seen_at": "2026-10-01T00:00:00.000000Z",
+        "last_seen_at": "2026-10-01T00:00:00.000000Z",
+        "observed_value": "0",
+        "threshold": "600",
+        "acknowledged": false,
+        "next_reminder_at": null
+      }
+    }
+  ]
+}

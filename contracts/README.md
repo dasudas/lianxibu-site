@@ -1,6 +1,6 @@
 # API contracts
 
-Contract package revision: 0.14. Observations accept wire revisions 0.11 and
+Contract package revision: 0.15. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
@@ -17,3 +17,10 @@ Frozen observation bytes and their hashes must never be rewritten.
 These files describe requests and responses. They do not provide
 authentication, authorization, persistence, or source admission. Clients and
 the service must still verify those rules at runtime.
+
+Operational rules may carry a bounded decimal-string parameter map. Changing
+operational configuration requires a reason at the service boundary. Legacy
+configuration without complete parameters remains readable but is not ready
+to execute. Alert observed values may be null for unknown measurements; zero
+is a known value. operational-wire-examples.json contains 18 fictional
+positive and negative fixtures. Deploy consumers before enabling these rules.
