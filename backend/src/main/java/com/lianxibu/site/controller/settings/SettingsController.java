@@ -55,6 +55,12 @@ public final class SettingsController {
         if (csrf == null || csrf.isBlank() || origin == null || origin.isBlank()) {
             throw new BoundaryFailure(403, "forbidden", "CSRF token and Origin required");
         }
+        Actor authorized = identity.getIfAvailable().authorizeWrite(cookie, csrf, origin);
+        if (authorized == null || authorized.userId() == null || authorized.userId().isBlank()
+                || !"owner".equals(authorized.role()) || !actor.userId().equals(authorized.userId())) {
+            throw new BoundaryFailure(403, "forbidden", "owner write authorization required");
+        }
+        actor = authorized;
         if (key == null || !key.matches("[!-~]{1,128}")) throw validation("valid Idempotency-Key required");
         JsonNode value = parse(raw);
         fields(value, Set.of("expected_revision", "follow_keywords", "blocked_keywords", "ai_paused",

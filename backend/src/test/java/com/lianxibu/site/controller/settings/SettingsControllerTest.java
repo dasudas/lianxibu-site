@@ -45,6 +45,7 @@ class SettingsControllerTest {
         when(settingsProvider.getIfAvailable()).thenReturn(service);
         when(identityProvider.getIfAvailable()).thenReturn(identity);
         when(identity.authenticate("fixture-session")).thenReturn(OWNER);
+        when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN)).thenReturn(OWNER);
         mvc = MockMvcBuilders.standaloneSetup(new SettingsController(identityProvider, settingsProvider)).build();
     }
 
@@ -172,6 +173,26 @@ class SettingsControllerTest {
             mvc.perform(auth(get("/admin/preferences"))).andExpect(status().isServiceUnavailable())
                     .andExpect(jsonPath("$.error.code").value("temporarily_unavailable"));
         }
+    }
+
+    @Test
+    void boundCsrfOriginAndAuthorizedRoleAreRequiredBeforeAnyBusinessWrite() throws Exception {
+        when(identity.authorizeWrite("fixture-session", "wrong-csrf", ORIGIN))
+                .thenThrow(new IdentityService.Rejected(IdentityService.Refusal.FORBIDDEN, null));
+        when(identity.authorizeWrite("fixture-session", "fixture-csrf", "https://wrong.example.invalid"))
+                .thenThrow(new IdentityService.Rejected(IdentityService.Refusal.FORBIDDEN, null));
+        String body = operationalBody("{}", "");
+        mvc.perform(auth(put("/admin/preferences")).contentType(MediaType.APPLICATION_JSON)
+                        .header("X-CSRF-Token", "wrong-csrf").header("Origin", ORIGIN)
+                        .header("Idempotency-Key", "fixture-key").content(body)).andExpect(status().isForbidden());
+        mvc.perform(auth(put("/admin/preferences")).contentType(MediaType.APPLICATION_JSON)
+                        .header("X-CSRF-Token", "fixture-csrf").header("Origin", "https://wrong.example.invalid")
+                        .header("Idempotency-Key", "fixture-key").content(body)).andExpect(status().isForbidden());
+        when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN)).thenReturn(new Actor("fixture-user", "user"));
+        mvc.perform(write(put("/admin/preferences"), body)).andExpect(status().isForbidden());
+        when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN)).thenReturn(null);
+        mvc.perform(write(put("/admin/preferences"), body)).andExpect(status().isForbidden());
+        verify(service, never()).write(any(), any(), any(), any(), any());
     }
 
     private static String operationalBody(String parameters, String reason) {
