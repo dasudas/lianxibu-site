@@ -50,6 +50,11 @@ type Adapter interface {
 type CompletedCursor interface {
 	Completed(client.RunClaim, string) (bool, []string, error)
 }
+
+// NotFoundAdapter interprets missing optional documents; it must reject missing identity steps.
+type NotFoundAdapter interface {
+	AllowNotFound() bool
+}
 type Outcome struct {
 	Cursor       string
 	Pages        int
@@ -156,7 +161,11 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 			out.Finished = true
 			return out, nil
 		}
-		if response.StatusCode != http.StatusOK {
+		optionalMissing := false
+		if adapter, ok := s.adapter.(NotFoundAdapter); ok {
+			optionalMissing = response.StatusCode == http.StatusNotFound && adapter.AllowNotFound()
+		}
+		if response.StatusCode != http.StatusOK && !optionalMissing {
 			return out, fmt.Errorf("source response status %d", response.StatusCode)
 		}
 		page, err := s.adapter.Parse(claim, response)
