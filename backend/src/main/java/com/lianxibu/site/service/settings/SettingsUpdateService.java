@@ -28,6 +28,8 @@ public final class SettingsUpdateService implements SettingsService {
         void update(Current previous, PreferencesWrite command, String commandHash,
                     String actionKey, String actorId);
         void recordNoop(Current previous, String commandHash, String actionKey, String actorId);
+        /** Append an ops_rule disposition in this transaction; never mutate earlier audit rows. */
+        void recordOperationalChange(Current previous, PreferencesWrite command, String actionKey, String actorId);
         boolean publishedPackage(String packageId);
         /** Durable pause intent in the same transaction; running calls keep their permit. */
         void recordPauseIntent(boolean paused);
@@ -71,7 +73,15 @@ public final class SettingsUpdateService implements SettingsService {
                 store.recordNoop(current, hash, key, actorId);
                 return project(current);
             }
+            boolean operationalChange = !current.operationalLimits().equals(command.operationalLimits());
+            if (operationalChange) {
+                String reason = command.operationalChangeReason();
+                if (reason == null || reason.isBlank() || reason.codePointCount(0, reason.length()) > 2048)
+                    throw new IllegalArgumentException("operational change reason required");
+                command.operationalLimits().forEach(OperationalRulePolicy::compile);
+            }
             store.update(current, command, hash, key, actorId);
+            if (operationalChange) store.recordOperationalChange(current, command, key, actorId);
             if (current.aiPaused() != command.aiPaused()) store.recordPauseIntent(command.aiPaused());
             return new Preferences(current.revision() + 1,
                     List.copyOf(command.followKeywords()), List.copyOf(command.blockedKeywords()),
@@ -121,6 +131,9 @@ public final class SettingsUpdateService implements SettingsService {
         if (value.defaultPackageId() != null && (value.defaultPackageId().isBlank()
                 || value.defaultPackageId().length() > 64))
             throw new IllegalArgumentException("invalid default package");
+        if (value.operationalChangeReason() != null && (value.operationalChangeReason().isBlank()
+                || value.operationalChangeReason().codePointCount(0, value.operationalChangeReason().length()) > 2048))
+            throw new IllegalArgumentException("invalid operational reason");
         Set<String> ruleIds = new HashSet<>();
         for (OperationalRule rule : value.operationalLimits()) {
             if (rule == null || rule.ruleId() == null || rule.ruleId().isBlank()
@@ -164,6 +177,19 @@ public final class SettingsUpdateService implements SettingsService {
                 field(digest, rule.recoveryThreshold());
                 field(digest, rule.notificationSecretRef());
                 field(digest, Boolean.toString(rule.notificationConfigured()));
+            }
+            // Preserve legacy action hashes when neither optional field was supplied.
+            if (value.operationalChangeReason() != null || value.operationalLimits().stream()
+                    .anyMatch(rule -> rule.ruleParameters() != null)) {
+                field(digest, "operational-extension-v1");
+                field(digest, value.operationalChangeReason());
+                for (OperationalRule rule : value.operationalLimits()) {
+                    if (rule.ruleParameters() == null) { field(digest, null); continue; }
+                    field(digest, Integer.toString(rule.ruleParameters().size()));
+                    new java.util.TreeMap<>(rule.ruleParameters()).forEach((name, parameter) -> {
+                        field(digest, name); field(digest, parameter);
+                    });
+                }
             }
             return HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException impossible) {
