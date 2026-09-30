@@ -225,7 +225,7 @@ VALUES(?,'lease_action',?,?,?,?,?,'0.11',1,?,?)`, operationID, keyHash, claim.Ru
 	if err != nil {
 		return err
 	}
-	attemptHash, err := client.Hash(client.ControlAttemptHash, map[string]any{"node_id": s.nodeID, "operation": "claim", "business_hash": action.BusinessHash,
+	attemptHash, err := client.Hash(client.ControlAttemptHash, map[string]any{"node_id": s.nodeID, "operation": "claim_ack", "business_hash": action.BusinessHash,
 		"attempt": map[string]any{"claim_token": *claim.ClaimToken, "expected_run_revision": nil}})
 	if err != nil {
 		return err

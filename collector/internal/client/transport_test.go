@@ -103,7 +103,7 @@ func TestClaimPersistsBeforeAckAndLeaseRetriesKeepOriginalIdentity(t *testing.T)
 			sent = append(sent, body)
 			keys = append(keys, r.Header.Get("Idempotency-Key"))
 			business := wire["business"]
-			hash, _ := Hash(ControlBusinessHash, business)
+			hash, _ := Hash(ControlBusinessHash, map[string]any{"operation": "claim_" + business.(map[string]any)["action"].(string), "business": business})
 			w.Write(envelope(map[string]any{"business_hash": hash, "run_id": "run-1", "run_revision": 2,
 				"current_lease_valid": true, "lease_until": later, "receipt_ref": "receipt"}))
 		default:
@@ -154,6 +154,7 @@ func TestFailedPersistencePreventsAckAndExpiredTokenCannotMoveToNewLease(t *test
 		case "/api/collector/v1/runs/run-1/claim":
 			ackCalls++
 			w.WriteHeader(http.StatusConflict)
+			w.Write([]byte(`{"error":{"code":"stale_claim","message":"expired"},"meta":{"request_id":"test"}}`))
 		}
 	}))
 	defer server.Close()

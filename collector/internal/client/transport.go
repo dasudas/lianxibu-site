@@ -17,6 +17,8 @@ import (
 var ErrPermission = errors.New("node permission denied")
 var ErrRetryable = errors.New("collector server temporarily unavailable")
 var ErrStaleClaim = errors.New("claim is stale")
+var ErrRevisionConflict = errors.New("run or member revision conflict")
+var ErrRunFrozen = errors.New("run business identity frozen")
 var ErrConfigExpired = errors.New("collector configuration expired")
 
 type SourceConfig struct {
@@ -260,7 +262,7 @@ func PrepareLeaseAction(kind string, claim RunClaim, key string, now time.Time) 
 		return LeaseAction{}, ErrStaleClaim
 	}
 	business := map[string]any{"run_id": claim.Run.RunID, "action": kind}
-	hash, err := Hash(ControlBusinessHash, business)
+	hash, err := Hash(ControlBusinessHash, map[string]any{"operation": "claim_" + kind, "business": business})
 	if err != nil {
 		return LeaseAction{}, err
 	}
@@ -311,7 +313,23 @@ func (c *Client) request(ctx context.Context, method, path, key string, body []b
 		return nil, ErrPermission
 	}
 	if resp.StatusCode == http.StatusConflict {
-		return nil, ErrStaleClaim
+		var failure struct {
+			Error struct {
+				Code string `json:"code"`
+			} `json:"error"`
+		}
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+		if json.Unmarshal(raw, &failure) == nil {
+			switch failure.Error.Code {
+			case "stale_claim":
+				return nil, ErrStaleClaim
+			case "revision_conflict":
+				return nil, ErrRevisionConflict
+			case "run_frozen":
+				return nil, ErrRunFrozen
+			}
+		}
+		return nil, errors.New("collector control conflict")
 	}
 	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
 		return nil, ErrRetryable
