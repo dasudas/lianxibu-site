@@ -24,7 +24,6 @@ import com.lianxibu.site.service.articles.ObservationIngressService;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.Base64;
-import java.util.List;
 import javax.crypto.spec.SecretKeySpec;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Value;
@@ -63,16 +62,23 @@ public class CollectorRuntimeConfiguration {
     }
 
     @Bean
+    CollectorReviewCatalog collectorReviewCatalog(
+            @Value("${SITE_COLLECTOR_REVIEW_CATALOG:}") String location) {
+        return CollectorReviewCatalog.load(location);
+    }
+
+    @Bean
     ObservationIngressService collectorObservations(DataSource dataSource, PlatformTransactionManager tx,
-                                                     NodeIdentityService nodes, RunManifestService manifests) {
+                                                     NodeIdentityService nodes, RunManifestService manifests,
+                                                     CollectorReviewCatalog review) {
         Clock clock = Clock.systemUTC();
         var writes = new SharedWriteExecutor(new JdbcSharedWriteEntry(dataSource), tx);
         var runs = new JdbcSourceRunStore(dataSource);
-        var mappings = new SourceIdentityMappingService(new JdbcSourceReads(dataSource), tx, List.of());
+        var mappings = new SourceIdentityMappingService(new JdbcSourceReads(dataSource), tx, review.sources());
         var articles = new ArticleCompatibilityWriter(new JdbcArticleWrites(dataSource), mappings,
-                tx, clock, List.of());
+                tx, clock, review.articles());
         var projection = new ArticleProjectionService(new JdbcArticleProjection(dataSource),
-                List.of(), clock);
+                review.orderRules(), clock);
         return new ObservationIngressService(new JdbcObservationStore(dataSource), runId -> {
             var row = runs.locked(runId);
             return row == null ? null : new ObservationIngressService.RunSnapshot(row.id(),
