@@ -96,7 +96,7 @@ class JdbcCollectorGatewayTest {
                 new JdbcSourceAdmission(source), writes,
                 new RunLeaseTokenCodec(new SecretKeySpec(new byte[32], "AES"), "fixture", new SecureRandom()),
                 (bearer, permission, sourceId) -> NODE,
-                new JdbcSourceRunReceipts(source, clock), clock);
+                new JdbcSourceRunReceipts(source, clock), clock, ignored -> true);
         var manifests = new RunManifestService(new JdbcRunManifestStore(source), writes,
                 (bearer, sourceId) -> NODE, clock);
         observationService = mock(ObservationIngressService.class);

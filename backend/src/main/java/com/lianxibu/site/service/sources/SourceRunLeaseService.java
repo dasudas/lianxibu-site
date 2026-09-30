@@ -45,6 +45,9 @@ public final class SourceRunLeaseService {
     public static final class LeaseRejected extends RuntimeException {
         public LeaseRejected() { super("source run or lease identity rejected"); }
     }
+    public static final class CapacityGuarded extends RuntimeException {
+        public CapacityGuarded() { super("capacity_guard"); }
+    }
 
     private static final ZoneId SHANGHAI = ZoneId.of("Asia/Shanghai");
     private static final Set<String> BACKFILL_KINDS = Set.of("historical_backfill", "production_qualification");
@@ -55,12 +58,20 @@ public final class SourceRunLeaseService {
     private final NodeAuthorizer nodes;
     private final Store receipts;
     private final Clock clock;
+    private final java.util.function.Predicate<String> newRunAllowed;
 
     public SourceRunLeaseService(JdbcSourceRunStore runs, JdbcSourceAdmission sources,
                                  SharedWriteExecutor writes, RunLeaseTokenCodec tokens,
                                  NodeAuthorizer nodes, Store receipts, Clock clock) {
+        this(runs,sources,writes,tokens,nodes,receipts,clock,ignored -> false);
+    }
+
+    public SourceRunLeaseService(JdbcSourceRunStore runs, JdbcSourceAdmission sources,
+                                 SharedWriteExecutor writes, RunLeaseTokenCodec tokens,
+                                 NodeAuthorizer nodes, Store receipts, Clock clock,
+                                 java.util.function.Predicate<String> newRunAllowed) {
         if (runs == null || sources == null || writes == null || tokens == null
-                || nodes == null || receipts == null || clock == null) {
+                || nodes == null || receipts == null || clock == null || newRunAllowed == null) {
             throw new IllegalArgumentException("source run dependencies required");
         }
         this.runs = runs;
@@ -70,6 +81,7 @@ public final class SourceRunLeaseService {
         this.nodes = nodes;
         this.receipts = receipts;
         this.clock = clock;
+        this.newRunAllowed = newRunAllowed;
     }
 
     public SourceRunLeaseService(JdbcSourceRunStore runs, JdbcSourceAdmission sources,
@@ -185,6 +197,7 @@ public final class SourceRunLeaseService {
             if (!context.preallocatedResourceId().matches("[A-Za-z0-9._:-]{1,64}")) {
                 throw new LeaseRejected();
             }
+            if (!newRunAllowed.test(sourceId)) throw new CapacityGuarded();
             runs.insert(new JdbcSourceRunStore.NewRun(context.preallocatedResourceId(), sourceId,
                     kind, day, generation, start, end, baseRunId, source.configRevision(),
                     config, stage, fetchMode, "probe".equals(kind) ? "probe"

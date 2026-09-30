@@ -29,6 +29,8 @@ class SourceRunLeaseServiceTest {
     private JdbcSourceRunStore runs;
     private final TestAuthorizer nodes = new TestAuthorizer();
     private final String sourceId = "fixture:feed";
+    private boolean newRunAllowed = true;
+    private SourceRunLeaseService unconfigured;
 
     @BeforeEach void setup() {
         JdbcDataSource db = new JdbcDataSource();
@@ -69,7 +71,27 @@ class SourceRunLeaseServiceTest {
         var codec = new RunLeaseTokenCodec(new SecretKeySpec(new byte[32], "AES"),
                 "fixture-key", new SecureRandom());
         service = new SourceRunLeaseService(runs, new JdbcSourceAdmission(db), writes, codec,
+                nodes, new JdbcSourceRunReceipts(db, time), time, ignored -> newRunAllowed);
+        unconfigured = new SourceRunLeaseService(runs, new JdbcSourceAdmission(db), writes, codec,
                 nodes, new JdbcSourceRunReceipts(db, time), time);
+    }
+
+    @Test void capacityStopsOnlyNewRunAllocationAndKeepsPermanentReceiptAndLeaseControls() {
+        time.set("2026-01-02T16:10:00Z");
+        assertThrows(SourceRunLeaseService.CapacityGuarded.class, () -> unconfigured.scheduleDaily(sourceId, action("unconfigured")));
+        var scheduled = service.scheduleDaily(sourceId, action("before-guard"));
+        newRunAllowed = false;
+        assertEquals(scheduled, service.scheduleDaily(sourceId, action("before-guard")));
+        assertEquals(scheduled, service.scheduleDaily(sourceId, action("same-existing-run")));
+        long receipts = count("request_receipts");
+        assertThrows(SourceRunLeaseService.CapacityGuarded.class, () -> service.scheduleBackfill(sourceId,"historical_backfill",scheduled.runId(),action("guarded-new")));
+        assertEquals(1L,count("source_runs"));assertEquals(receipts,count("request_receipts"));
+        var claim=service.claimNext("node-a-bearer",false,action("existing-claim"));
+        assertEquals(scheduled.runId(),claim.runId());
+        service.acknowledge("node-a-bearer",claim.runId(),claim.claimToken(),action("existing-ack"));
+        service.renew("node-a-bearer",claim.runId(),claim.claimToken(),action("existing-renew"));
+        newRunAllowed=true;
+        assertNotEquals(scheduled.runId(),service.scheduleBackfill(sourceId,"historical_backfill",scheduled.runId(),action("guarded-new")).runId());
     }
 
     @Test void dailyWindowClaimReplayAndDistinctControls() {
