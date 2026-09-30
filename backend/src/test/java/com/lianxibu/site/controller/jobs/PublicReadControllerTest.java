@@ -23,8 +23,8 @@ class PublicReadControllerTest {
         MockMvc mvc = mvc(null);
         mvc.perform(get("/capabilities")).andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", "no-store"))
-                .andExpect(jsonPath("$.data.protocol_revision").value("0.11"))
-                .andExpect(jsonPath("$.data.contract_version").value("0.13"))
+                .andExpect(jsonPath("$.data.protocol_revision").value("0.12"))
+                .andExpect(jsonPath("$.data.contract_version").value("0.14"))
                 .andExpect(jsonPath("$.data.supported_features").isEmpty())
                 .andExpect(jsonPath("$.data.max_page_size").value(50))
                 .andExpect(jsonPath("$.data.max_observations").value(10));

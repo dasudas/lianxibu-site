@@ -17,6 +17,9 @@ public record ObservationEnvelope(String observationId, String memberId, String 
     private static final Set<String> ARTICLE_FIELDS = Set.of("title", "source_url",
             "published_at", "updated_at", "time_basis", "source_summary", "body_text",
             "content_status", "body_truncated", "parser_version", "config_version", "source_order");
+    private static final Set<String> ARTICLE_FIELDS_V012 = java.util.stream.Stream.concat(
+            ARTICLE_FIELDS.stream(), java.util.stream.Stream.of("submitted_at"))
+            .collect(java.util.stream.Collectors.toUnmodifiableSet());
     private static final Set<String> CATALOG_FIELDS = Set.of("schema_version", "parser_version",
             "config_version", "category", "identity", "title", "source_url", "version",
             "published_at", "updated_at", "summary", "document_text", "truncated", "evidence");
@@ -28,7 +31,8 @@ public record ObservationEnvelope(String observationId, String memberId, String 
 
     public static ObservationEnvelope fromJson(JsonNode value) {
         WireValues.object(value, FIELDS, FIELDS);
-        if (!"0.11".equals(WireValues.text(value.get("protocol_revision")))) {
+        String protocol = WireValues.text(value.get("protocol_revision"));
+        if (!Set.of("0.11", "0.12").contains(protocol)) {
             throw new IllegalArgumentException("schema_not_supported");
         }
         String observationId = WireValues.id(value.get("observation_id"), false);
@@ -50,7 +54,7 @@ public record ObservationEnvelope(String observationId, String memberId, String 
         if (!replaces.isNull()) WireValues.id(replaces, false);
         JsonNode payload = value.get("payload");
         Set<String> payloadFields = switch (kind) {
-            case "article" -> ARTICLE_FIELDS;
+            case "article" -> "0.12".equals(protocol) ? ARTICLE_FIELDS_V012 : ARTICLE_FIELDS;
             case "catalog" -> CATALOG_FIELDS;
             case "metric" -> METRIC_FIELDS;
             default -> throw new IllegalArgumentException("unknown observation kind");

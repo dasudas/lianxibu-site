@@ -214,7 +214,7 @@ public final class CollectorController {
                     for (JsonNode item : list) {
                         var observation = ObservationEnvelope.fromJson(item);
                         if (!"article".equals(observation.kind())) {
-                            ObservationPayloadPolicy.validate(observation.kind(), item.get("payload"));
+                            ObservationPayloadPolicy.validate(observation);
                         }
                         if (!seen.add(observation.observationId())) throw new IllegalArgumentException("duplicate observation ID");
                         if (!principal.sourceIds().contains(observation.sourceId())) throw new BoundaryFailure(403, "forbidden");

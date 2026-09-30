@@ -22,22 +22,42 @@ public final class ObservationPayloadPolicy {
     private ObservationPayloadPolicy() { }
 
     public static void validate(String kind, JsonNode payload) {
+        validate(kind, payload, false, null);
+    }
+
+    public static void validate(com.lianxibu.site.domain.protocol.ObservationEnvelope observation) {
+        validate(observation.kind(), observation.wire().get("payload"),
+                "0.12".equals(observation.wire().get("protocol_revision").asText()), observation.sourceId());
+    }
+
+    private static void validate(String kind, JsonNode payload, boolean v012, String sourceId) {
         if (CanonicalJson.bytes(payload).length > 200 * 1024) invalid();
         switch (kind) {
-            case "article" -> article(payload);
+            case "article" -> article(payload, v012, sourceId);
             case "catalog" -> catalog(payload);
             case "metric" -> metric(payload);
             default -> invalid();
         }
     }
 
-    private static void article(JsonNode value) {
+    private static void article(JsonNode value, boolean v012, String sourceId) {
         String title = required(value.get("title"), 512);
         if (title.length() > 512) invalid();
         https(value.get("source_url"));
         utc(value.get("published_at"));
         utc(value.get("updated_at"));
-        oneOf(value.get("time_basis"), Set.of("published", "updated", "unknown"));
+        oneOf(value.get("time_basis"), v012 ? Set.of("published", "updated", "submitted", "unknown")
+                : Set.of("published", "updated", "unknown"));
+        if (v012) {
+            utc(value.get("submitted_at"));
+            String basis = value.get("time_basis").asText();
+            if ("submitted".equals(basis)) {
+                if (!"global-hn".equals(sourceId) || value.get("submitted_at").isNull()
+                        || !value.get("published_at").isNull() || !value.get("updated_at").isNull()
+                        || !"unknown".equals(value.get("source_order").get("basis").asText())) invalid();
+            } else if (!value.get("submitted_at").isNull()) invalid();
+            if (Set.of("published", "updated").contains(basis) && value.get(basis+"_at").isNull()) invalid();
+        }
         String summary = optional(value.get("source_summary"), 16384);
         String body = optional(value.get("body_text"), 50000);
         if (summary != null && summary.length() > 16384

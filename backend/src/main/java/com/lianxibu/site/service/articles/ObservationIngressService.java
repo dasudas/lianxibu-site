@@ -242,7 +242,7 @@ public final class ObservationIngressService {
         }
         JsonNode wire = value.wire();
         JsonNode payload = wire.get("payload");
-        ObservationPayloadPolicy.validate(value.kind(), payload);
+        ObservationPayloadPolicy.validate(value);
         LocalDate day = LocalDate.parse(wire.get("business_date").asText());
         long sourceRevision = wire.get("source_revision").longValue();
         Instant retrieved = Instant.parse(wire.get("retrieved_at").asText());
