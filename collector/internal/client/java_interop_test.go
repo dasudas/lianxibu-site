@@ -92,6 +92,100 @@ func TestJavaInterop(t *testing.T) {
 		}
 		return
 	}
+	if mode == "finalize" {
+		frozenClaim, err := os.ReadFile(os.Getenv("V02_CLAIM_FILE"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var claim RunClaim
+		if err := json.Unmarshal(frozenClaim, &claim); err != nil || claim.ClaimToken == nil {
+			t.Fatal("frozen Go claim unavailable", err)
+		}
+		wire, err := os.ReadFile(os.Getenv("V02_FROZEN_FILE"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		observation, err := DecodeObservation(wire)
+		if err != nil {
+			t.Fatal(err)
+		}
+		member := map[string]any{"member_id": observation.MemberID,
+			"source_item_id": "go-metric-item", "observation_id": observation.ID,
+			"payload_hash": observation.PayloadHash, "replaces_observation_id": nil}
+		members := []any{member}
+		partHash, err := Hash(ManifestPartHash, map[string]any{"run_id": claim.Run.RunID,
+			"part_no": 0, "members": members})
+		if err != nil {
+			t.Fatal(err)
+		}
+		part := map[string]any{"run_id": claim.Run.RunID, "part_no": 0,
+			"part_hash": partHash, "members": members}
+		partBusinessHash, err := Hash(ControlBusinessHash,
+			map[string]any{"operation": "manifest", "business": part})
+		if err != nil {
+			t.Fatal(err)
+		}
+		partWire, err := json.Marshal(map[string]any{"business": part,
+			"attempt": map[string]any{"claim_token": *claim.ClaimToken, "expected_run_revision": nil}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		partQueue := &memoryDeliveryQueue{controlCurrent: true, control: &ControlAttempt{
+			ID: "go-part-attempt", BusinessID: "go-part", RunID: claim.Run.RunID,
+			Kind: "manifest", IdempotencyKey: "go-part", BusinessHash: partBusinessHash, Wire: partWire,
+		}}
+		partDelivery, err := NewDelivery(c, partQueue)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if applied, err := partDelivery.DeliverOneControl(ctx); err != nil || !applied || !partQueue.controlApplied {
+			t.Fatalf("Go manifest was not durably acknowledged by Java: %v", err)
+		}
+		runRaw, err := c.request(ctx, http.MethodGet, "/runs/"+claim.Run.RunID, "", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var run struct {
+			RunRevision uint64 `json:"run_revision"`
+		}
+		if err := decodeData(runRaw, &run); err != nil {
+			t.Fatal(err)
+		}
+		manifestHash, err := Hash(ManifestHash, map[string]any{"run_id": claim.Run.RunID,
+			"expected_count": 1, "parts": []any{map[string]any{"part_no": 0,
+				"part_hash": partHash, "member_count": 1}}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		result := map[string]any{"run_id": claim.Run.RunID, "manifest_hash": manifestHash,
+			"part_count": 1, "expected_count": 1, "fetch_outcome": "succeeded",
+			"coverage": map[string]any{"state": "complete", "missing_inputs": []any{},
+				"missing_dates": []any{}, "no_update_dates": []any{}}}
+		resultBusinessHash, err := Hash(ControlBusinessHash,
+			map[string]any{"operation": "result", "business": result})
+		if err != nil {
+			t.Fatal(err)
+		}
+		resultWire, err := json.Marshal(map[string]any{"business": result,
+			"attempt": map[string]any{"claim_token": *claim.ClaimToken,
+				"expected_run_revision": run.RunRevision}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		resultQueue := &memoryDeliveryQueue{controlCurrent: true, control: &ControlAttempt{
+			ID: "go-result-attempt", BusinessID: "go-result", RunID: claim.Run.RunID,
+			Kind: "run_result", IdempotencyKey: "go-result", BusinessHash: resultBusinessHash,
+			Wire: resultWire,
+		}}
+		resultDelivery, err := NewDelivery(c, resultQueue)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if applied, err := resultDelivery.DeliverOneControl(ctx); err != nil || !applied || !resultQueue.controlApplied {
+			t.Fatalf("Go terminal result was not durably acknowledged by Java: %v", err)
+		}
+		return
+	}
 	if mode != "fresh" {
 		t.Fatal("unknown Java interop mode")
 	}

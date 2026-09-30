@@ -182,10 +182,11 @@ class CollectorRuntimeHttpTest {
                 goInterop("stale");
                 jdbc.update("UPDATE source_runs SET claim_token_hash=? WHERE id=?",
                         originalClaimHash, "fixture-go-run");
-                Timestamp closed = Timestamp.from(Instant.now());
-                assertEquals(1, jdbc.update("UPDATE source_runs SET delivery_state='complete',"
-                                + "finished_at=?,barrier_closed_at=? WHERE id=?",
-                        closed, closed, "fixture-go-run"));
+                goInterop("finalize");
+                assertEquals("complete", jdbc.queryForObject(
+                        "SELECT delivery_state FROM source_runs WHERE id=?", String.class, "fixture-go-run"));
+                assertEquals(1L, jdbc.queryForObject(
+                        "SELECT expected_count FROM source_runs WHERE id=?", Long.class, "fixture-go-run"));
                 assertEquals(1, jdbc.update("UPDATE request_receipts SET created_at=? WHERE observation_id=?",
                         Timestamp.from(Instant.now().minusSeconds(91L * 24 * 3600)),
                         "go-metric-observation"));
