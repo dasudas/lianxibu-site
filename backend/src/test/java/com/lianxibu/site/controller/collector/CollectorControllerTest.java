@@ -71,7 +71,7 @@ class CollectorControllerTest {
         route(write(post(prefix + "/observations"), "{\"observations\":[" + validWire("ObservationEnvelope") + "]}", false), Operation.OBSERVATIONS);
         route(write(post(prefix + "/heartbeat"), "{\"observed_at\":\"2026-09-30T08:00:00.000000Z\",\"pending_observations\":0,\"pending_controls\":0,\"quarantined\":0,\"outbox_bytes\":1,\"free_bytes\":100,\"oldest_pending_at\":null}", false), Operation.HEARTBEAT);
         route(write(post(prefix + "/probe-claims"), "{\"source_ids\":[\"fixture\"],\"required_features\":[]}", true), Operation.PROBE_CLAIMS);
-        route(write(put(prefix + "/probes/fixture/result"), control("{\"probe_id\":\"fixture\",\"result\":{}}", false), true), Operation.PROBE_RESULT);
+        route(write(put(prefix + "/probes/fixture/result"), control("{\"probe_id\":\"fixture\",\"result\":{\"reachable\":true,\"http_status\":200,\"tls_valid\":true,\"parser_valid\":true,\"identity_valid\":true,\"checked_at\":\"2026-09-30T08:00:00.000000Z\",\"error_code\":null,\"evidence_refs\":[]}}", false), true), Operation.PROBE_RESULT);
     }
 
     @Test

@@ -9,6 +9,7 @@ import com.lianxibu.site.service.jobs.SharedWriteExecutor.ActionContext;
 import com.lianxibu.site.service.sources.SourceRunLeaseService;
 import com.lianxibu.site.service.sources.RunManifestService;
 import com.lianxibu.site.service.sources.RunLeaseTokenCodec;
+import com.lianxibu.site.service.sources.ProbeResultService;
 import com.lianxibu.site.service.articles.ObservationIngressService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -42,19 +43,21 @@ public final class JdbcCollectorGateway implements CollectorGateway {
     private final SourceRunLeaseService leases;
     private final RunManifestService manifests;
     private final ObservationIngressService observations;
+    private final ProbeResultService probes;
     private final Clock clock;
 
     public JdbcCollectorGateway(DataSource source, NodeIdentityService nodes,
                                 SourceRunLeaseService leases, RunManifestService manifests,
-                                ObservationIngressService observations, Clock clock) {
+                                ObservationIngressService observations, ProbeResultService probes, Clock clock) {
         if (source == null || nodes == null || leases == null || manifests == null
-                || observations == null || clock == null)
+                || observations == null || probes == null || clock == null)
             throw new IllegalArgumentException("collector runtime dependencies required");
         this.jdbc = new JdbcTemplate(source);
         this.nodes = nodes;
         this.leases = leases;
         this.manifests = manifests;
         this.observations = observations;
+        this.probes = probes;
         this.clock = clock;
     }
 
@@ -75,6 +78,7 @@ public final class JdbcCollectorGateway implements CollectorGateway {
                 case OBSERVATIONS -> observations(principal, bearer, request);
                 case HEARTBEAT -> heartbeat(principal, bearer);
                 case PROBE_CLAIMS -> claimRuns(principal, bearer, request, true);
+                case PROBE_RESULT -> probeResult(bearer, request);
                 default -> throw new Refused(503, "temporarily_unavailable");
             };
         } catch (SourceRunLeaseService.LeaseRejected rejected) {
@@ -83,7 +87,21 @@ public final class JdbcCollectorGateway implements CollectorGateway {
             throw new Refused(409, "run_frozen");
         } catch (ObservationIngressService.IdentityConflict conflict) {
             throw new Refused(409, "observation_identity_conflict");
+        } catch (ProbeResultService.ProbeRejected rejected) {
+            throw new Refused(409, "stale_claim");
         }
+    }
+
+    private Result probeResult(String bearer, Request request) {
+        JsonNode business = request.body().get("business");
+        var outcome = probes.submit(bearer, request.probeId(), business,
+                request.body().get("attempt"), action(request.idempotencyKey(), request.body()));
+        ObjectNode data = control("probe_result", business, null, outcome.probeId(),
+                outcome.revision(), outcome.deliveryState(), false,
+                outcome.originalLeaseUntil(), outcome.receiptRef());
+        if (!outcome.businessHash().equals(data.get("business_hash").asText()))
+            throw new Refused(503, "temporarily_unavailable");
+        return new Result(200, data, null);
     }
 
     private Result observations(Principal principal, String bearer, Request request) {

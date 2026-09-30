@@ -16,6 +16,7 @@ import com.lianxibu.site.service.jobs.SharedWriteExecutor;
 import com.lianxibu.site.service.sources.RunLeaseTokenCodec;
 import com.lianxibu.site.service.sources.SourceRunLeaseService;
 import com.lianxibu.site.service.sources.RunManifestService;
+import com.lianxibu.site.service.sources.ProbeResultService;
 import com.lianxibu.site.service.sources.SourceIdentityMappingService;
 import com.lianxibu.site.service.articles.ArticleCompatibilityWriter;
 import com.lianxibu.site.service.articles.ArticleProjectionService;
@@ -81,10 +82,18 @@ public class CollectorRuntimeConfiguration {
     }
 
     @Bean
+    ProbeResultService collectorProbeResults(DataSource dataSource, PlatformTransactionManager tx,
+                                             NodeIdentityService nodes) {
+        return new ProbeResultService(dataSource,
+                new SharedWriteExecutor(new JdbcSharedWriteEntry(dataSource), tx),
+                nodes, Clock.systemUTC());
+    }
+
+    @Bean
     CollectorGateway collectorGateway(DataSource dataSource, NodeIdentityService nodes,
                                       SourceRunLeaseService leases, RunManifestService manifests,
-                                      ObservationIngressService observations) {
+                                      ObservationIngressService observations, ProbeResultService probes) {
         return new JdbcCollectorGateway(dataSource, nodes, leases, manifests,
-                observations, Clock.systemUTC());
+                observations, probes, Clock.systemUTC());
     }
 }

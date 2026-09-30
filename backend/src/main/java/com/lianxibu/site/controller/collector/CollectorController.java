@@ -201,7 +201,10 @@ public final class CollectorController {
                         Set.of("run_id", "manifest_hash", "part_count", "expected_count", "fetch_outcome", "coverage"), true);
                 case MEMBER_SEAL -> control(value, runId, memberId,
                         Set.of("run_id", "member_id", "expected_member_revision", "action", "reason"), true);
-                case PROBE_RESULT -> control(value, null, probeId, Set.of("probe_id", "result"), false);
+                case PROBE_RESULT -> {
+                    control(value, null, probeId, Set.of("probe_id", "result"), false);
+                    probeResult(value.get("business").get("result"));
+                }
                 case OBSERVATIONS -> {
                     WireValues.object(value, Set.of("observations"), Set.of("observations"));
                     JsonNode list = value.get("observations");
@@ -265,6 +268,31 @@ public final class CollectorController {
             WireValues.nonnegativeInteger(value.get(field));
         }
         if (!value.get("oldest_pending_at").isNull()) WireValues.utcMicroseconds(value.get("oldest_pending_at"));
+    }
+
+    private static void probeResult(JsonNode value) {
+        Set<String> fields = Set.of("reachable", "http_status", "tls_valid", "parser_valid",
+                "identity_valid", "checked_at", "error_code", "evidence_refs");
+        WireValues.object(value, fields, fields);
+        for (String field : List.of("reachable", "tls_valid", "parser_valid", "identity_valid")) {
+            if (!value.get(field).isBoolean()) throw new IllegalArgumentException("invalid probe result flag");
+        }
+        JsonNode status = value.get("http_status");
+        if (!status.isNull() && (!status.isIntegralNumber() || status.intValue() < 100 || status.intValue() > 599)) {
+            throw new IllegalArgumentException("invalid probe HTTP status");
+        }
+        WireValues.utcMicroseconds(value.get("checked_at"));
+        JsonNode code = value.get("error_code");
+        if (!code.isNull() && (!code.isTextual() || !code.asText().matches("[A-Za-z0-9._:-]{1,64}"))) {
+            throw new IllegalArgumentException("invalid probe error code");
+        }
+        JsonNode refs = value.get("evidence_refs");
+        if (!refs.isArray() || refs.size() > 32) throw new IllegalArgumentException("invalid probe evidence list");
+        for (JsonNode ref : refs) {
+            if (!ref.isTextual() || ref.asText().length() > 2000 || !ref.asText().startsWith("https://")) {
+                throw new IllegalArgumentException("invalid probe evidence reference");
+            }
+        }
     }
 
     private static void validateResponse(Operation operation, JsonNode data, String runId, String probeId, JsonNode requestBody) {

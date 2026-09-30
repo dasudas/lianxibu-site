@@ -23,6 +23,7 @@ import com.lianxibu.site.service.jobs.SharedWriteExecutor.ActionContext;
 import com.lianxibu.site.service.sources.RunLeaseTokenCodec;
 import com.lianxibu.site.service.sources.SourceRunLeaseService;
 import com.lianxibu.site.service.sources.RunManifestService;
+import com.lianxibu.site.service.sources.ProbeResultService;
 import com.lianxibu.site.service.articles.ObservationIngressService;
 import java.security.SecureRandom;
 import java.time.Clock;
@@ -68,7 +69,8 @@ class JdbcCollectorGatewayTest {
                 + "claim_token_hash BINARY(32),claim_token_ciphertext BLOB,claim_key_id VARCHAR(64),"
                 + "lease_until TIMESTAMP,node_id VARCHAR(64),started_at TIMESTAMP,finished_at TIMESTAMP,"
                 + "barrier_closed_at TIMESTAMP,"
-                + "result_json CLOB,manifest_hash BINARY(32),part_count BIGINT,expected_count BIGINT,"
+                + "result_json CLOB,probe_trial_result_json CLOB,manifest_hash BINARY(32),"
+                + "part_count BIGINT,expected_count BIGINT,"
                 + "UNIQUE(source_id,run_kind,business_date,generation))");
         jdbc.execute("CREATE TABLE request_receipts(principal VARCHAR(80),operation VARCHAR(32),"
                 + "request_key VARCHAR(128),request_hash BINARY(32),status_code INT,response_json CLOB,"
@@ -98,8 +100,9 @@ class JdbcCollectorGatewayTest {
         var manifests = new RunManifestService(new JdbcRunManifestStore(source), writes,
                 (bearer, sourceId) -> NODE, clock);
         observationService = mock(ObservationIngressService.class);
+        var probes = new ProbeResultService(source, writes, nodes, clock);
         gateway = new JdbcCollectorGateway(source, nodes, leases, manifests,
-                observationService, clock);
+                observationService, probes, clock);
     }
 
     @Test void configClaimRunAndPermanentLeaseReceiptUseCurrentDatabaseRows() {
@@ -176,6 +179,39 @@ class JdbcCollectorGatewayTest {
         verify(observationService).accept(anyString(), raw.capture(), any(ActionContext.class));
         assertEquals(item, new String(raw.getValue(), StandardCharsets.UTF_8));
         assertEquals("receipt-one", result.data().get("acks").get(0).get("receipt_ref").asText());
+    }
+
+    @Test void probeResultPersistsOnceAndCannotBeChangedByKeyReuse() {
+        jdbc.update("UPDATE sources SET activation_stage='disabled',config_revision=2 WHERE id=?", SOURCE);
+        var scheduled = leases.scheduleProbe(SOURCE, new ActionContext("probe-schedule", "fixture-probe", "fixture"));
+        assertEquals("fixture-probe", scheduled.runId());
+        JsonNode claimBody = CanonicalJson.parse("{\"source_ids\":[\"fixture:feed\"],\"required_features\":[]}");
+        var claim = gateway.execute(NODE, "fixture-bearer", Operation.PROBE_CLAIMS,
+                new Request(null, null, null, null, null, null, null, "probe-claim-key", claimBody));
+        String token = claim.data().get("claim_token").asText();
+        JsonNode result = CanonicalJson.parse("{\"business\":{\"probe_id\":\"fixture-probe\","
+                + "\"result\":{\"reachable\":true,\"http_status\":200,\"tls_valid\":true,"
+                + "\"parser_valid\":true,\"identity_valid\":true,"
+                + "\"checked_at\":\"2026-01-02T16:10:00.000000Z\",\"error_code\":null,"
+                + "\"evidence_refs\":[]}},\"attempt\":{\"claim_token\":\"" + token
+                + "\",\"expected_run_revision\":null}}");
+        Request request = new Request(null, null, "fixture-probe", null, null, null, null,
+                "probe-result-key", result);
+        var first = gateway.execute(NODE, "fixture-bearer", Operation.PROBE_RESULT, request);
+        assertEquals("complete", first.data().get("delivery_state").asText());
+        assertEquals(first.data().get("receipt_ref").asText(), gateway.execute(NODE,
+                "fixture-bearer", Operation.PROBE_RESULT, request).data().get("receipt_ref").asText());
+        assertEquals(first.data().get("receipt_ref").asText(), gateway.execute(NODE,
+                "fixture-bearer", Operation.PROBE_RESULT,
+                new Request(null, null, "fixture-probe", null, null, null, null,
+                        "second-probe-result-key", result)).data().get("receipt_ref").asText());
+        JsonNode changed = CanonicalJson.parse(result.toString().replace("\"reachable\":true", "\"reachable\":false"));
+        assertThrows(CollectorGateway.Refused.class, () -> gateway.execute(NODE,
+                "fixture-bearer", Operation.PROBE_RESULT,
+                new Request(null, null, "fixture-probe", null, null, null, null,
+                        "probe-result-key", changed)));
+        assertNotNull(jdbc.queryForObject("SELECT probe_trial_result_json FROM source_runs WHERE id=?",
+                String.class, "fixture-probe"));
     }
 
     private static Request request(String runId, JsonNode body, String etag) {
