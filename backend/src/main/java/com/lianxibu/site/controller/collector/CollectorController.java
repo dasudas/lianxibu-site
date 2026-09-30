@@ -557,6 +557,11 @@ public final class CollectorController {
         return failure(new BoundaryFailure(status, status == 401 ? "unauthenticated" : "forbidden"));
     }
 
+    @ExceptionHandler(com.lianxibu.site.service.articles.ObservationIngressService.CapacityGuarded.class)
+    public ResponseEntity<ErrorEnvelope> capacityGuard(com.lianxibu.site.service.articles.ObservationIngressService.CapacityGuarded error) {
+        return failure(new BoundaryFailure(503,"capacity_guard"));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorEnvelope> runtimeFailure(RuntimeException error) {
         return failure(unavailable());

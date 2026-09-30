@@ -56,6 +56,18 @@ class CollectorControllerTest {
     }
 
     @Test
+    void capacityGuardIsRetryableWithoutCreatingTerminalAck() throws Exception {
+        org.mockito.Mockito.doThrow(new com.lianxibu.site.service.articles.ObservationIngressService.CapacityGuarded())
+                .when(gateway).execute(any(),anyString(),org.mockito.ArgumentMatchers.eq(Operation.OBSERVATIONS),any());
+        mvc.perform(auth(write(post("/api/collector/v1/observations"),"{\"observations\":["+validWire("ObservationEnvelope")+"]}",false)))
+                .andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.error.code").value("capacity_guard"))
+                .andExpect(jsonPath("$.error.message").value("capacity_guard"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Retry-After","1"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Cache-Control","no-store"))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
     void allThirteenCollectorRoutesMapToExactGatewayOperations() throws Exception {
         String prefix = "/api/collector/v1";
         route(get(prefix + "/config"), Operation.CONFIG);
