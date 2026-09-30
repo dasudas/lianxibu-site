@@ -69,19 +69,29 @@ public final class WorkerAuthorizationService {
     private final Store store;
     private final Clock clock;
     private final IntUnaryOperator tieChoice;
+    private final java.util.function.BooleanSupplier dispatchAllowed;
     private final AtomicReference<Permit> current = new AtomicReference<>();
 
     public WorkerAuthorizationService(SharedWriteExecutor writes, Store store, Clock clock) {
-        this(writes, store, clock, bound -> ThreadLocalRandom.current().nextInt(bound));
+        this(writes, store, clock, bound -> ThreadLocalRandom.current().nextInt(bound), () -> false);
+    }
+    public WorkerAuthorizationService(SharedWriteExecutor writes, Store store, Clock clock,
+                                      java.util.function.BooleanSupplier dispatchAllowed) {
+        this(writes,store,clock,bound -> ThreadLocalRandom.current().nextInt(bound),dispatchAllowed);
     }
     WorkerAuthorizationService(SharedWriteExecutor writes, Store store, Clock clock,
                                IntUnaryOperator tieChoice) {
-        if (writes == null || store == null || clock == null || tieChoice == null)
+        this(writes,store,clock,tieChoice,() -> false);
+    }
+    WorkerAuthorizationService(SharedWriteExecutor writes, Store store, Clock clock,
+                               IntUnaryOperator tieChoice, java.util.function.BooleanSupplier dispatchAllowed) {
+        if (writes == null || store == null || clock == null || tieChoice == null || dispatchAllowed == null)
             throw new IllegalArgumentException("worker dependencies required");
         this.writes = writes;
         this.store = store;
         this.clock = clock;
         this.tieChoice = tieChoice;
+        this.dispatchAllowed = dispatchAllowed;
     }
 
     public Claim claim(ActionContext action) {
@@ -90,6 +100,7 @@ public final class WorkerAuthorizationService {
         Identity identity = writes.execute(action, store::committedClaim, context -> {
             if (!inWindow(clock.instant()) || store.paused() || !store.slotFree())
                 return idleMarker();
+            if (!dispatchAllowed.getAsBoolean()) return idleMarker();
             List<Candidate> candidates = store.candidates(now).stream()
                     .filter(item -> item != null && item.priority() >= 1 && item.priority() <= 14
                             && item.eligibleAt() != null && !item.eligibleAt().isAfter(now)
@@ -134,13 +145,14 @@ public final class WorkerAuthorizationService {
                         Instant now = clock.instant();
                         if (!inWindow(now) || store.paused())
                             return new Authorization(false, "window_or_pause");
+                        if (!dispatchAllowed.getAsBoolean()) return new Authorization(false,"operational_guard");
                         return store.authorize(identity, now, context.actionKey());
                     });
         } catch (RuntimeException uncertain) {
             return new Dispatch(State.UNKNOWN, null);
         }
         if (!authorization.send()) {
-            if ("window_or_pause".equals(authorization.reason()))
+            if (Set.of("window_or_pause", "operational_guard").contains(authorization.reason()))
                 return abortNeverSent(identity, authorization.reason());
             if ("already_authorized".equals(authorization.reason()))
                 return new Dispatch(State.UNKNOWN, null);
@@ -152,6 +164,8 @@ public final class WorkerAuthorizationService {
         Instant beforeSend = clock.instant();
         if (!inWindow(beforeSend) || paused || permit.cancelled.get())
             return abortNeverSent(identity, "window_or_pause");
+        try { if (!dispatchAllowed.getAsBoolean()) return abortNeverSent(identity,"operational_guard"); }
+        catch (RuntimeException unavailable) { return new Dispatch(State.UNKNOWN,null); }
         if (!beforeSend.isBefore(identity.leaseUntil()))
             return new Dispatch(State.LOST, null);
         try {
@@ -165,7 +179,8 @@ public final class WorkerAuthorizationService {
         try {
             Boolean refunded = writes.execute(action(identity, "not-sent"),
                     store::committedAbort, context -> store.refundNotSent(identity,
-                            nextWindow(clock.instant()), reason, context.actionKey()));
+                            "operational_guard".equals(reason) && inWindow(clock.instant())
+                                    ? clock.instant().plusSeconds(60) : nextWindow(clock.instant()), reason, context.actionKey()));
             return new Dispatch(Boolean.TRUE.equals(refunded) ? State.NOT_SENT : State.LOST, null);
         } catch (RuntimeException uncertain) {
             return new Dispatch(State.UNKNOWN, null);

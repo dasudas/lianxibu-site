@@ -34,6 +34,7 @@ class WorkerAuthorizationServiceTest {
     private SharedWriteExecutor writes;
     private StubStore store;
     private WorkerAuthorizationService service;
+    private boolean dispatchAllowed=true;
 
     @BeforeEach void setup() {
         JdbcDataSource source = new JdbcDataSource();
@@ -51,7 +52,7 @@ class WorkerAuthorizationServiceTest {
         writes = new SharedWriteExecutor(new JdbcSharedWriteEntry(source),
                 new DataSourceTransactionManager(source), () -> 25, ignored -> { });
         store = new StubStore();
-        service = new WorkerAuthorizationService(writes, store, clock, ignored -> 0);
+        service = new WorkerAuthorizationService(writes, store, clock, ignored -> 0, () -> dispatchAllowed);
     }
 
     @Test void onlyReadyMinimumPriorityClaimsAndPermitSendsOnce() {
@@ -81,7 +82,7 @@ class WorkerAuthorizationServiceTest {
         }).state());
         assertEquals(1, sent.get());
         assertEquals(State.IDLE, service.claim(action("other-while-busy")).state());
-        var restarted = new WorkerAuthorizationService(writes, store, clock, ignored -> 0);
+        var restarted = new WorkerAuthorizationService(writes, store, clock, ignored -> 0, () -> dispatchAllowed);
         var replay = restarted.claim(action("claim-1"));
         assertEquals(State.UNKNOWN, restarted.dispatch(replay.permit(), ignored -> {
             sent.incrementAndGet(); return "bad";
@@ -170,6 +171,30 @@ class WorkerAuthorizationServiceTest {
         }).state());
         assertEquals(0, count("root"));
         assertEquals("free", slotState());
+    }
+
+    @Test void operationalGuardPreventsReservationAndRefundsOnlyProvenUnsentClaim() {
+        add("root",1,true,0);clock.set("2026-10-01T02:00:00+08:00");dispatchAllowed=false;
+        assertEquals(State.IDLE,service.claim(action("guarded")).state());assertEquals(0,count("root"));assertEquals("free",slotState());
+        dispatchAllowed=true;var claim=service.claim(action("claim-before-guard"));dispatchAllowed=false;
+        assertSame(claim.permit(),service.claim(action("claim-before-guard")).permit());
+        assertEquals(State.NOT_SENT,service.dispatch(claim.permit(),request->{fail("guarded request must not be sent");return null;}).state());
+        assertEquals(0,count("root"));assertEquals("free",slotState());assertEquals("prepared",state("root","attempt_state"));
+    }
+
+    @Test void protectionAfterSendDoesNotRefundOrEraseUnknownUsage() {
+        add("root",1,true,0);clock.set("2026-10-01T02:00:00+08:00");var claim=service.claim(action("sent-then-guard"));
+        assertEquals(State.UNKNOWN,service.dispatch(claim.permit(),request->{dispatchAllowed=false;throw new IllegalStateException("fictional uncertain provider outcome");}).state());
+        assertEquals(1,count("root"));assertEquals("occupied",slotState());assertEquals(State.IDLE,service.claim(action("guarded-new-claim")).state());
+    }
+
+    @Test void guardAtFinalPreSendCheckPreventsNetworkAndAllowsRetryWithinWindow() {
+        add("root",1,true,0);clock.set("2026-10-01T02:00:00+08:00");AtomicInteger checks=new AtomicInteger();
+        service=new WorkerAuthorizationService(writes,store,clock,ignored->0,()->checks.incrementAndGet()<3);
+        var claim=service.claim(action("final-check"));
+        assertEquals(State.NOT_SENT,service.dispatch(claim.permit(),request->{fail("last check must stop network");return null;}).state());
+        assertEquals(0,count("root"));assertEquals("free",slotState());
+        assertEquals(OffsetDateTime.parse("2026-10-01T02:01:00+08:00").toInstant(),jdbc.queryForObject("SELECT eligible_at FROM task WHERE root_id='root'",Timestamp.class).toInstant());
     }
 
     private void add(String id, int priority, boolean dependency, int callCount) {
