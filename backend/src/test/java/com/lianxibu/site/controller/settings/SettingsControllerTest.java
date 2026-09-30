@@ -151,6 +151,29 @@ class SettingsControllerTest {
         verify(service, never()).write(any(), any(), any(), any(), any());
     }
 
+    @Test
+    void actualBusinessRefusalsHaveSafeHttpCodes() throws Exception {
+        when(service.get(OWNER)).thenThrow(new com.lianxibu.site.service.settings.SettingsUpdateService.Rejected("settings_mapping_required"));
+        mvc.perform(auth(get("/admin/preferences"))).andExpect(status().isServiceUnavailable())
+                .andExpect(header().string("Retry-After", "1"))
+                .andExpect(jsonPath("$.error.code").value("settings_mapping_required"));
+        String body = "{\"expected_revision\":1,\"follow_keywords\":[],\"blocked_keywords\":[],\"ai_paused\":true,\"default_package_id\":null,\"operational_limits\":[]}";
+        for (String code : List.of("revision_conflict", "identity_conflict")) {
+            org.mockito.Mockito.doThrow(new com.lianxibu.site.service.settings.SettingsUpdateService.Rejected(code)).when(service).write(any(), any(), any(), any(), any());
+            mvc.perform(write(put("/admin/preferences"), body)).andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.error.code").value(code));
+        }
+        org.mockito.Mockito.doThrow(new IllegalArgumentException("Fictional private internal detail")).when(service).write(any(), any(), any(), any(), any());
+        mvc.perform(write(put("/admin/preferences"), body)).andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("validation"))
+                .andExpect(jsonPath("$.error.message").value("invalid preferences"));
+        for (String internal : java.util.Arrays.asList(null, "Fictional internal detail")) {
+            org.mockito.Mockito.doThrow(new com.lianxibu.site.service.settings.SettingsUpdateService.Rejected(internal)).when(service).get(OWNER);
+            mvc.perform(auth(get("/admin/preferences"))).andExpect(status().isServiceUnavailable())
+                    .andExpect(jsonPath("$.error.code").value("temporarily_unavailable"));
+        }
+    }
+
     private static String operationalBody(String parameters, String reason) {
         return "{\"expected_revision\":1,\"follow_keywords\":[],\"blocked_keywords\":[],"
                 + "\"ai_paused\":true,\"default_package_id\":null,\"operational_limits\":[{"

@@ -5,6 +5,7 @@ import com.lianxibu.site.domain.protocol.WireValues;
 import com.lianxibu.site.service.identity.IdentityService;
 import com.lianxibu.site.service.identity.IdentityService.Actor;
 import com.lianxibu.site.service.settings.SettingsService;
+import com.lianxibu.site.service.settings.SettingsUpdateService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +93,27 @@ public final class SettingsController {
         }
         return response.body(new SettingsDtos.ErrorEnvelope(new SettingsDtos.ErrorDetail(code, code),
                 new SettingsDtos.Meta(requestId())));
+    }
+
+    @ExceptionHandler(SettingsUpdateService.Rejected.class)
+    public ResponseEntity<SettingsDtos.ErrorEnvelope> businessRefusal(SettingsUpdateService.Rejected error) {
+        String code = error.getMessage() == null ? "temporarily_unavailable" : error.getMessage();
+        int status = switch (code) {
+            case "revision_conflict", "identity_conflict" -> 409;
+            case "default_package_unavailable" -> 422;
+            default -> 503;
+        };
+        if (!Set.of("revision_conflict", "identity_conflict", "default_package_unavailable",
+                "settings_mapping_required", "settings_unavailable").contains(code)) code = "temporarily_unavailable";
+        var response = ResponseEntity.status(status).header(HttpHeaders.CACHE_CONTROL, "no-store");
+        if (status == 503) response.header(HttpHeaders.RETRY_AFTER, "1");
+        return response.body(new SettingsDtos.ErrorEnvelope(new SettingsDtos.ErrorDetail(code, code), new SettingsDtos.Meta(requestId())));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<SettingsDtos.ErrorEnvelope> invalidCommand(IllegalArgumentException error) {
+        return ResponseEntity.unprocessableContent().header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(new SettingsDtos.ErrorEnvelope(new SettingsDtos.ErrorDetail("validation", "invalid preferences"), new SettingsDtos.Meta(requestId())));
     }
 
     private Actor owner(String cookie) {
