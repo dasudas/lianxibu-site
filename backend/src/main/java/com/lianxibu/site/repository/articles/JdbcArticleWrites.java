@@ -23,7 +23,17 @@ public final class JdbcArticleWrites {
                            String summary, String body, Instant sourceTime, String timeBasis,
                            String contentStatus, boolean bodyTruncated, String parserVersion,
                            long configVersion, String sourceOrderJson, boolean legacy,
-                           Instant now) { }
+                           Instant now, Instant publishedAt, Instant updatedAt, Instant submittedAt) {
+        public Revision(String id,String articleId,byte[] contentHash,String title,String summary,
+                        String body,Instant sourceTime,String timeBasis,String contentStatus,
+                        boolean bodyTruncated,String parserVersion,long configVersion,
+                        String sourceOrderJson,boolean legacy,Instant now) {
+            this(id,articleId,contentHash,title,summary,body,sourceTime,timeBasis,contentStatus,
+                    bodyTruncated,parserVersion,configVersion,sourceOrderJson,legacy,now,
+                    "published".equals(timeBasis)?sourceTime:null,
+                    "updated".equals(timeBasis)?sourceTime:null,null);
+        }
+    }
 
     private static final String COLUMNS = "id,source_id,external_id,external_key,title,url,published_at,"
             + "summary,body_text,facts_json,content_hash,revision,updated_at,source_item_id,"
@@ -82,13 +92,14 @@ public final class JdbcArticleWrites {
         jdbc.update("INSERT INTO article_revisions(id,created_at,revision,article_id,revision_no,"
                         + "content_hash,title,source_summary,body_text,source_time,time_basis,"
                         + "content_status,body_truncated,parser_version,config_version,"
-                        + "qualification_events_json,source_order_json,legacy_flag)"
-                        + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        + "qualification_events_json,source_order_json,legacy_flag,published_at,updated_at,submitted_at)"
+                        + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 value.id(), timestamp(value.now()), 0, value.articleId(), 1,
                 value.contentHash(), value.title(), value.summary(), value.body(),
                 timestamp(value.sourceTime()), value.timeBasis(), value.contentStatus(),
                 value.bodyTruncated() ? 1 : 0, value.parserVersion(), value.configVersion(),
-                "[]", value.sourceOrderJson(), value.legacy() ? 1 : 0);
+                "[]", value.sourceOrderJson(), value.legacy() ? 1 : 0,
+                timestamp(value.publishedAt()),timestamp(value.updatedAt()),timestamp(value.submittedAt()));
     }
 
     public void attachNewRevision(String articleId, String revisionId, byte[] sourceItemHash,

@@ -105,7 +105,7 @@ class ObservationIngressServiceTest {
                 + "UNIQUE(source_id,source_item_hash))");
         jdbc.execute("CREATE TABLE article_revisions(id VARCHAR(64) PRIMARY KEY,created_at TIMESTAMP,"
                 + "revision BIGINT,article_id VARCHAR(64),revision_no BIGINT,content_hash BINARY(32),"
-                + "title VARCHAR(512),source_summary CLOB,body_text CLOB,source_time TIMESTAMP,"
+                + "title VARCHAR(512),source_summary CLOB,body_text CLOB,source_time TIMESTAMP,published_at TIMESTAMP,updated_at TIMESTAMP,submitted_at TIMESTAMP,"
                 + "time_basis VARCHAR(32),content_status VARCHAR(32),body_truncated INT,"
                 + "parser_version VARCHAR(64),config_version BIGINT,qualification_events_json CLOB,"
                 + "source_order_json CLOB,legacy_flag INT,UNIQUE(article_id,revision_no))");

@@ -41,7 +41,21 @@ public final class ArticleCompatibilityWriter {
     public record Input(String sourceId, String sourceItemId, String title, String sourceUrl,
                         Instant publishedAt, String summary, String body, String timeBasis,
                         String contentStatus, boolean bodyTruncated, String parserVersion,
-                        long configVersion, String sourceOrderJson) { }
+                        long configVersion, String sourceOrderJson, Instant updatedAt,
+                        Instant submittedAt) {
+        public Input(String sourceId, String sourceItemId, String title, String sourceUrl,
+                     Instant publishedAt, String summary, String body, String timeBasis,
+                     String contentStatus, boolean bodyTruncated, String parserVersion,
+                     long configVersion, String sourceOrderJson) {
+            this(sourceId,sourceItemId,title,sourceUrl,"published".equals(timeBasis)?publishedAt:null,summary,body,timeBasis,
+                    contentStatus,bodyTruncated,parserVersion,configVersion,sourceOrderJson,
+                    "updated".equals(timeBasis)?publishedAt:null,null);
+        }
+        public Instant sourceTime() {
+            return switch(timeBasis) {case "published" -> publishedAt;case "updated" -> updatedAt;
+                case "submitted" -> submittedAt;default -> null;};
+        }
+    }
 
     public record Result(String articleId, String revisionId, boolean inserted,
                          boolean legacyBaselineCreated) { }
@@ -156,6 +170,9 @@ public final class ArticleCompatibilityWriter {
         facts.put("time_basis", input.timeBasis());
         facts.put("content_status", input.contentStatus());
         facts.put("body_truncated", input.bodyTruncated());
+        facts.put("published_at", input.publishedAt()==null?null:input.publishedAt().toString());
+        facts.put("updated_at", input.updatedAt()==null?null:input.updatedAt().toString());
+        facts.put("submitted_at", input.submittedAt()==null?null:input.submittedAt().toString());
         if (input.sourceOrderJson() == null) facts.putNull("source_order");
         else facts.set("source_order", CanonicalJson.parse(input.sourceOrderJson()));
         byte[] externalKey = hash(Domain.LEGACY_EXTERNAL, input.sourceId(), "external_id",
@@ -166,9 +183,10 @@ public final class ArticleCompatibilityWriter {
                     input.summary(), input.body(), new String(CanonicalJson.bytes(facts),
                     StandardCharsets.UTF_8), projectionHash, now));
             store.insertRevision(new JdbcArticleWrites.Revision(revisionId, id, projectionHash,
-                    input.title(), input.summary(), input.body(), input.publishedAt(),
+                    input.title(), input.summary(), input.body(), input.sourceTime(),
                     input.timeBasis(), input.contentStatus(), input.bodyTruncated(),
-                    input.parserVersion(), input.configVersion(), input.sourceOrderJson(), false, now));
+                    input.parserVersion(), input.configVersion(), input.sourceOrderJson(), false, now,
+                    input.publishedAt(),input.updatedAt(),input.submittedAt()));
             store.attachInsertedRevision(id, revisionId);
         } catch (DataIntegrityViolationException conflict) {
             Row byHash = store.byNewIdentity(input.sourceId(), itemHash);
@@ -190,11 +208,16 @@ public final class ArticleCompatibilityWriter {
                 || blank(input.sourceUrl()) || input.sourceUrl().length() > 2000
                 || input.summary() != null && input.summary().length() > 16384
                 || input.body() != null && (input.body().length() > 50000 || bytes(input.body()) > 204800)
-                || !Set.of("published", "updated", "unknown").contains(input.timeBasis())
+                || !Set.of("published", "updated", "submitted", "unknown").contains(input.timeBasis())
                 || !Set.of("full", "partial", "unavailable").contains(input.contentStatus())
                 || blank(input.parserVersion()) || input.parserVersion().length() > 64
                 || input.configVersion() < 0 || input.configVersion() > CanonicalJson.MAX_SAFE_INTEGER) {
             throw new IllegalArgumentException("invalid normalized article");
+        }
+        if ("submitted".equals(input.timeBasis()) && (input.submittedAt()==null
+                || input.publishedAt()!=null || input.updatedAt()!=null)
+                || !"submitted".equals(input.timeBasis()) && input.submittedAt()!=null) {
+            throw new IllegalArgumentException("invalid article time combination");
         }
         if (input.sourceOrderJson() != null && !CanonicalJson.parse(input.sourceOrderJson()).isObject()) {
             throw new IllegalArgumentException("invalid source order");

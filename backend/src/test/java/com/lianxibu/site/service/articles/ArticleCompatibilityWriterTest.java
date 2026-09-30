@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,7 +61,7 @@ class ArticleCompatibilityWriterTest {
                 + "title VARCHAR(512),source_summary CLOB,body_text CLOB,source_time TIMESTAMP,"
                 + "time_basis VARCHAR(32),content_status VARCHAR(32),body_truncated INT,"
                 + "parser_version VARCHAR(64),config_version BIGINT,qualification_events_json CLOB,"
-                + "source_order_json CLOB,legacy_flag INT,UNIQUE(article_id,revision_no))");
+                + "source_order_json CLOB,legacy_flag INT,published_at TIMESTAMP,updated_at TIMESTAMP,submitted_at TIMESTAMP,UNIQUE(article_id,revision_no))");
         articles = new JdbcArticleWrites(source);
         sources = new JdbcSourceReads(source);
         tx = new DataSourceTransactionManager(source);
@@ -92,6 +93,36 @@ class ArticleCompatibilityWriterTest {
         assertFalse(again.legacyBaselineCreated());
         assertEquals(1L, jdbc.queryForObject("SELECT COUNT(*) FROM article_revisions", Long.class));
         assertEquals(1L, jdbc.queryForObject("SELECT COUNT(*) FROM articles", Long.class));
+    }
+
+    @Test void publishedAndUpdatedTimesStayIndependentAtInitialization() {
+        var published=Instant.parse("2025-12-30T00:00:00Z");
+        var updated=Instant.parse("2025-12-31T00:00:00Z");
+        var value=new Input("fixture:feed","independent-times","Title",
+                "https://example.invalid/article",published,"Summary","Body","updated",
+                "full",false,"fixture-parser",1,null,updated,null);
+        var result=writer(List.of()).accept(value);
+        assertEquals(published,jdbc.queryForObject("SELECT published_at FROM articles WHERE id=?",Timestamp.class,result.articleId()).toInstant());
+        assertEquals(updated,jdbc.queryForObject("SELECT source_time FROM article_revisions WHERE id=?",Timestamp.class,result.revisionId()).toInstant());
+        assertEquals(published,jdbc.queryForObject("SELECT published_at FROM article_revisions WHERE id=?",Timestamp.class,result.revisionId()).toInstant());
+        assertEquals(updated,jdbc.queryForObject("SELECT updated_at FROM article_revisions WHERE id=?",Timestamp.class,result.revisionId()).toInstant());
+    }
+    @Test void submittedEvidenceNeverBecomesArticlePublication() {
+        var writer=writer(List.of());
+        var submitted=Instant.parse("2026-09-30T00:00:00Z");
+        var value=new Input("fixture:feed","fictional-hn-item","Fictional HN",
+                "https://example.invalid/story",null,null,null,"submitted","unavailable",
+                false,"global-hn-v1",1,null,null,submitted);
+        var result=writer.accept(value);
+        assertNull(jdbc.queryForObject("SELECT published_at FROM articles WHERE id=?",java.sql.Timestamp.class,result.articleId()));
+        assertEquals(submitted,jdbc.queryForObject("SELECT submitted_at FROM article_revisions WHERE id=?",java.sql.Timestamp.class,result.revisionId()).toInstant());
+        assertEquals(submitted,jdbc.queryForObject("SELECT source_time FROM article_revisions WHERE id=?",java.sql.Timestamp.class,result.revisionId()).toInstant());
+        assertNull(jdbc.queryForObject("SELECT published_at FROM article_revisions WHERE id=?",java.sql.Timestamp.class,result.revisionId()));
+        var bad=new Input("fixture:feed","bad-hn-item","Fictional HN",
+                "https://example.invalid/story",submitted,null,null,"submitted","unavailable",
+                false,"global-hn-v1",1,null,null,submitted);
+        assertThrows(IllegalArgumentException.class,()->writer.accept(bad));
+        assertEquals(1L,jdbc.queryForObject("SELECT COUNT(*) FROM articles",Long.class));
     }
 
     @Test void newInsertFillsOldRequiredColumnsAndIsIdempotent() {

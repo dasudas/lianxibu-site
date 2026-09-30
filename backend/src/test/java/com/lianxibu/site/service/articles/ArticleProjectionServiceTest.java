@@ -47,7 +47,7 @@ class ArticleProjectionServiceTest {
         jdbc.execute("CREATE TABLE article_revisions(id VARCHAR(64) PRIMARY KEY,"
                 + "created_at TIMESTAMP,revision BIGINT,article_id VARCHAR(64),revision_no BIGINT,"
                 + "content_hash BINARY(32),title VARCHAR(512),source_summary CLOB,body_text CLOB,"
-                + "source_time TIMESTAMP,time_basis VARCHAR(32),content_status VARCHAR(32),"
+                + "source_time TIMESTAMP,published_at TIMESTAMP,updated_at TIMESTAMP,submitted_at TIMESTAMP,time_basis VARCHAR(32),content_status VARCHAR(32),"
                 + "body_truncated INT,parser_version VARCHAR(64),config_version BIGINT,"
                 + "qualification_events_json CLOB,source_order_json CLOB,legacy_flag INT,"
                 + "UNIQUE(article_id,revision_no))");
@@ -61,7 +61,7 @@ class ArticleProjectionServiceTest {
                 "Summary", "Body B", java.sql.Timestamp.from(Instant.parse("2026-01-03T00:00:00Z")),
                 "{}", hash("Title", "Summary", "Body B"), 1,
                 java.sql.Timestamp.from(NOW), "revision-one", order("2026-01-03T00:00:00.000000Z"));
-        jdbc.update("INSERT INTO article_revisions VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        jdbc.update("INSERT INTO article_revisions(id,created_at,revision,article_id,revision_no,content_hash,title,source_summary,body_text,source_time,time_basis,content_status,body_truncated,parser_version,config_version,qualification_events_json,source_order_json,legacy_flag) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 "revision-one", java.sql.Timestamp.from(NOW), 0, "article-one", 1,
                 hash("Title", "Summary", "Body B"), "Title", "Summary", "Body B",
                 java.sql.Timestamp.from(Instant.parse("2026-01-03T00:00:00Z")),
@@ -181,9 +181,9 @@ class ArticleProjectionServiceTest {
     }
     private static Input input(String body, String time) {
         return new Input("fixture:feed", "item-one", "Title", "https://example.invalid/article",
-                time == null ? null : Instant.parse(time), "Summary", body, "updated", "full", false,
+                time == null ? null : Instant.parse("2026-01-02T00:00:00Z"), "Summary", body, "updated", "full", false,
                 "fixture-parser", 1, time == null ? "{\"basis\":\"unknown\",\"domain\":null,"
-                + "\"value\":null,\"evidence_ref\":null}" : order(time));
+                + "\"value\":null,\"evidence_ref\":null}" : order(time), time == null ? null : Instant.parse(time), null);
     }
     private static String order(String time) {
         return "{\"basis\":\"revision_time\",\"domain\":\"fixture-domain\","
