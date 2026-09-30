@@ -30,6 +30,7 @@ class GenerationFlowServiceTest {
     private JdbcTemplate jdbc;
     private GenerationFlowService service;
     private boolean invalidRequest;
+    private boolean preparationAllowed = true;
 
     @BeforeEach void setup() {
         JdbcDataSource source = new JdbcDataSource();
@@ -73,7 +74,19 @@ class GenerationFlowServiceTest {
                 + "\"input_hash\":\"" + hash + "\",\"messages\":[{\"role\":\"user\","
                 + "\"content\":\"fixture\"}],\"response_format\":{\"type\":\"json_object\"},"
                 + "\"parameters\":{},\"schema_version\":\"fixture-v1\","
-                + "\"prompt_version\":\"fixture-v1\"}", time);
+                + "\"prompt_version\":\"fixture-v1\"}", time, () -> preparationAllowed);
+    }
+
+    @Test void capacityStopsNewPreparationWithoutDeletingFrozenInputsOrBlockingReplay() {
+        Prepare value=command(Stage.AD_HOC_AI,LocalDate.of(2026,9,30),List.of(),
+                List.of(evidence("fictional-input",LocalDate.of(2026,9,30),"2026-10-01T04:00:00+08:00")),List.of());
+        Frozen frozen=service.prepare(value,action("before-guard"));
+        preparationAllowed=false;
+        assertEquals(frozen,service.prepare(value,action("before-guard")));
+        assertThrows(GenerationFlowService.CapacityGuarded.class,()->service.prepare(value,action("new-guarded")));
+        assertEquals(1L,jdbc.queryForObject("SELECT COUNT(*) FROM frozen",Long.class));
+        preparationAllowed=true;
+        assertNotEquals(frozen.ownerId(),service.prepare(value,action("new-guarded")).ownerId());
     }
 
     @Test void prioritiesCoverFourteenStagesAndBarrierClosesAtFourThirty() {

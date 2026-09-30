@@ -60,6 +60,9 @@ public final class GenerationFlowService {
     public static final class InputRejected extends RuntimeException {
         public InputRejected() { super("generation input or frozen request rejected"); }
     }
+    public static final class CapacityGuarded extends RuntimeException {
+        public CapacityGuarded() { super("capacity_guard"); }
+    }
     private static final ZoneId SHANGHAI = ZoneId.of("Asia/Shanghai");
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final Set<String> FINISHED = Set.of("succeeded", "complete", "partial", "empty_success");
@@ -67,15 +70,22 @@ public final class GenerationFlowService {
     private final FrozenStore store;
     private final RequestBuilder requests;
     private final Clock clock;
+    private final java.util.function.BooleanSupplier preparationAllowed;
 
     public GenerationFlowService(SharedWriteExecutor writes, FrozenStore store,
                                  RequestBuilder requests, Clock clock) {
-        if (writes == null || store == null || requests == null || clock == null)
+        this(writes,store,requests,clock,() -> false);
+    }
+    public GenerationFlowService(SharedWriteExecutor writes, FrozenStore store,
+                                 RequestBuilder requests, Clock clock,
+                                 java.util.function.BooleanSupplier preparationAllowed) {
+        if (writes == null || store == null || requests == null || clock == null || preparationAllowed == null)
             throw new IllegalArgumentException("generation dependencies required");
         this.writes = writes;
         this.store = store;
         this.requests = requests;
         this.clock = clock;
+        this.preparationAllowed = preparationAllowed;
     }
 
     public Frozen prepare(Prepare command, ActionContext action) {
@@ -83,6 +93,7 @@ public final class GenerationFlowService {
         Instant now = clock.instant();
         Instant cutoff = cutoff(command, now);
         return writes.execute(action, store::committed, context -> {
+            if (!preparationAllowed.getAsBoolean()) throw new CapacityGuarded();
             if (!ready(command, now)) {
                 Frozen waiting = new Frozen(context.preallocatedResourceId(), command.logicalKey(),
                         command.generation(), command.stage(), cutoff, "pending", List.of(),
