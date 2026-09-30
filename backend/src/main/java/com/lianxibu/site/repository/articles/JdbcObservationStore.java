@@ -95,6 +95,17 @@ public final class JdbcObservationStore {
                              String category, String receiptId, String terminalState,
                              String evidenceJson, String articleId, String revisionId,
                              String projectionDecision, Instant now) {
+        insertMember(id, nodeId, observation, category, receiptId, terminalState, evidenceJson,
+                articleId, revisionId, projectionDecision, now, null);
+    }
+
+    public void insertMember(String id, String nodeId, ObservationEnvelope observation,
+                             String category, String receiptId, String terminalState,
+                             String evidenceJson, String articleId, String revisionId,
+                             String projectionDecision, Instant now, String exclusionReason) {
+        String state = "needs_review".equals(projectionDecision) ? "needs_review"
+                : exclusionReason == null ? "pending" : "excluded";
+        String activation = exclusionReason == null ? "pending" : "excluded";
         byte[] itemHash = sourceItemHash(observation.sourceId(), observation.sourceItemId());
         byte[] evidenceHash = evidenceJson == null ? null : sha(evidenceJson);
         JsonNode payload = observation.wire().get("payload");
@@ -117,26 +128,26 @@ public final class JdbcObservationStore {
             jdbc.update("UPDATE source_run_items SET category=?,node_id=?,evidence_json=?,"
                             + "evidence_hash=?,article_id=?,article_revision_id=?,terminal_state='accepted',"
                             + "receipt_ref=?,state=?,projection_decision=?,source_order_json=?,"
+                            + "exclusion_reason=?,activation_state=?,"
                             + "revision=revision+1 WHERE id=? AND terminal_state='pending'",
                     category, nodeId, evidenceJson, evidenceHash, articleId, revisionId,
-                    receiptId, "needs_review".equals(projectionDecision) ? "needs_review" : "pending",
-                    projectionDecision, order, old[0]);
+                    receiptId, state, projectionDecision, order, exclusionReason, activation, old[0]);
             return;
         }
         jdbc.update("INSERT INTO source_run_items(id,created_at,revision,run_id,member_id,source_id,"
                         + "source_item_id,source_item_hash,category,observation_id,node_id,payload_hash,"
                         + "replaces_observation_id,evidence_json,evidence_hash,article_id,article_revision_id,"
                         + "terminal_state,receipt_ref,state,projection_decision,source_order_json,"
-                        + "validity_revision,effective_valid) VALUES(?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
-                        + "?,?,?, ?,?,0,1)",
+                        + "validity_revision,effective_valid,exclusion_reason,activation_state)"
+                        + " VALUES(?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
+                        + "?,?,?, ?,?,0,1,?,?)",
                 id, Timestamp.from(now), observation.runId(), observation.memberId(),
                 observation.sourceId(), observation.sourceItemId(), itemHash, category,
                 observation.observationId(), nodeId,
                 HexFormat.of().parseHex(observation.payloadHash()),
                 nullableText(observation.wire().get("replaces_observation_id")), evidenceJson,
                 evidenceHash, articleId, revisionId, terminalState, receiptId,
-                "needs_review".equals(projectionDecision) ? "needs_review" : "pending",
-                projectionDecision, order);
+                state, projectionDecision, order, exclusionReason, activation);
     }
 
     public static byte[] sourceItemHash(String sourceId, String sourceItemId) {

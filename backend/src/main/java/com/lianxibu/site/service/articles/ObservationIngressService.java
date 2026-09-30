@@ -26,7 +26,15 @@ import tools.jackson.databind.node.ObjectNode;
 public final class ObservationIngressService {
     public record RunSnapshot(String id, String sourceId, LocalDate businessDate,
                               long configVersion, String configSnapshotJson,
-                              String activationStage, String deliveryState) { }
+                              String activationStage, String deliveryState,
+                              Instant windowStart, Instant windowEnd) {
+        public RunSnapshot(String id, String sourceId, LocalDate businessDate, long configVersion,
+                           String configSnapshotJson, String activationStage, String deliveryState) {
+            this(id, sourceId, businessDate, configVersion, configSnapshotJson, activationStage,
+                    deliveryState, businessDate.atStartOfDay(java.time.ZoneId.of("Asia/Shanghai")).toInstant(),
+                    businessDate.plusDays(1).atStartOfDay(java.time.ZoneId.of("Asia/Shanghai")).toInstant());
+        }
+    }
     public interface RunReader {
         RunSnapshot locked(String runId);
     }
@@ -164,8 +172,12 @@ public final class ObservationIngressService {
             String revisionId = null;
             String decision = null;
             Long articleRevision = null;
+            Prepared qualified = prepared;
             if ("article".equals(observation.kind())) {
-                var written = articles.accept(articleInput(observation, prepared),
+                var input = articleInput(observation, prepared);
+                qualified = prepared.withExclusion(ArticleWindowQualification.exclusion(input,
+                        run.windowStart(), run.windowEnd()));
+                var written = articles.accept(input,
                         prepared.businessDate());
                 articleId = written.articleId();
                 revisionId = written.evidenceRevisionId();
@@ -174,7 +186,7 @@ public final class ObservationIngressService {
             }
             Ack accepted = persist(context, currentNode.nodeId(), observation, run.id(),
                     "accepted", "accepted", articleId, revisionId, decision,
-                    prepared.evidenceJson(), articleRevision, prepared, true);
+                    prepared.evidenceJson(), articleRevision, qualified, true);
             finalizer.recompute(run.id());
             return accepted;
         });
@@ -193,7 +205,7 @@ public final class ObservationIngressService {
         if (member) {
             store.insertMember(UUID.randomUUID().toString(), nodeId, observation,
                     prepared.category(), receiptId, "accepted", evidenceJson,
-                    articleId, revisionId, decision, now);
+                    articleId, revisionId, decision, now, prepared.exclusionReason());
         }
         return ack;
     }
@@ -263,7 +275,7 @@ public final class ObservationIngressService {
         }
         String evidence = new String(CanonicalJson.bytes(payload), StandardCharsets.UTF_8);
         return new Prepared(day, sourceRevision, retrieved, category, evidence,
-                payload.get("parser_version").asText(), payload.get("config_version").longValue());
+                payload.get("parser_version").asText(), payload.get("config_version").longValue(), null);
     }
 
     private static ArticleCompatibilityWriter.Input articleInput(ObservationEnvelope value,
@@ -273,18 +285,14 @@ public final class ObservationIngressService {
             throw new IllegalArgumentException("article config revision mismatch");
         }
         String timeBasis = payload.get("time_basis").asText();
-        Instant sourceTime = switch (timeBasis) {
-            case "published" -> nullableTime(payload.get("published_at"));
-            case "updated" -> nullableTime(payload.get("updated_at"));
-            default -> null;
-        };
         return new ArticleCompatibilityWriter.Input(value.sourceId(), value.sourceItemId(),
                 payload.get("title").asText(), payload.get("source_url").asText(),
-                sourceTime, nullableText(payload.get("source_summary")),
+                nullableTime(payload.get("published_at")), nullableText(payload.get("source_summary")),
                 nullableText(payload.get("body_text")), timeBasis,
                 payload.get("content_status").asText(), payload.get("body_truncated").booleanValue(),
                 payload.get("parser_version").asText(), prepared.sourceRevision(),
-                new String(CanonicalJson.bytes(payload.get("source_order")), StandardCharsets.UTF_8));
+                new String(CanonicalJson.bytes(payload.get("source_order")), StandardCharsets.UTF_8),
+                nullableTime(payload.get("updated_at")), nullableTime(payload.get("submitted_at")));
     }
 
     private static String json(Ack ack, String runId) {
@@ -305,9 +313,14 @@ public final class ObservationIngressService {
     }
     private static String nullableText(JsonNode node) { return node.isNull() ? null : node.asText(); }
     private static Instant nullableTime(JsonNode node) {
-        return node.isNull() ? null : Instant.parse(node.asText());
+        return node == null || node.isNull() ? null : Instant.parse(node.asText());
     }
     private record Prepared(LocalDate businessDate, long sourceRevision, Instant retrievedAt,
                             String category, String evidenceJson, String parserVersion,
-                            long payloadConfigVersion) { }
+                            long payloadConfigVersion, String exclusionReason) {
+        Prepared withExclusion(String reason) {
+            return new Prepared(businessDate, sourceRevision, retrievedAt, category, evidenceJson,
+                    parserVersion, payloadConfigVersion, reason);
+        }
+    }
 }

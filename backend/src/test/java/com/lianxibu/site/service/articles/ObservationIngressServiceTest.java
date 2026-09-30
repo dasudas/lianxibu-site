@@ -91,7 +91,7 @@ class ObservationIngressServiceTest {
                 + "article_id VARCHAR(64),article_revision_id VARCHAR(64),part_no BIGINT,terminal_state VARCHAR(16),"
                 + "receipt_ref VARCHAR(64),state VARCHAR(32),projection_decision VARCHAR(16),"
                 + "source_order_json CLOB,validity_revision BIGINT,effective_valid INT,"
-                + "exclusion_reason VARCHAR(128),"
+                + "exclusion_reason VARCHAR(128),activation_state VARCHAR(16),"
                 + "UNIQUE(run_id,member_id),UNIQUE(run_id,source_item_hash))");
         jdbc.execute("CREATE TABLE fixture_articles(id VARCHAR(64) PRIMARY KEY,source_item_id VARCHAR(200))");
         jdbc.execute("CREATE TABLE fixture_revisions(id VARCHAR(64) PRIMARY KEY,article_id VARCHAR(64))");
@@ -116,7 +116,7 @@ class ObservationIngressServiceTest {
             var row = runs.locked(runId);
             return row == null ? null : new ObservationIngressService.RunSnapshot(row.id(),
                     row.sourceId(), row.businessDate(), row.configVersion(),
-                    row.configSnapshotJson(), row.activationStage(), row.deliveryState());
+                    row.configSnapshotJson(), row.activationStage(), row.deliveryState(), row.windowStart(), row.windowEnd());
         }, writes, nodes, (input, day) -> {
             boolean inserted = count("fixture_articles") == 0;
             if (inserted) {
@@ -130,6 +130,71 @@ class ObservationIngressServiceTest {
         }, time);
     }
 
+    @Test void hnSubmissionPersistsSeparatelyAndDuplicateDoesNotReclassify() {
+        jdbc.update("UPDATE sources SET id='global-hn' WHERE id='fixture:feed'");
+        jdbc.update("UPDATE source_runs SET source_id='global-hn' WHERE id='run-fixture'");
+        var tx=new DataSourceTransactionManager(db);
+        var identity=new SourceIdentityMappingService(new JdbcSourceReads(db),tx,List.of(
+                new ReviewedMapping("global-hn","article",SourceIdentityMappingService.sha256(
+                        "{\"url\":\"https://feeds.example.invalid/news\"}"),"https://feeds.example.invalid/news","article")));
+        var writer=new ArticleCompatibilityWriter(new JdbcArticleWrites(db),identity,tx,time,List.of());
+        var integrated=new ObservationIngressService(new JdbcObservationStore(db),runId->{
+            var row=runs.locked(runId);
+            return new ObservationIngressService.RunSnapshot(row.id(),row.sourceId(),row.businessDate(),
+                    row.configVersion(),row.configSnapshotJson(),row.activationStage(),row.deliveryState(),row.windowStart(),row.windowEnd());
+        },writes,nodes,(input,day)->{
+            var baseline=writer.accept(input);
+            var selected=new ArticleProjectionService(new JdbcArticleProjection(db),List.of(),time).decide(input,baseline,day);
+            return new ObservationIngressService.ArticleOutcome(selected.articleId(),selected.evidenceRevisionId(),selected.projectionDecision(),selected.articleRevision());
+        },time);
+        byte[] raw=hn("hn-accepted","2026-01-02T00:00:00.000000Z");
+        assertEquals("accepted",integrated.accept("node-fixture",raw,action("hn-accepted")).status());
+        assertNull(jdbc.queryForObject("SELECT published_at FROM articles",java.sql.Timestamp.class));
+        assertNull(jdbc.queryForObject("SELECT published_at FROM article_revisions",java.sql.Timestamp.class));
+        assertEquals(Instant.parse("2026-01-02T00:00:00Z"),jdbc.queryForObject("SELECT submitted_at FROM article_revisions",java.sql.Timestamp.class).toInstant());
+        assertEquals(jdbc.queryForObject("SELECT submitted_at FROM article_revisions",java.sql.Timestamp.class),jdbc.queryForObject("SELECT source_time FROM article_revisions",java.sql.Timestamp.class));
+        assertEquals("pending",jdbc.queryForObject("SELECT state FROM source_run_items",String.class));
+        assertNull(jdbc.queryForObject("SELECT exclusion_reason FROM source_run_items",String.class));
+        assertEquals("duplicate",integrated.accept("node-fixture",raw,action("hn-accepted")).status());
+        assertEquals(1L,count("article_revisions"));
+    }
+
+    @Test void submissionWindowIsHalfOpenAndInvalidCombinationHasNoMember() {
+        jdbc.update("UPDATE source_runs SET source_id='global-hn' WHERE id='run-fixture'");
+        for(String[] sample:List.of(new String[]{"start","2026-01-01T16:00:00.000000Z","pending"},
+                new String[]{"end","2026-01-02T16:00:00.000000Z","excluded"},
+                new String[]{"before","2026-01-01T15:59:59.999999Z","excluded"})) {
+            String id="hn-"+sample[0];
+            assertEquals("accepted",service.accept("node-fixture",hn(id,sample[1]),action(id)).status());
+            assertEquals(sample[2],jdbc.queryForObject("SELECT state FROM source_run_items WHERE observation_id=?",String.class,id));
+            assertEquals("excluded".equals(sample[2])?"outside_window":null,
+                    jdbc.queryForObject("SELECT exclusion_reason FROM source_run_items WHERE observation_id=?",String.class,id));
+            assertEquals("excluded".equals(sample[2])?"excluded":"pending",
+                    jdbc.queryForObject("SELECT activation_state FROM source_run_items WHERE observation_id=?",String.class,id));
+        }
+        ObjectNode bad=(ObjectNode)CanonicalJson.parse(hn("hn-invalid","2026-01-02T00:00:00.000000Z"));
+        ((ObjectNode)bad.get("payload")).put("published_at","2026-01-02T00:00:00.000000Z");
+        bad.remove("payload_hash");bad.put("payload_hash",CanonicalJson.hash(Domain.OBSERVATION,bad));
+        assertEquals("rejected",service.accept("node-fixture",CanonicalJson.bytes(bad),action("hn-invalid")).status());
+        assertEquals(3L,count("source_run_items"));
+    }
+
+    @Test void unknownTimeRemainsEvidenceButCannotActivateAnalysis() {
+        var raw=article("unknown-time","Title","run-fixture","member-unknown");
+        assertEquals("accepted",service.accept("node-fixture",raw,action("unknown-time")).status());
+        assertEquals("time_unknown",jdbc.queryForObject("SELECT exclusion_reason FROM source_run_items",String.class));
+        assertEquals("excluded",jdbc.queryForObject("SELECT activation_state FROM source_run_items",String.class));
+        assertEquals(1,jdbc.queryForObject("SELECT effective_valid FROM source_run_items",Integer.class));
+        assertEquals("accepted",jdbc.queryForObject("SELECT terminal_state FROM source_run_items",String.class));
+    }
+
+    private byte[] hn(String id,String submitted) {
+        ObjectNode root=(ObjectNode)CanonicalJson.parse(article(id,"Fictional HN","run-fixture","member-"+id));
+        root.put("protocol_revision","0.12");root.put("source_id","global-hn");root.put("source_item_id",id);
+        ObjectNode payload=(ObjectNode)root.get("payload");payload.put("submitted_at",submitted);payload.put("time_basis","submitted");
+        root.remove("payload_hash");root.put("payload_hash",CanonicalJson.hash(Domain.OBSERVATION,root));
+        return CanonicalJson.bytes(root);
+    }
     @Test void articleRevisionEvidenceAndPermanentAckCommitTogether() {
         byte[] raw = article("obs-one", "Title", "run-fixture", "member-one");
         var accepted = service.accept("node-fixture", raw, action("obs-one"));
@@ -250,7 +315,7 @@ class ObservationIngressServiceTest {
             var row = runs.locked(runId);
             return row == null ? null : new ObservationIngressService.RunSnapshot(row.id(),
                     row.sourceId(), row.businessDate(), row.configVersion(),
-                    row.configSnapshotJson(), row.activationStage(), row.deliveryState());
+                    row.configSnapshotJson(), row.activationStage(), row.deliveryState(), row.windowStart(), row.windowEnd());
         }, writes, nodes, (input, day) -> {
             var compatible = writer.accept(input);
             var projected = new ArticleProjectionService(new JdbcArticleProjection(db),
@@ -441,7 +506,7 @@ class ObservationIngressServiceTest {
     private static final class TestNodes implements ObservationIngressService.NodeAuthorizer {
         boolean revoked;
         @Override public Principal authorize(String bearer, String sourceId) {
-            if (revoked || !"node-fixture".equals(bearer) || !"fixture:feed".equals(sourceId)) {
+            if (revoked || !"node-fixture".equals(bearer) || !Set.of("fixture:feed","global-hn").contains(sourceId)) {
                 throw new SecurityException("node permission denied");
             }
             return new Principal("node-fixture", List.of(sourceId), List.of("observation:write"), 1);

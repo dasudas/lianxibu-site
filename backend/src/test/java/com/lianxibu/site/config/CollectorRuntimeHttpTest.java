@@ -344,7 +344,7 @@ class CollectorRuntimeHttpTest {
                 + "article_id VARCHAR(64),article_revision_id VARCHAR(64),part_no BIGINT,terminal_state VARCHAR(16),"
                 + "receipt_ref VARCHAR(64),state VARCHAR(32),projection_decision VARCHAR(16),"
                 + "source_order_json CLOB,validity_revision BIGINT,effective_valid INT,"
-                + "exclusion_reason VARCHAR(128),UNIQUE(run_id,member_id),UNIQUE(run_id,source_item_hash))");
+                + "exclusion_reason VARCHAR(128),activation_state VARCHAR(16),UNIQUE(run_id,member_id),UNIQUE(run_id,source_item_hash))");
     }
 
     private void ddl(String statement) {

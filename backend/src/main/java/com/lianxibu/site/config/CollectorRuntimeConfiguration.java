@@ -83,7 +83,7 @@ public class CollectorRuntimeConfiguration {
             var row = runs.locked(runId);
             return row == null ? null : new ObservationIngressService.RunSnapshot(row.id(),
                     row.sourceId(), row.businessDate(), row.configVersion(), row.configSnapshotJson(),
-                    row.activationStage(), row.deliveryState());
+                    row.activationStage(), row.deliveryState(), row.windowStart(), row.windowEnd());
         }, writes, nodes, articles, projection, manifests::recomputeAfterMember, clock);
     }
 

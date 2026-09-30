@@ -83,6 +83,14 @@ class EntityDedupServiceTest {
                 Clock.fixed(Instant.parse("2026-09-30T12:00:00Z"), ZoneOffset.UTC));
     }
 
+    @Test void windowExcludedEvidenceCannotAcquireEntityContribution() {
+        item("outside","run-one","source-a","item-outside","news_tech");
+        jdbc.update("UPDATE source_run_items SET state='excluded' WHERE id='outside'");
+        assertThrows(Rejected.class,()->service.applyAutomatic(newDecision("outside","news_tech","stable-key"),action("outside")));
+        assertEquals(0L,jdbc.queryForObject("SELECT COUNT(*) FROM analyzed_entities",Long.class));
+        assertEquals(0L,jdbc.queryForObject("SELECT COUNT(*) FROM dispositions",Long.class));
+    }
+
     @Test void independentSourceItemsCountOnceAcrossRunsAndRetries() {
         item("one", "run-one", "source-a", "item-a", "news_tech");
         item("again", "run-two", "source-a", "item-a", "news_tech");

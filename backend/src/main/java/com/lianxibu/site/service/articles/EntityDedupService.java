@@ -215,6 +215,7 @@ public final class EntityDedupService {
     }
     private static void requireEvidence(Member item) {
         if (!"accepted".equals(item.terminalState()) || !item.effectiveValid()
+                || "excluded".equals(item.state())
                 || "needs_review".equals(item.projectionDecision())
                 || item.sourceItemId() == null || item.sourceItemId().isBlank()) throw new Rejected();
     }
