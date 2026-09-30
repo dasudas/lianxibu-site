@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import tools.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,11 +56,15 @@ class CollectorRuntimeHttpTest {
         jdbc.update("INSERT INTO sources VALUES(?,?,?,?,?,?,?,?,?,?,?)", "fixture:feed", "rss", "Fixture",
                 config, config, config, 1, 1, "production", Timestamp.from(Instant.parse("2027-01-01T00:00:00Z")),
                 "news_tech");
+        jdbc.update("INSERT INTO sources VALUES(?,?,?,?,?,?,?,?,?,?,?)", "fixture:go", "rss", "Go Fixture",
+                config, config, config, 1, 1, "production", Timestamp.from(Instant.parse("2027-01-01T00:00:00Z")),
+                "news_tech");
         jdbc.update("INSERT INTO collector_nodes VALUES(?,?,?,?,?,?,?,?)", "fixture-node", "Fixture",
-                NodeTokens.digest(TOKEN), "[\"fixture:feed\"]", 1, null, 1,
+                NodeTokens.digest(TOKEN), "[\"fixture:feed\",\"fixture:go\"]", 1, null, 1,
                 "[\"config:read\",\"run:claim\",\"run:read\",\"run:write\",\"observation:write\","
                         + "\"probe:claim\",\"probe:write\"]");
         leases.scheduleDaily("fixture:feed", new ActionContext("schedule-http", "fixture-http-run", "fixture"));
+        leases.scheduleDaily("fixture:go", new ActionContext("schedule-go-http", "fixture-go-run", "fixture"));
         String root = "http://127.0.0.1:" + port + "/api/collector/v1";
         try (HttpClient client = HttpClient.newHttpClient()) {
             assertEquals(401, client.send(HttpRequest.newBuilder(URI.create(root + "/config")).GET().build(),
@@ -164,6 +169,29 @@ class CollectorRuntimeHttpTest {
             assertEquals("duplicate", CanonicalJson.parse(replay.body()).get("data").get("acks")
                     .get(0).get("status").asText());
             assertEquals(1L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
+            goInterop("fresh");
+            if (System.getenv("V02_GO_EXEC") != null) {
+                assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
+                assertEquals("receiving", jdbc.queryForObject(
+                        "SELECT delivery_state FROM source_runs WHERE id=?", String.class, "fixture-go-run"));
+                byte[] originalClaimHash = jdbc.queryForObject(
+                        "SELECT claim_token_hash FROM source_runs WHERE id=?", byte[].class, "fixture-go-run");
+                assertNotNull(originalClaimHash);
+                jdbc.update("UPDATE source_runs SET claim_token_hash=? WHERE id=?",
+                        NodeTokens.digest("C".repeat(43)), "fixture-go-run");
+                goInterop("stale");
+                jdbc.update("UPDATE source_runs SET claim_token_hash=? WHERE id=?",
+                        originalClaimHash, "fixture-go-run");
+                Timestamp closed = Timestamp.from(Instant.now());
+                assertEquals(1, jdbc.update("UPDATE source_runs SET delivery_state='complete',"
+                                + "finished_at=?,barrier_closed_at=? WHERE id=?",
+                        closed, closed, "fixture-go-run"));
+                assertEquals(1, jdbc.update("UPDATE request_receipts SET created_at=? WHERE observation_id=?",
+                        Timestamp.from(Instant.now().minusSeconds(91L * 24 * 3600)),
+                        "go-metric-observation"));
+                goInterop("replay");
+                assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
+            }
             ObjectNode article = null;
             for (JsonNode sample : examples.get("cases")) {
                 if ("ObservationEnvelope".equals(sample.get("schema").asText())
@@ -191,7 +219,8 @@ class CollectorRuntimeHttpTest {
                             + new String(CanonicalJson.bytes(article), StandardCharsets.UTF_8) + "]}"))
                     .build(), HttpResponse.BodyHandlers.ofString());
             assertEquals(503, unreviewed.statusCode());
-            assertEquals(1L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
+            assertEquals(System.getenv("V02_GO_EXEC") == null ? 1L : 2L,
+                    jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
             assertEquals(0L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts WHERE observation_id=?",
                     Long.class, "unreviewed-article"));
             jdbc.update("UPDATE sources SET activation_stage='disabled',config_revision=2 WHERE id=?",
@@ -230,6 +259,7 @@ class CollectorRuntimeHttpTest {
                     String.class, "fixture-http-probe"));
             jdbc.update("UPDATE collector_nodes SET token_hash=? WHERE id=?",
                     NodeTokens.digest("B".repeat(43)), "fixture-node");
+            goInterop("revoked");
             assertEquals(403, client.send(HttpRequest.newBuilder(URI.create(root + "/runs/fixture-http-run"))
                     .header("Authorization", "Bearer " + TOKEN).GET().build(),
                     HttpResponse.BodyHandlers.discarding()).statusCode());
@@ -298,5 +328,33 @@ class CollectorRuntimeHttpTest {
             statement = statement.replace("CLOB", "LONGTEXT");
         }
         jdbc.execute(statement);
+    }
+
+    private void goInterop(String mode) throws Exception {
+        String go = System.getenv("V02_GO_EXEC");
+        if (go == null) return;
+        ProcessBuilder command = new ProcessBuilder(go, "test", "./internal/client", "-run",
+                "^TestJavaInterop$", "-count=1");
+        command.directory(Path.of("../collector").toAbsolutePath().normalize().toFile());
+        command.redirectErrorStream(true);
+        Path childLog = Path.of("target/v02-go-child.log").toAbsolutePath();
+        command.redirectOutput(childLog.toFile());
+        command.environment().put("V02_BASE_URL", "https://127.0.0.1:" + port);
+        command.environment().put("V02_NODE_TOKEN", TOKEN);
+        command.environment().put("V02_MODE", mode);
+        command.environment().put("V02_FROZEN_FILE", Path.of("target/v02-frozen-observation.json")
+                .toAbsolutePath().toString());
+        command.environment().put("V02_CLAIM_FILE", Path.of("target/v02-frozen-claim.json")
+                .toAbsolutePath().toString());
+        command.environment().put("GOTOOLCHAIN", "local");
+        command.environment().put("GOPROXY", "off");
+        command.environment().put("GOROOT", Path.of(go).getParent().getParent().toString());
+        Process process = command.start();
+        if (!process.waitFor(120, TimeUnit.SECONDS)) {
+            process.destroyForcibly();
+            fail("Go interop timed out");
+        }
+        String output = Files.readString(childLog, StandardCharsets.UTF_8);
+        assertEquals(0, process.exitValue(), output);
     }
 }

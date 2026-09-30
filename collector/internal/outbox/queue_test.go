@@ -54,6 +54,39 @@ func TestObservationAckAppliesOnlyExactFrozenBatchAtomically(t *testing.T) {
 	}
 }
 
+func TestIdentityConflictQuarantinesExactFrozenObservation(t *testing.T) {
+	store, err := Open(filepath.Join(t.TempDir(), "queue.db"), "node", fixtureClock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	if err := store.PersistClaim(fixtureClaim()); err != nil {
+		t.Fatal(err)
+	}
+	record := fixtureRecord("3")
+	if err := store.SavePage(context.Background(), "run-1", "token-a", 0, "", "end", []Record{record}); err != nil {
+		t.Fatal(err)
+	}
+	batch, err := store.NextObservationBatch(context.Background(), 10, 512<<10)
+	if err != nil || len(batch) != 1 {
+		t.Fatal("frozen observation not selected", err)
+	}
+	if err := store.QuarantineObservations(context.Background(), batch); err != nil {
+		t.Fatal(err)
+	}
+	got, state, err := store.Record(context.Background(), record.ID)
+	if err != nil || state != "quarantine" || string(got.Payload) != string(record.Payload) {
+		t.Fatal("identity conflict lost frozen evidence", err)
+	}
+	var code string
+	if err := store.db.QueryRow("SELECT last_error_code FROM outbox WHERE id=?", record.ID).Scan(&code); err != nil || code != "identity_conflict" {
+		t.Fatal("identity conflict reason not durable", err)
+	}
+	if err := store.QuarantineObservations(context.Background(), batch); !errors.Is(err, ErrConflict) {
+		t.Fatal("same identity quarantined twice", err)
+	}
+}
+
 func TestControlReceiptBindsAttemptAndLateOldClaimCannotAcknowledgeNewBusiness(t *testing.T) {
 	now := fixtureClock()
 	store, err := Open(filepath.Join(t.TempDir(), "queue.db"), "node", func() time.Time { return now })

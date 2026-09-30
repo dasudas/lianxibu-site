@@ -87,7 +87,7 @@ public final class JdbcCollectorGateway implements CollectorGateway {
         } catch (RunManifestService.RunFrozen frozen) {
             throw new Refused(409, "run_frozen");
         } catch (ObservationIngressService.IdentityConflict conflict) {
-            throw new Refused(409, "observation_identity_conflict");
+            throw new Refused(409, "identity_conflict");
         } catch (ProbeResultService.ProbeRejected rejected) {
             throw new Refused(409, "stale_claim");
         }

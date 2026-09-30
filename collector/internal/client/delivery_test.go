@@ -18,6 +18,8 @@ type memoryDeliveryQueue struct {
 	control        *ControlAttempt
 	accepted       int
 	retried        int
+	quarantined    int
+	failAckOnce    bool
 	controlApplied bool
 	controlCurrent bool
 	stopped        bool
@@ -28,11 +30,19 @@ func (q *memoryDeliveryQueue) NextObservationBatch(context.Context, int, int) ([
 	return q.observations, nil
 }
 func (q *memoryDeliveryQueue) ApplyObservationAcks(_ context.Context, b []FrozenObservation, acks []ObservationAck) error {
+	if q.failAckOnce {
+		q.failAckOnce = false
+		return errors.New("fictional local ACK commit failure")
+	}
 	q.accepted += len(acks)
 	return nil
 }
 func (q *memoryDeliveryQueue) RetryObservations(_ context.Context, b []FrozenObservation) error {
 	q.retried++
+	return nil
+}
+func (q *memoryDeliveryQueue) QuarantineObservations(_ context.Context, b []FrozenObservation) error {
+	q.quarantined += len(b)
 	return nil
 }
 func (q *memoryDeliveryQueue) NextControlAttempt(context.Context) (*ControlAttempt, error) {

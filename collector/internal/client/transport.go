@@ -19,6 +19,7 @@ var ErrRetryable = errors.New("collector server temporarily unavailable")
 var ErrStaleClaim = errors.New("claim is stale")
 var ErrRevisionConflict = errors.New("run or member revision conflict")
 var ErrRunFrozen = errors.New("run business identity frozen")
+var ErrIdentityConflict = errors.New("observation identity conflict")
 var ErrConfigExpired = errors.New("collector configuration expired")
 
 type SourceConfig struct {
@@ -327,6 +328,8 @@ func (c *Client) request(ctx context.Context, method, path, key string, body []b
 				return nil, ErrRevisionConflict
 			case "run_frozen":
 				return nil, ErrRunFrozen
+			case "identity_conflict":
+				return nil, ErrIdentityConflict
 			}
 		}
 		return nil, errors.New("collector control conflict")

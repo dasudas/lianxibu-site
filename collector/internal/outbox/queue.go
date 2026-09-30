@@ -71,6 +71,26 @@ func (s *Store) RetryObservations(ctx context.Context, batch []client.FrozenObse
 	})
 }
 
+// An identity conflict is permanent for the frozen observation ID and bytes.
+func (s *Store) QuarantineObservations(ctx context.Context, batch []client.FrozenObservation) error {
+	return s.write(ctx, func(conn *sql.Conn) error {
+		for _, item := range batch {
+			result, err := conn.ExecContext(ctx, `UPDATE outbox
+SET state='quarantine',revision=revision+1,last_error_code='identity_conflict'
+WHERE id=? AND state='sending' AND observation_id=? AND member_id=? AND payload_hash=?`,
+				item.RecordID, item.ObservationID, item.MemberID, item.PayloadHash)
+			if err != nil {
+				return err
+			}
+			changed, err := result.RowsAffected()
+			if err != nil || changed != 1 {
+				return ErrConflict
+			}
+		}
+		return nil
+	})
+}
+
 func (s *Store) ApplyObservationAcks(ctx context.Context, batch []client.FrozenObservation, acks []client.ObservationAck) error {
 	if len(batch) != len(acks) {
 		return ErrConflict

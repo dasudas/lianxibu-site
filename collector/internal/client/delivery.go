@@ -43,6 +43,7 @@ type DeliveryQueue interface {
 	NextObservationBatch(context.Context, int, int) ([]FrozenObservation, error)
 	ApplyObservationAcks(context.Context, []FrozenObservation, []ObservationAck) error
 	RetryObservations(context.Context, []FrozenObservation) error
+	QuarantineObservations(context.Context, []FrozenObservation) error
 	NextControlAttempt(context.Context) (*ControlAttempt, error)
 	RetryControlAttempt(context.Context, ControlAttempt) error
 	ApplyControlReceipt(context.Context, ControlAttempt, ControlResult) (bool, error)
@@ -94,6 +95,12 @@ func (d *Delivery) UploadOneBatch(ctx context.Context) (int, error) {
 	}
 	raw, err := d.client.request(ctx, http.MethodPost, "/observations", "", body.Bytes())
 	if err != nil {
+		if errors.Is(err, ErrIdentityConflict) {
+			if quarantineErr := d.queue.QuarantineObservations(ctx, batch); quarantineErr != nil {
+				return 0, quarantineErr
+			}
+			return 0, err
+		}
 		_ = d.queue.RetryObservations(ctx, batch)
 		return 0, err
 	}
