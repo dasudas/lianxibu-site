@@ -45,8 +45,9 @@ type ReleasesAdapter struct {
 
 var _ scheduler.Adapter = (*ReleasesAdapter)(nil)
 
-func React() *ReleasesAdapter { return newReleases("global-react") }
-func Vue() *ReleasesAdapter   { return newReleases("global-vue") }
+func React() *ReleasesAdapter  { return newReleases("global-react") }
+func Vue() *ReleasesAdapter    { return newReleases("global-vue") }
+func Spring() *ReleasesAdapter { return newReleases("global-spring") }
 func newReleases(source string) *ReleasesAdapter {
 	return &ReleasesAdapter{feed: &FeedAdapter{sourceID: source, version: source + "-v1", format: fetcher.JSON}, pending: map[string]releasePending{}}
 }
