@@ -88,7 +88,7 @@ class ObservationIngressServiceTest {
                 + "source_item_id CLOB,source_item_hash BINARY(32),category VARCHAR(16),"
                 + "observation_id VARCHAR(64),node_id VARCHAR(64),payload_hash BINARY(32),"
                 + "replaces_observation_id VARCHAR(64),evidence_json CLOB,evidence_hash BINARY(32),"
-                + "article_id VARCHAR(64),article_revision_id VARCHAR(64),terminal_state VARCHAR(16),"
+                + "article_id VARCHAR(64),article_revision_id VARCHAR(64),part_no BIGINT,terminal_state VARCHAR(16),"
                 + "receipt_ref VARCHAR(64),state VARCHAR(32),projection_decision VARCHAR(16),"
                 + "source_order_json CLOB,validity_revision BIGINT,effective_valid INT,"
                 + "exclusion_reason VARCHAR(128),"
@@ -148,6 +148,26 @@ class ObservationIngressServiceTest {
         assertEquals(accepted.acceptedAt(), duplicate.acceptedAt());
         assertEquals(1L, count("fixture_revisions"));
         assertEquals(1L, count("source_run_items"));
+    }
+
+    @Test void observationFillsFrozenManifestPlaceholderWithoutAddingMember() {
+        byte[] raw = article("obs-reserved", "Reserved title", "run-fixture", "member-reserved");
+        String hash = CanonicalJson.parse(raw).get("payload_hash").asText();
+        jdbc.update("INSERT INTO source_run_items(id,created_at,revision,run_id,member_id,source_id,"
+                        + "source_item_id,source_item_hash,observation_id,node_id,payload_hash,"
+                        + "part_no,terminal_state,state,validity_revision,effective_valid)"
+                        + " VALUES(?,?,0,?,?,?,?,?,?,?,?,0,'pending','pending',0,1)",
+                "reserved-row", java.sql.Timestamp.from(time.instant()), "run-fixture", "member-reserved",
+                "fixture:feed", "fixture-item", JdbcObservationStore.sourceItemHash("fixture:feed", "fixture-item"),
+                "obs-reserved", "node-fixture", java.util.HexFormat.of().parseHex(hash));
+        jdbc.update("UPDATE source_runs SET part_count=1 WHERE id='run-fixture'");
+        var accepted = service.accept("node-fixture", raw, action("obs-reserved"));
+        assertEquals("accepted", accepted.status());
+        assertEquals(1L, count("source_run_items"));
+        assertEquals("accepted", jdbc.queryForObject("SELECT terminal_state FROM source_run_items",
+                String.class));
+        assertEquals(accepted.receiptRef(), jdbc.queryForObject("SELECT receipt_ref FROM source_run_items",
+                String.class));
     }
 
     @Test void conflictingIdentityAndRevokedNodeNeverReplaySuccess() {

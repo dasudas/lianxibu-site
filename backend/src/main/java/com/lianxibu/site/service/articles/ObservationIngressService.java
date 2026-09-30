@@ -36,6 +36,7 @@ public final class ObservationIngressService {
     public interface ArticleWriter {
         ArticleOutcome accept(ArticleCompatibilityWriter.Input input, LocalDate businessDate);
     }
+    @FunctionalInterface public interface RunFinalizer { void recompute(String runId); }
     public record ArticleOutcome(String articleId, String evidenceRevisionId,
                                  String projectionDecision, long articleRevision) { }
     public record Ack(String observationId, String memberId, String status, String code,
@@ -53,12 +54,19 @@ public final class ObservationIngressService {
     private final NodeAuthorizer nodes;
     private final ArticleWriter articles;
     private final Clock clock;
+    private final RunFinalizer finalizer;
 
     public ObservationIngressService(JdbcObservationStore store, RunReader runs,
                                      SharedWriteExecutor writes, NodeAuthorizer nodes,
                                      ArticleWriter articles, Clock clock) {
+        this(store, runs, writes, nodes, articles, ignored -> { }, clock);
+    }
+
+    public ObservationIngressService(JdbcObservationStore store, RunReader runs,
+                                     SharedWriteExecutor writes, NodeAuthorizer nodes,
+                                     ArticleWriter articles, RunFinalizer finalizer, Clock clock) {
         if (store == null || runs == null || writes == null || nodes == null
-                || articles == null || clock == null) {
+                || articles == null || finalizer == null || clock == null) {
             throw new IllegalArgumentException("observation dependencies required");
         }
         this.store = store;
@@ -67,12 +75,21 @@ public final class ObservationIngressService {
         this.nodes = nodes;
         this.articles = articles;
         this.clock = clock;
+        this.finalizer = finalizer;
     }
 
     public ObservationIngressService(JdbcObservationStore store, RunReader runs,
                                      SharedWriteExecutor writes, NodeIdentityService nodes,
                                      ArticleCompatibilityWriter articles,
                                      ArticleProjectionService projection, Clock clock) {
+        this(store, runs, writes, nodes, articles, projection, ignored -> { }, clock);
+    }
+
+    public ObservationIngressService(JdbcObservationStore store, RunReader runs,
+                                     SharedWriteExecutor writes, NodeIdentityService nodes,
+                                     ArticleCompatibilityWriter articles,
+                                     ArticleProjectionService projection, RunFinalizer finalizer,
+                                     Clock clock) {
         this(store, runs, writes,
                 (bearer, sourceId) -> nodes.authorizeBearer(bearer, "observation:write", sourceId),
                 (input, day) -> {
@@ -81,7 +98,7 @@ public final class ObservationIngressService {
                     return new ArticleOutcome(decided.articleId(),
                             decided.evidenceRevisionId(), decided.projectionDecision(),
                             decided.articleRevision());
-                }, clock);
+                }, finalizer, clock);
     }
 
     /** Caller supplies the exact outbox bytes; no normalization or network work occurs under lock. */
@@ -131,15 +148,17 @@ public final class ObservationIngressService {
             }
             var prior = store.member(run.id(), observation.memberId());
             JsonNode replaces = observation.wire().get("replaces_observation_id");
+            boolean reserved = prior != null && "pending".equals(prior.terminalState())
+                    && prior.observationId().equals(observation.observationId());
             if (prior == null && !replaces.isNull()) throw new IdentityConflict();
-            if (prior != null) {
+            if (prior != null && !reserved) {
                 if (replaces.isNull() || !prior.observationId().equals(replaces.asText())
                         || !"accepted".equals(prior.terminalState())
                         || store.manifestStarted(run.id()) || !store.supersede(prior)) {
                     throw new IdentityConflict();
                 }
             }
-            if (store.itemIdentityTaken(run.id(), observation.sourceId(),
+            if (!reserved && store.itemIdentityTaken(run.id(), observation.sourceId(),
                     observation.sourceItemId())) throw new IdentityConflict();
             String articleId = null;
             String revisionId = null;
@@ -153,9 +172,11 @@ public final class ObservationIngressService {
                 decision = written.projectionDecision();
                 articleRevision = written.articleRevision();
             }
-            return persist(context, currentNode.nodeId(), observation, run.id(),
+            Ack accepted = persist(context, currentNode.nodeId(), observation, run.id(),
                     "accepted", "accepted", articleId, revisionId, decision,
                     prepared.evidenceJson(), articleRevision, prepared, true);
+            finalizer.recompute(run.id());
+            return accepted;
         });
     }
 

@@ -100,6 +100,29 @@ public final class JdbcObservationStore {
         JsonNode payload = observation.wire().get("payload");
         String order = "article".equals(observation.kind())
                 ? new String(CanonicalJson.bytes(payload.get("source_order")), StandardCharsets.UTF_8) : null;
+        List<Object[]> reserved = jdbc.query("SELECT id,source_item_id,payload_hash,"
+                        + "replaces_observation_id,node_id,terminal_state FROM source_run_items"
+                        + " WHERE run_id=? AND member_id=? FOR UPDATE",
+                (rs, ignored) -> new Object[]{rs.getString(1), rs.getString(2), rs.getBytes(3),
+                        rs.getString(4), rs.getString(5), rs.getString(6)},
+                observation.runId(), observation.memberId());
+        if (!reserved.isEmpty()) {
+            Object[] old = reserved.getFirst();
+            if (!"pending".equals(old[5]) || !observation.sourceItemId().equals(old[1])
+                    || !MessageDigest.isEqual((byte[]) old[2],
+                        HexFormat.of().parseHex(observation.payloadHash()))
+                    || !java.util.Objects.equals(old[3], nullableText(observation.wire().get("replaces_observation_id")))) {
+                throw new IllegalStateException("reserved manifest member differs from observation");
+            }
+            jdbc.update("UPDATE source_run_items SET category=?,node_id=?,evidence_json=?,"
+                            + "evidence_hash=?,article_id=?,article_revision_id=?,terminal_state='accepted',"
+                            + "receipt_ref=?,state=?,projection_decision=?,source_order_json=?,"
+                            + "revision=revision+1 WHERE id=? AND terminal_state='pending'",
+                    category, nodeId, evidenceJson, evidenceHash, articleId, revisionId,
+                    receiptId, "needs_review".equals(projectionDecision) ? "needs_review" : "pending",
+                    projectionDecision, order, old[0]);
+            return;
+        }
         jdbc.update("INSERT INTO source_run_items(id,created_at,revision,run_id,member_id,source_id,"
                         + "source_item_id,source_item_hash,category,observation_id,node_id,payload_hash,"
                         + "replaces_observation_id,evidence_json,evidence_hash,article_id,article_revision_id,"
