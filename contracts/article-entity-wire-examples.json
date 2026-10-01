@@ -1,0 +1,342 @@
+[
+  {
+    "name": "fictional explicit unique entity",
+    "schema": "ArticleWithEntitySummary",
+    "valid": true,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null,
+      "entity_summary": {
+        "id": "fictional-entity",
+        "category": "news_tech",
+        "first_recorded_at": "2026-01-01T00:00:00.000000Z",
+        "first_seen_business_date": null,
+        "last_seen_at": "2026-01-02T00:00:00.000000Z",
+        "occurrence_count": 3,
+        "repeat_count": 2,
+        "analysis_state": "analyzed",
+        "revision": 4
+      }
+    }
+  },
+  {
+    "name": "fictional no unique association",
+    "schema": "ArticleWithEntitySummary",
+    "valid": true,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null,
+      "entity_summary": null
+    }
+  },
+  {
+    "name": "fictional default old shape",
+    "schema": "ArticleReadResult",
+    "valid": true,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null
+    }
+  },
+  {
+    "name": "fictional unknown entity metadata preserved",
+    "schema": "ArticleWithEntitySummary",
+    "valid": true,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null,
+      "entity_summary": {
+        "id": "fictional-entity",
+        "category": "news_tech",
+        "first_recorded_at": null,
+        "first_seen_business_date": null,
+        "last_seen_at": null,
+        "occurrence_count": null,
+        "repeat_count": null,
+        "analysis_state": null,
+        "revision": 4
+      }
+    }
+  },
+  {
+    "name": "fictional wrong kind",
+    "schema": "ArticleWithEntitySummary",
+    "valid": false,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null,
+      "entity_summary": {
+        "id": "fictional-entity",
+        "category": "model",
+        "first_recorded_at": "2026-01-01T00:00:00.000000Z",
+        "first_seen_business_date": null,
+        "last_seen_at": "2026-01-02T00:00:00.000000Z",
+        "occurrence_count": 3,
+        "repeat_count": 2,
+        "analysis_state": "analyzed",
+        "revision": 4
+      }
+    }
+  },
+  {
+    "name": "fictional private payload",
+    "schema": "ArticleWithEntitySummary",
+    "valid": false,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null,
+      "entity_summary": {
+        "id": "fictional-entity",
+        "category": "news_tech",
+        "first_recorded_at": "2026-01-01T00:00:00.000000Z",
+        "first_seen_business_date": null,
+        "last_seen_at": "2026-01-02T00:00:00.000000Z",
+        "occurrence_count": 3,
+        "repeat_count": 2,
+        "analysis_state": "analyzed",
+        "revision": 4,
+        "raw_json": "Fictional forbidden"
+      }
+    }
+  },
+  {
+    "name": "fictional unsafe count",
+    "schema": "ArticleWithEntitySummary",
+    "valid": false,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null,
+      "entity_summary": {
+        "id": "fictional-entity",
+        "category": "news_tech",
+        "first_recorded_at": "2026-01-01T00:00:00.000000Z",
+        "first_seen_business_date": null,
+        "last_seen_at": "2026-01-02T00:00:00.000000Z",
+        "occurrence_count": 9007199254740992,
+        "repeat_count": 2,
+        "analysis_state": "analyzed",
+        "revision": 4
+      }
+    }
+  },
+  {
+    "name": "fictional bad time",
+    "schema": "ArticleWithEntitySummary",
+    "valid": false,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null,
+      "entity_summary": {
+        "id": "fictional-entity",
+        "category": "news_tech",
+        "first_recorded_at": "unknown",
+        "first_seen_business_date": null,
+        "last_seen_at": "2026-01-02T00:00:00.000000Z",
+        "occurrence_count": 3,
+        "repeat_count": 2,
+        "analysis_state": "analyzed",
+        "revision": 4
+      }
+    }
+  },
+  {
+    "name": "fictional unknown state",
+    "schema": "ArticleWithEntitySummary",
+    "valid": false,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null,
+      "entity_summary": {
+        "id": "fictional-entity",
+        "category": "news_tech",
+        "first_recorded_at": "2026-01-01T00:00:00.000000Z",
+        "first_seen_business_date": null,
+        "last_seen_at": "2026-01-02T00:00:00.000000Z",
+        "occurrence_count": 3,
+        "repeat_count": 2,
+        "analysis_state": "succeeded",
+        "revision": 4
+      }
+    }
+  },
+  {
+    "name": "fictional missing ID",
+    "schema": "ArticleWithEntitySummary",
+    "valid": false,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null,
+      "entity_summary": {
+        "category": "news_tech",
+        "first_recorded_at": "2026-01-01T00:00:00.000000Z",
+        "first_seen_business_date": null,
+        "last_seen_at": "2026-01-02T00:00:00.000000Z",
+        "occurrence_count": 3,
+        "repeat_count": 2,
+        "analysis_state": "analyzed",
+        "revision": 4
+      }
+    }
+  },
+  {
+    "name": "fictional partial unknown counts",
+    "schema": "ArticleWithEntitySummary",
+    "valid": false,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null,
+      "entity_summary": {
+        "id": "fictional-entity",
+        "category": "news_tech",
+        "first_recorded_at": "2026-01-01T00:00:00.000000Z",
+        "first_seen_business_date": null,
+        "last_seen_at": "2026-01-02T00:00:00.000000Z",
+        "occurrence_count": null,
+        "repeat_count": 2,
+        "analysis_state": "analyzed",
+        "revision": 4
+      }
+    }
+  },
+  {
+    "name": "fictional requested projection requires explicit nullable field",
+    "schema": "ArticleWithEntitySummary",
+    "valid": false,
+    "value": {
+      "id": "fictional-article",
+      "title": "Fictional article",
+      "summary": null,
+      "source_id": "fictional-source",
+      "source_name": "Fictional source",
+      "source_url": "https://example.invalid/story",
+      "published_at": null,
+      "observed_at": "2026-01-02T00:00:00.000000Z",
+      "topic": null,
+      "region": null,
+      "content_status": "unavailable",
+      "revision": 1,
+      "record": null
+    }
+  }
+]

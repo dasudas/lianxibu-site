@@ -230,6 +230,42 @@
         "meta": {
           "request_id": "fixture-request"
         }
+      },
+      "entity_summary_opt_in_example": {
+        "query": {
+          "include_entity": true
+        },
+        "response": {
+          "data": {
+            "id": "fictional-article",
+            "title": "Fictional article",
+            "summary": null,
+            "source_id": "fictional-source",
+            "source_name": "Fictional source",
+            "source_url": "https://example.invalid/story",
+            "published_at": null,
+            "observed_at": "2026-01-02T00:00:00.000000Z",
+            "topic": null,
+            "region": null,
+            "content_status": "unavailable",
+            "revision": 1,
+            "record": null,
+            "entity_summary": {
+              "id": "fictional-entity",
+              "category": "news_tech",
+              "first_recorded_at": "2026-01-01T00:00:00.000000Z",
+              "first_seen_business_date": null,
+              "last_seen_at": "2026-01-02T00:00:00.000000Z",
+              "occurrence_count": 3,
+              "repeat_count": 2,
+              "analysis_state": "analyzed",
+              "revision": 4
+            }
+          },
+          "meta": {
+            "request_id": "fictional-request"
+          }
+        }
       }
     },
     {

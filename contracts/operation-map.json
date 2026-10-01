@@ -139,7 +139,7 @@
     "group": "business",
     "method": "get",
     "path": "/private/articles",
-    "response": "ArticlePage",
+    "response": "ArticleListResult",
     "request": null,
     "access": "user",
     "scope": null,
@@ -164,22 +164,31 @@
           "learning",
           "completed"
         ]
+      },
+      "include_entity": {
+        "type": "boolean",
+        "default": false
       }
     },
-    "description": "",
+    "description": "Authenticated article metadata and own record. include_entity absent/false preserves the original Article shape; true requires nullable entity_summary from one repeatable-read snapshot. Only exact article/source news_tech accepted effective unexcluded ready/analyzed item links proving one unique entity are eligible; same-entity observations may repeat. Unresolved, wrong-kind/source, dangling or ambiguous relationships yield null, never guessed from article identity/title/time. Summary reads direct entity first/last times, safe known counts with repeat=max(count-1,0) or both null, and closed analysis state; unknown fields stay null. No source body, dedup payload, internal identity or other user data. Unknown/duplicate query 400; invalid boolean 422; unreadable storage 503. Existing filters/pagination/auth/record unchanged.",
     "operation_id": "business_get_private_articles"
   },
   {
     "group": "business",
     "method": "get",
     "path": "/private/articles/{id}",
-    "response": "Article",
+    "response": "ArticleReadResult",
     "request": null,
     "access": "user",
     "scope": null,
     "paging": false,
-    "query": {},
-    "description": "",
+    "query": {
+      "include_entity": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "description": "Authenticated article metadata and own record. include_entity absent/false preserves the original Article shape; true requires nullable entity_summary from one repeatable-read snapshot. Only exact article/source news_tech accepted effective unexcluded ready/analyzed item links proving one unique entity are eligible; same-entity observations may repeat. Unresolved, wrong-kind/source, dangling or ambiguous relationships yield null, never guessed from article identity/title/time. Summary reads direct entity first/last times, safe known counts with repeat=max(count-1,0) or both null, and closed analysis state; unknown fields stay null. No source body, dedup payload, internal identity or other user data. Unknown/duplicate query 400; invalid boolean 422; unreadable storage 503. Existing filters/pagination/auth/record unchanged.",
     "operation_id": "business_get_private_articles_id"
   },
   {

@@ -1,6 +1,6 @@
 # API contracts
 
-Contract package revision: 0.17. Observations accept wire revisions 0.11 and
+Contract package revision: 0.18. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
@@ -45,3 +45,11 @@ version identity, independent validity revision and safe active invalidation
 IDs/reasons/timestamps with real pagination. Operation receipts are not
 invalidation IDs. Existing protocol definitions and wire capabilities stay
 unchanged; this package revision does not advertise deployed support.
+
+article-entity-wire-examples.json provides fictional opt-in entity summary cases.
+Private article reads accept include_entity=true for an explicit nullable summary;
+omitted/false preserves the original closed Article response. Only an exact,
+unique news_tech article/source relationship is eligible. Unknown fields remain
+null; counts and first/last times are never inferred from article metadata.
+This package does not advertise deployed support; existing wire definitions
+and runtime capability constants remain unchanged.

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:lianxibu:contracts:0.17",
+  "$id": "urn:lianxibu:contracts:0.18",
   "$defs": {
     "Id": {
       "type": "string",
@@ -9471,6 +9471,337 @@
         },
         {
           "$ref": "#/$defs/PackageSummary"
+        }
+      ]
+    },
+    "ArticleEntitySummary": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "category": {
+          "const": "news_tech"
+        },
+        "first_recorded_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "first_seen_business_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_seen_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "occurrence_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "repeat_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "analysis_state": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "pending",
+                "queued",
+                "analyzed",
+                "failed",
+                "needs_review"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "id",
+        "category",
+        "first_recorded_at",
+        "first_seen_business_date",
+        "last_seen_at",
+        "occurrence_count",
+        "repeat_count",
+        "analysis_state",
+        "revision"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "occurrence_count": {
+                "type": "null"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "repeat_count": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repeat_count": {
+                "type": "null"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "occurrence_count": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ArticleWithEntitySummary": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 16384
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "source_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "source_url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+        },
+        "topic": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "content_status": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "record": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Record"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "entity_summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArticleEntitySummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "summary",
+        "source_id",
+        "source_name",
+        "source_url",
+        "published_at",
+        "observed_at",
+        "topic",
+        "region",
+        "content_status",
+        "revision",
+        "record",
+        "entity_summary"
+      ],
+      "additionalProperties": false
+    },
+    "ArticleWithEntitySummaryPage": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ArticleWithEntitySummary"
+          },
+          "minItems": 0,
+          "maxItems": 50
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "items",
+        "page",
+        "page_size",
+        "total"
+      ],
+      "additionalProperties": false
+    },
+    "ArticleReadResult": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Article"
+        },
+        {
+          "$ref": "#/$defs/ArticleWithEntitySummary"
+        }
+      ]
+    },
+    "ArticleListResult": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ArticlePage"
+        },
+        {
+          "$ref": "#/$defs/ArticleWithEntitySummaryPage"
         }
       ]
     },

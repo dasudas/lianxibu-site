@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lianxibu business API",
-    "version": "0.17",
+    "version": "0.18",
     "description": "Design contract. Observation revisions 0.11/0.12; config/control 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -1615,7 +1615,7 @@
       "get": {
         "operationId": "business_get_private_articles",
         "summary": "GET /private/articles",
-        "description": "Semantics and transaction invariants: api-contract.md. Schema validation precedes service semantic checks.",
+        "description": "Authenticated article metadata and own record. include_entity absent/false preserves the original Article shape; true requires nullable entity_summary from one repeatable-read snapshot. Only exact article/source news_tech accepted effective unexcluded ready/analyzed item links proving one unique entity are eligible; same-entity observations may repeat. Unresolved, wrong-kind/source, dangling or ambiguous relationships yield null, never guessed from article identity/title/time. Summary reads direct entity first/last times, safe known counts with repeat=max(count-1,0) or both null, and closed analysis state; unknown fields stay null. No source body, dedup payload, internal identity or other user data. Unknown/duplicate query 400; invalid boolean 422; unreadable storage 503. Existing filters/pagination/auth/record unchanged.",
         "security": [
           {
             "sessionCookie": []
@@ -1658,6 +1658,15 @@
             }
           },
           {
+            "name": "include_entity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -1689,7 +1698,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/ArticlePage"
+                      "$ref": "#/components/schemas/ArticleListResult"
                     },
                     "meta": {
                       "$ref": "#/components/schemas/Meta"
@@ -1842,7 +1851,7 @@
       "get": {
         "operationId": "business_get_private_articles_id",
         "summary": "GET /private/articles/{id}",
-        "description": "Semantics and transaction invariants: api-contract.md. Schema validation precedes service semantic checks.",
+        "description": "Authenticated article metadata and own record. include_entity absent/false preserves the original Article shape; true requires nullable entity_summary from one repeatable-read snapshot. Only exact article/source news_tech accepted effective unexcluded ready/analyzed item links proving one unique entity are eligible; same-entity observations may repeat. Unresolved, wrong-kind/source, dangling or ambiguous relationships yield null, never guessed from article identity/title/time. Summary reads direct entity first/last times, safe known counts with repeat=max(count-1,0) or both null, and closed analysis state; unknown fields stay null. No source body, dedup payload, internal identity or other user data. Unknown/duplicate query 400; invalid boolean 422; unreadable storage 503. Existing filters/pagination/auth/record unchanged.",
         "security": [
           {
             "sessionCookie": []
@@ -1859,6 +1868,15 @@
               "maxLength": 64,
               "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
             }
+          },
+          {
+            "name": "include_entity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -1870,7 +1888,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/Article"
+                      "$ref": "#/components/schemas/ArticleReadResult"
                     },
                     "meta": {
                       "$ref": "#/components/schemas/Meta"
@@ -21831,6 +21849,337 @@
           },
           {
             "$ref": "#/components/schemas/PackageSummary"
+          }
+        ]
+      },
+      "ArticleEntitySummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "category": {
+            "const": "news_tech"
+          },
+          "first_recorded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "first_seen_business_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "occurrence_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "repeat_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "analysis_state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "queued",
+                  "analyzed",
+                  "failed",
+                  "needs_review"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "first_recorded_at",
+          "first_seen_business_date",
+          "last_seen_at",
+          "occurrence_count",
+          "repeat_count",
+          "analysis_state",
+          "revision"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "occurrence_count": {
+                  "type": "null"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "repeat_count": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "repeat_count": {
+                  "type": "null"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "occurrence_count": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ArticleWithEntitySummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 16384
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "source_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "source_url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "format": "uri",
+            "pattern": "^https://"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "content_status": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "record": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Record"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entity_summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArticleEntitySummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "summary",
+          "source_id",
+          "source_name",
+          "source_url",
+          "published_at",
+          "observed_at",
+          "topic",
+          "region",
+          "content_status",
+          "revision",
+          "record",
+          "entity_summary"
+        ],
+        "additionalProperties": false
+      },
+      "ArticleWithEntitySummaryPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArticleWithEntitySummary"
+            },
+            "minItems": 0,
+            "maxItems": 50
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "additionalProperties": false
+      },
+      "ArticleReadResult": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Article"
+          },
+          {
+            "$ref": "#/components/schemas/ArticleWithEntitySummary"
+          }
+        ]
+      },
+      "ArticleListResult": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ArticlePage"
+          },
+          {
+            "$ref": "#/components/schemas/ArticleWithEntitySummaryPage"
           }
         ]
       },
