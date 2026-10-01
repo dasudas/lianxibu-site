@@ -28,6 +28,12 @@ function command(kind,value){
 function versionTarget(value){closed(value,['kind','content_kind','content_id','revision','body_hash','input_job_id']);if(value.kind!=='content_version'||typeof value.body_hash!=='string'||!/^[0-9a-f]{64}$/.test(value.body_hash))throw new TypeError('Invalid content version target');return {kind:'content_version',content_kind:one(value.content_kind,kinds),content_id:identifier(value.content_id),revision:number(value.revision),body_hash:value.body_hash,input_job_id:value.input_job_id===null?null:identifier(value.input_job_id)};}
 
 export function createAdminContentApi(client){return Object.freeze({
+ async supplement(identifierValue,{kind,fields,signal,idempotencyKey}={}){
+  if(!kinds.includes(kind)||typeof idempotencyKey!=='string'||!/^[!-~]{1,128}$/.test(idempotencyKey))throw new TypeError('Explicit supplement identity/key required');const target=identifier(identifierValue);closed(fields,['expected_revision','reason']);
+  const body={expected_revision:number(fields.expected_revision),action:'supplement_generate',reason:text(fields.reason,2048)};if(!body.reason.trim())throw new TypeError('Supplement reason required');
+  const {data}=await client.request('POST','/admin/content/'+kind+'/'+encodeURIComponent(target)+'/actions',{signal,idempotencyKey,body}),result=actionResult(data);
+  if(result.generation===null||result.generation<1||result.cutoff===null||result.coverage===null||!['job','content'].includes(result.resource.kind)||result.resource.packageId!==null||result.resource.kind==='content'&&result.resource.id!==target)invalid();return result;
+ },
  async dispositions(identifierValue,{kind,target,page=1,page_size=20,signal}={}){
   if(!kinds.includes(kind)||!Number.isSafeInteger(page)||page<1||!Number.isSafeInteger(page_size)||page_size<1||page_size>50)throw new TypeError('Invalid version disposition page');const id=identifier(identifierValue),expected=versionTarget(target);if(expected.content_kind!==kind||expected.content_id!==id)throw new TypeError('Version target does not match path');
   const query={revision:expected.revision,body_hash:expected.body_hash,...(expected.input_job_id===null?{}:{input_job_id:expected.input_job_id}),page,page_size};
