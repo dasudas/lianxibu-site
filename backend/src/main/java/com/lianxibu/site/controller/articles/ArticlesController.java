@@ -44,11 +44,12 @@ public final class ArticlesController {
     }
 
     @GetMapping(path = "/private/articles", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ArticlesDtos.Envelope<ArticlesDtos.ArticlePage>> articles(
+    public ResponseEntity<?> articles(
             @CookieValue(name = "lianxibu_session", required = false) String cookie,
             @RequestParam MultiValueMap<String, String> query) {
         Actor actor = authenticated(cookie, false);
-        query(query, Set.of("source_id", "q", "status"));
+        query(query, Set.of("source_id", "q", "status", "include_entity"));
+        boolean includeEntity = includeEntity(query);
         String sourceId = query.getFirst("source_id");
         if (sourceId != null) sourceId = sourceId(sourceId);
         String search = optionalText(query.getFirst("q"), 256);
@@ -56,6 +57,11 @@ public final class ArticlesController {
         if (status != null && !RECORD_STATUSES.contains(status)) throw validation("invalid record status");
         long page = positive(query.getFirst("page"), 1, CanonicalJson.MAX_SAFE_INTEGER);
         int size = (int) positive(query.getFirst("page_size"), 20, 50);
+        if (includeEntity) {
+            var result = service().listArticlesWithEntity(actor, sourceId, search, status, page, size);
+            if (result == null || result.items() == null || result.items().size() > size || result.page() != page || result.pageSize() != size || result.total() < 0 || result.total() > CanonicalJson.MAX_SAFE_INTEGER) throw unavailable();
+            return success(new ArticlesDtos.ArticleEntityPage(result.items().stream().map(ArticlesController::articleWithEntity).toList(), result.page(), result.pageSize(), result.total()));
+        }
         var result = service().listArticles(actor, sourceId, search, status, page, size);
         if (result == null || result.items() == null || result.items().size() > 50) throw unavailable();
         return success(new ArticlesDtos.ArticlePage(result.items().stream().map(ArticlesController::article).toList(),
@@ -63,10 +69,16 @@ public final class ArticlesController {
     }
 
     @GetMapping(path = "/private/articles/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ArticlesDtos.Envelope<ArticlesDtos.Article>> article(
+    public ResponseEntity<?> article(
             @CookieValue(name = "lianxibu_session", required = false) String cookie,
-            @PathVariable("id") String articleId) {
+            @PathVariable("id") String articleId, @RequestParam MultiValueMap<String,String> query) {
         Actor actor = authenticated(cookie, false);
+        for (String key : query.keySet()) if (!key.equals("include_entity") || query.get(key).size()!=1) throw protocol("unknown or repeated query parameter");
+        if (includeEntity(query)) {
+            var result=service().articleWithEntity(actor,id(articleId));
+            if(result==null||result.article()==null||!articleId.equals(result.article().id()))throw unavailable();
+            return success(articleWithEntity(result));
+        }
         return success(article(service().article(actor, id(articleId))));
     }
 
@@ -123,6 +135,11 @@ public final class ArticlesController {
                 error.getMessage()), new ArticlesDtos.Meta(requestId())));
     }
 
+    @ExceptionHandler({IllegalStateException.class, org.springframework.dao.DataAccessException.class})
+    public ResponseEntity<ArticlesDtos.ErrorEnvelope> storage(RuntimeException ignored) { return failure(unavailable()); }
+    @ExceptionHandler(com.lianxibu.site.service.articles.ArticleEntityProjectionService.Denied.class)
+    public ResponseEntity<ArticlesDtos.ErrorEnvelope> denied(RuntimeException ignored) { return failure(new BoundaryFailure(403,"forbidden","forbidden")); }
+
     @ExceptionHandler(IdentityService.Rejected.class)
     public ResponseEntity<ArticlesDtos.ErrorEnvelope> rejected(IdentityService.Rejected error) {
         int status = switch (error.refusal()) {
@@ -168,6 +185,13 @@ public final class ArticlesController {
             if ((!Set.of("page", "page_size").contains(field) && !extra.contains(field)) ||
                     values.get(field).size() != 1) throw protocol("unknown or repeated query parameter");
         }
+    }
+
+    private static boolean includeEntity(MultiValueMap<String,String> query) {
+        String value=query.getFirst("include_entity");
+        if(value==null||value.equals("false"))return false;
+        if(value.equals("true"))return true;
+        throw validation("invalid include_entity boolean");
     }
 
     private static long positive(String raw, long fallback, long max) {
@@ -258,6 +282,19 @@ public final class ArticlesController {
                 value.sourceName(), value.sourceUrl(), time(value.publishedAt()), time(value.observedAt()),
                 value.topic(), value.region(), value.contentStatus(), value.revision(), record(value.record()));
     }
+
+    private static ArticlesDtos.ArticleWithEntitySummary articleWithEntity(ArticlesService.ArticleWithEntity value) {
+        if(value==null)throw unavailable();var a=article(value.article());var e=value.entitySummary();ArticlesDtos.EntitySummary summary=null;
+        if(e!=null){
+            try{WireValues.id(e.id(),false);}catch(IllegalArgumentException ignored){throw unavailable();}
+            if(!"news_tech".equals(e.category())||e.revision()<0||e.revision()>CanonicalJson.MAX_SAFE_INTEGER||(e.occurrenceCount()==null)!=(e.repeatCount()==null)||e.analysisState()!=null&&!Set.of("pending","queued","analyzed","failed","needs_review").contains(e.analysisState())||e.firstRecordedAt()!=null&&e.lastSeenAt()!=null&&e.firstRecordedAt().isAfter(e.lastSeenAt()))throw unavailable();
+            if(e.occurrenceCount()!=null&&(e.occurrenceCount()<0||e.occurrenceCount()>CanonicalJson.MAX_SAFE_INTEGER||e.repeatCount()!=Math.max(e.occurrenceCount()-1,0)))throw unavailable();
+            String first=summaryTime(e.firstRecordedAt()),last=summaryTime(e.lastSeenAt()),day=date(e.firstSeenBusinessDate());if(day!=null&&!day.matches("\\d{4}-\\d{2}-\\d{2}"))throw unavailable();
+            summary=new ArticlesDtos.EntitySummary(e.id(),e.category(),first,day,last,e.occurrenceCount(),e.repeatCount(),e.analysisState(),e.revision());
+        }
+        return new ArticlesDtos.ArticleWithEntitySummary(a.id(),a.title(),a.summary(),a.source_id(),a.source_name(),a.source_url(),a.published_at(),a.observed_at(),a.topic(),a.region(),a.content_status(),a.revision(),a.record(),summary);
+    }
+    private static String summaryTime(Instant value){String result=time(value);if(result!=null&&!result.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z"))throw unavailable();return result;}
 
     private static ArticlesDtos.Entity entity(ArticlesService.Entity value) {
         if (value == null) throw unavailable();

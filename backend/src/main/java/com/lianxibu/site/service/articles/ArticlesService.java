@@ -14,6 +14,12 @@ public interface ArticlesService {
     record Article(String id, String title, String summary, String sourceId, String sourceName,
                    String sourceUrl, Instant publishedAt, Instant observedAt, String topic, String region,
                    String contentStatus, long revision, Record record) { }
+    record EntitySummary(String id, String category, Instant firstRecordedAt, LocalDate firstSeenBusinessDate,
+                         Instant lastSeenAt, Long occurrenceCount, Long repeatCount, String analysisState, long revision) { }
+    record ArticleWithEntity(Article article, EntitySummary entitySummary) { }
+    record ArticleEntityPage(List<ArticleWithEntity> items, long page, int pageSize, long total) { }
+    default ArticleEntityPage listArticlesWithEntity(Actor actor, String sourceId, String query, String status, long page, int pageSize) { throw new IllegalStateException("entity projection unavailable"); }
+    default ArticleWithEntity articleWithEntity(Actor actor, String articleId) { throw new IllegalStateException("entity projection unavailable"); }
     record ArticlePage(List<Article> items, long page, int pageSize, long total) { }
     record Entity(String id, String category, String title, String summary, Instant firstRecordedAt,
                   LocalDate firstSeenBusinessDate, Instant lastSeenAt, Long occurrenceCount,

@@ -17,6 +17,12 @@ public final class ArticlesDtos {
     public record Article(String id, String title, String summary, String source_id, String source_name,
                           String source_url, String published_at, String observed_at, String topic,
                           String region, String content_status, long revision, Record record) { }
+    public record EntitySummary(String id, String category, String first_recorded_at, String first_seen_business_date,
+                                String last_seen_at, Long occurrence_count, Long repeat_count, String analysis_state, long revision) { }
+    public record ArticleWithEntitySummary(String id, String title, String summary, String source_id, String source_name,
+                          String source_url, String published_at, String observed_at, String topic,
+                          String region, String content_status, long revision, Record record, EntitySummary entity_summary) { }
+    public record ArticleEntityPage(List<ArticleWithEntitySummary> items, long page, int page_size, long total) { }
     public record ArticlePage(List<Article> items, long page, int page_size, long total) { }
     public record Entity(String id, String category, String title, String summary, String first_recorded_at,
                          String first_seen_business_date, String last_seen_at, Long occurrence_count,
