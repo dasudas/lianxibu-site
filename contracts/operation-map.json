@@ -796,6 +796,47 @@
   {
     "group": "business",
     "method": "get",
+    "path": "/admin/content",
+    "response": "AdminContentItemPage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "report",
+          "agent",
+          "skill",
+          "workflow",
+          "model"
+        ]
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "approved",
+          "published",
+          "withdrawn"
+        ]
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "daily",
+          "weekly",
+          "monthly"
+        ]
+      }
+    },
+    "description": "Owner-only current-row content metadata. Filter kind/state/report type before count and pagination in one repeatable-read snapshot, stable kind/id order. type implies report and is incompatible with a non-report kind (422). report_type is null when current JSON cannot prove daily/weekly/monthly; body_revision is null for legacy rows without that field, never replaced by management revision. No body, source payload or review proofs in this list. State is physical publication state and does not establish public eligibility. Unknown/duplicate query keys are 400; invalid values 422. Existing single-item owner detail/write/action remain authoritative.",
+    "operation_id": "business_get_admin_content"
+  },
+  {
+    "group": "business",
+    "method": "get",
     "path": "/admin/content/{kind}/{id}",
     "response": "ContentDetail",
     "request": null,

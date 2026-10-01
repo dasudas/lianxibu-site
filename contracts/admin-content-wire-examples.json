@@ -1,0 +1,171 @@
+[
+  {
+    "name": "fictional legacy unknown type and body version",
+    "schema": "AdminContentItemPage",
+    "valid": true,
+    "value": {
+      "items": [
+        {
+          "id": "fictional-content",
+          "kind": "report",
+          "title": "Fictional current content",
+          "revision": 3,
+          "body_revision": null,
+          "publication_state": "draft",
+          "report_type": null
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional report current metadata",
+    "schema": "AdminContentItemPage",
+    "valid": true,
+    "value": {
+      "items": [
+        {
+          "id": "fictional-content",
+          "kind": "report",
+          "title": "Fictional current content",
+          "revision": 3,
+          "body_revision": 1,
+          "publication_state": "draft",
+          "report_type": "daily"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional private body extra",
+    "schema": "AdminContentItemPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "id": "fictional-content",
+          "kind": "report",
+          "title": "Fictional current content",
+          "revision": 3,
+          "body_revision": null,
+          "publication_state": "draft",
+          "report_type": null,
+          "body_json": "Fictional forbidden extra"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional unsafe revision",
+    "schema": "AdminContentItemPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "id": "fictional-content",
+          "kind": "report",
+          "title": "Fictional current content",
+          "revision": 9007199254740992,
+          "body_revision": null,
+          "publication_state": "draft",
+          "report_type": null
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional unknown state",
+    "schema": "AdminContentItemPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "id": "fictional-content",
+          "kind": "report",
+          "title": "Fictional current content",
+          "revision": 3,
+          "body_revision": null,
+          "publication_state": "arbitrary",
+          "report_type": null
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional wrong kind",
+    "schema": "AdminContentItemPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "id": "fictional-content",
+          "kind": "node",
+          "title": "Fictional current content",
+          "revision": 3,
+          "body_revision": null,
+          "publication_state": "draft",
+          "report_type": null
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional wrong period type",
+    "schema": "AdminContentItemPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "id": "fictional-content",
+          "kind": "report",
+          "title": "Fictional current content",
+          "revision": 3,
+          "body_revision": null,
+          "publication_state": "draft",
+          "report_type": "hourly"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional bad page",
+    "schema": "AdminContentItemPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "id": "fictional-content",
+          "kind": "report",
+          "title": "Fictional current content",
+          "revision": 3,
+          "body_revision": null,
+          "publication_state": "draft",
+          "report_type": null
+        }
+      ],
+      "page": 0,
+      "page_size": 20,
+      "total": 1
+    }
+  }
+]

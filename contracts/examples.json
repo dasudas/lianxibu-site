@@ -1865,6 +1865,21 @@
           "request_id": "fixture-request"
         }
       }
+    },
+    {
+      "operation_id": "business_get_admin_content",
+      "request": null,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "page_size": 20,
+          "total": 0
+        },
+        "meta": {
+          "request_id": "fictional-request"
+        }
+      }
     }
   ]
 }

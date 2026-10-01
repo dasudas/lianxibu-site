@@ -1,11 +1,11 @@
 # API contracts
 
-Contract package revision: 0.15. Observations accept wire revisions 0.11 and
+Contract package revision: 0.16. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
 surfaces. `schemas.json` is the shared JSON Schema 2020-12 definition set.
-`operation-map.json` lists all 72 operations: 59 business and 13 collector.
+`operation-map.json` lists all 73 operations: 60 business and 13 collector.
 `examples.json`, `wire-examples.json`, and `hn-time-wire-examples.json`
 contain fictional fixtures, including intentionally invalid wire cases.
 
@@ -29,3 +29,10 @@ article-record-wire-examples.json provides fictional aggregate record cases.
 GET /private/article-records returns actor-owned current article records with
 literal title, status and favorite filters, nullable article metadata and
 independent full statistics. Existing record writes remain unchanged.
+
+Owner content metadata is available through GET /admin/content. Current
+publication state is separate from public eligibility. Missing legacy body
+versions and report types stay null; body payloads are excluded from the list.
+Capabilities wire schema remains unchanged; package revision alone does not
+advertise a runtime feature. Fictional metadata cases are in
+admin-content-wire-examples.json.
