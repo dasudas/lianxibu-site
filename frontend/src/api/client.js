@@ -45,12 +45,24 @@ export function createApiClient({
   let csrfToken = null;
   let generation = 0;
   const inFlight = new Set();
+  const sessionListeners = new Set();
 
-  function clearSession() {
+  function subscribeSessionChange(listener) {
+    if (typeof listener !== 'function') throw new TypeError('Session listener must be a function');
+    sessionListeners.add(listener);
+    return () => sessionListeners.delete(listener);
+  }
+
+  function clearSession(reason = 'cleared') {
     generation += 1;
     csrfToken = null;
     for (const controller of inFlight) controller.abort();
     inFlight.clear();
+    const event = Object.freeze({ generation, reason });
+    for (const listener of [...sessionListeners]) {
+      // A broken consumer must not prevent other views from clearing private data.
+      try { listener(event); } catch { /* Isolation at the invalidation boundary. */ }
+    }
   }
 
   async function request(method, path, { body, query, idempotencyKey, signal } = {}) {
@@ -76,27 +88,31 @@ export function createApiClient({
     if (key !== null) headers['Idempotency-Key'] = key;
     const capturedGeneration = generation;
     const controller = new AbortController();
+    const abort = () => controller.abort();
     inFlight.add(controller);
     if (signal) {
       if (signal.aborted) controller.abort();
-      else signal.addEventListener('abort', () => controller.abort(), { once: true });
+      else signal.addEventListener('abort', abort, { once: true });
     }
     try {
       for (let attempt = 0; attempt < 3; attempt += 1) {
         if (capturedGeneration !== generation) throw new StaleSessionError();
+        controller.signal.throwIfAborted();
         const response = await fetchImpl(url, {
           method, headers, body: serialized, credentials: 'same-origin',
           mode: 'same-origin', redirect: 'error', cache: 'no-store',
           signal: controller.signal
         });
         if (capturedGeneration !== generation) throw new StaleSessionError();
+        controller.signal.throwIfAborted();
         if (RETRYABLE.has(response.status) && attempt < 2 && (!write || key !== null)) {
           await sleep(retryDelay(response.headers?.get('Retry-After'), now, attempt));
           continue;
         }
         const envelope = response.status === 204 ? null : await response.json();
         if (capturedGeneration !== generation) throw new StaleSessionError();
-        if (response.status === 401) clearSession();
+        controller.signal.throwIfAborted();
+        if (response.status === 401) clearSession('unauthorized');
         if (!response.ok) {
           throw new ApiError(response.status, envelope?.error?.code,
             envelope?.error?.message, envelope?.meta?.request_id);
@@ -114,6 +130,7 @@ export function createApiClient({
       throw error;
     } finally {
       inFlight.delete(controller);
+      signal?.removeEventListener('abort', abort);
     }
   }
 
@@ -140,5 +157,5 @@ export function createApiClient({
     return data;
   }
 
-  return Object.freeze({ request, getSession, list, clearSession, get generation() { return generation; } });
+  return Object.freeze({ request, getSession, list, clearSession, subscribeSessionChange, get generation() { return generation; } });
 }
