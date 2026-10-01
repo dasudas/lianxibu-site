@@ -12,3 +12,9 @@ test('production build rejects direct API calls in components', () => {
   assert.match(violation('components/common/card.js', 'import { get } from "../../api/client.js"'), /components/);
   assert.equal(violation('pages/home/index.js', 'import { get } from "../../api/client.js"'), null);
 });
+
+test('components cannot import pages and API modules cannot depend on DOM', () => {
+  assert.match(violation('components/layout/shell.js', 'import { mount } from "../../pages/home/index.js"'), /pages/);
+  assert.match(violation('api/home.js', 'document.querySelector("main")'), /DOM/);
+  assert.equal(violation('components/common/status.js', 'root.ownerDocument.createElement("p")'), null);
+});

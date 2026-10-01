@@ -14,6 +14,13 @@ export function violation(relativePath, source) {
           || /(?:from\s*|import\s*\()['"][^'"]*\/api\//.test(source))) {
     return 'components cannot call or import the API';
   }
+  if (/(^|\/)components\//.test(path)
+      && /(?:from\s*|import\s*\()['"][^'"]*\/pages\//.test(source)) {
+    return 'components cannot import pages';
+  }
+  if (/(^|\/)api\//.test(path) && /\b(?:document|window|HTMLElement)\b/.test(source)) {
+    return 'API modules cannot depend on DOM';
+  }
   return null;
 }
 
