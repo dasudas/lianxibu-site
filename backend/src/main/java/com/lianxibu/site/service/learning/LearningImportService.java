@@ -102,7 +102,8 @@ public final class LearningImportService {
                 || command.partCount() < 1 || command.partCount() > 100_000
                 || command.title() == null || command.title().isBlank()
                 || command.description() == null || command.manifestHash() == null
-                || expectedRevision != null && expectedRevision < 1
+                || expectedRevision != null && (expectedRevision < 0
+                || expectedRevision >= 9_007_199_254_740_991L)
                 || targetPackageId == null && expectedRevision != null
                 || targetPackageId != null && expectedRevision == null) {
             throw new IllegalArgumentException("invalid import commit");

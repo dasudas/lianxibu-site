@@ -168,6 +168,38 @@ class LearningImportServiceTest {
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM packages", Integer.class));
     }
 
+    @Test void knownZeroRevisionImportsOnceAndPreservesExistingItems() {
+        jdbc.update("INSERT INTO packages VALUES('existing',0,'draft','Before')");
+        jdbc.update("INSERT INTO items VALUES('existing','old','published','keep')");
+        var part = chunk("i-zero", 0, 1, node("tmp", "new"));
+        service.stage("owner", "existing", part);
+        var manifest = manifest("i-zero", part);
+        Result accepted = service.commit("owner", "existing", 0L, manifest, action("zero", "existing"));
+        assertEquals(1, accepted.revision());
+        assertTrue(service.commit("owner", "existing", 0L, manifest, action("zero", "existing")).replayed());
+        assertEquals(1, jdbc.queryForObject("SELECT revision FROM packages WHERE id='existing'", Long.class));
+        assertEquals("keep", jdbc.queryForObject("SELECT body FROM items WHERE id='old'", String.class));
+        assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM items", Integer.class));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM receipts", Integer.class));
+    }
+
+    @Test void unknownNegativeOrUnsafeIncrementRejectsBeforeWritesAndKeepsStage() {
+        jdbc.update("INSERT INTO packages VALUES('existing',0,'draft','Before')");
+        var part = chunk("i-boundary", 0, 1, node("tmp", "new"));
+        service.stage("owner", "existing", part);
+        var manifest = manifest("i-boundary", part);
+        for (Long revision : new Long[]{null, -1L, 9_007_199_254_740_991L, Long.MAX_VALUE}) {
+            assertThrows(IllegalArgumentException.class, () -> service.commit("owner", "existing", revision,
+                    manifest, action("bad-" + revision, "existing")));
+        }
+        assertThrows(IllegalArgumentException.class, () -> service.commit("owner", null, 0L,
+                manifest, action("new-with-revision", "new")));
+        assertEquals(0L, jdbc.queryForObject("SELECT revision FROM packages WHERE id='existing'", Long.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM items", Integer.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM receipts", Integer.class));
+        assertEquals(1, stages.load("owner", "existing", "i-boundary", NOW).parts().size());
+    }
+
     private static LearningService.ImportChunk chunk(String importId, long no, long count, JsonNode... items) {
         List<JsonNode> values = List.of(items);
         return new LearningService.ImportChunk(importId, no, count,
