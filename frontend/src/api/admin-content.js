@@ -1,4 +1,6 @@
 import {ApiError} from './client.js';
+import {createReportsApi} from './reports.js';
+import {createInterpretationsApi} from './interpretations.js';
 const kinds=['report','model','agent','skill','workflow'],states=['draft','approved','published','withdrawn'],types=['daily','weekly','monthly'];
 const invalid=()=>{throw new ApiError(200,'invalid_response','Content catalog is unavailable');};
 const freeze=value=>{if(value&&typeof value==='object'){for(const child of Object.values(value))freeze(child);Object.freeze(value);}return value;};
@@ -6,6 +8,11 @@ function text(value,max){if(typeof value!=='string'||!value||[...value].length>m
 function number(value){if(!Number.isSafeInteger(value)||value<0)invalid();return value;}
 function one(value,choices){if(!choices.includes(value))invalid();return value;}
 export function createAdminContentApi(client){return Object.freeze({
+ async detail(identifier,{kind,signal}={}){
+  if(!kinds.includes(kind))throw new TypeError('Invalid owner content kind');
+  const value=kind==='report'?await createReportsApi(client).detail(identifier,{signal,draft:true}):await createInterpretationsApi(client).detail(identifier,{kind,signal,draft:true});
+  return freeze({...value,kind});
+ },
  async list({kind,state,type,page=1,page_size=20,signal}={}){
   if(kind!=null&&!kinds.includes(kind)||state!=null&&!states.includes(state)||type!=null&&(!types.includes(type)||kind!=null&&kind!=='report')||!Number.isSafeInteger(page)||page<1||!Number.isSafeInteger(page_size)||page_size<1||page_size>50)throw new TypeError('Invalid owner catalog filters');
   const {data}=await client.request('GET','/admin/content',{signal,query:{kind,state,type,page,page_size}});
