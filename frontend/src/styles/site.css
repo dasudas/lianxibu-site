@@ -94,3 +94,8 @@
 .content-input-summary { border-bottom: 1px solid var(--line, #d8ded7); padding: 12px 0; }
 .content-comparison { max-height: 55dvh; overflow-y: auto; margin: 20px 0; padding: 16px; border: 1px solid var(--line, #d8ded7); }
 #content-editor input:disabled, #content-editor textarea:disabled { opacity: .75; }
+
+.content-actions { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line, #d8ded7); }
+.content-actions label { display: grid; gap: 8px; margin: 14px 0; }
+.content-actions textarea, .content-actions select { width: 100%; font: inherit; line-height: 1.7; padding: 10px 12px; border: 1px solid var(--line, #d8ded7); border-radius: 8px; color: inherit; background: white; }
+.content-actions .row-actions { display: flex; flex-wrap: wrap; gap: 10px; }
