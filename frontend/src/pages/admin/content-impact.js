@@ -9,12 +9,12 @@ export function createContentImpact({scope,api,limit=20,onChange=()=>{}}){
    if(value.operationRef!==op||value.state==='pending'&&position!==0||total!==null&&(value.state!=='complete'||value.total!==total))throw new TypeError('Impact proof changed');
    const keys=value.items.map(ref=>JSON.stringify([ref.kind,ref.id,ref.packageId]));for(const [previous,seen]of identities)if(previous!==position&&keys.some(key=>seen.includes(key)))throw new TypeError('Repeated impact identity');
    if(value.state==='complete'){let counted=keys.length;for(const [previous,seen]of identities)if(previous!==position)counted+=seen.length;if(counted>value.total||value.nextCursor===null&&position>0&&counted!==value.total)throw new TypeError('Incomplete impact proof');total=value.total;}
-   identities.set(position,keys);page=value;index=position;cursors[position+1]=value.nextCursor;cursors.length=position+2;phase='ready';message=value.state==='pending'?'影响范围仍在核对，总数未知。稍后再次核对。':'完整影响集合已确认；撤销失效仍需重新审核和发布。';attempt=null;notify();
+   identities.set(position,keys);page=value;index=position;cursors[position+1]=value.nextCursor;cursors.length=position+2;phase='ready';message=value.state==='pending'?'影响范围仍在核对，总数未知。稍后再次核对。':'完整影响集合已确认；请按各项当前审核与发布状态核对后续处理。';attempt=null;notify();
   }catch{phase='conflict';message='影响集合无法一致核对，请从第一页重新读取。';notify();}},error=>{if(disposed||current!==epoch)return;phase=error.status===409?'conflict':error.status===401||error.status===403?'forbidden':'error';if(phase==='forbidden'){page=null;identities.clear();}message=phase==='conflict'?'分页依据已变化，请从第一页重新核对。':phase==='forbidden'?'当前无权查看影响范围。':error.status===404||error.status===410?'此操作影响证明不可用，请重新核对回执。':'影响范围暂时无法读取，已确认页面保留。重试只读取原页面。';notify();}).finally(()=>{if(current===epoch)pending=null;});pending=request;return request;
  }
  function dispose(){if(disposed)return;clear();disposed=true;}scope.own(dispose);
  return Object.freeze({get snapshot(){return snapshot();},clear,dispose,
-  open(value,origin){if(disposed||!scope.active)return Promise.resolve();if(!value?.operationRef||!['actions','versions'].includes(origin))throw new TypeError('Explicit confirmed operation receipt required');clear();receipt=Object.freeze({operationRef:value.operationRef});source=origin;return load(0);},
+  open(value,origin){if(disposed||!scope.active)return Promise.resolve();if(!value?.operationRef||!['actions','versions','result'].includes(origin))throw new TypeError('Explicit confirmed operation receipt required');clear();receipt=Object.freeze({operationRef:value.operationRef});source=origin;return load(0);},
   next(){if(phase!=='ready'||!page?.nextCursor||page.state!=='complete')return Promise.resolve();return load(index+1);},
   previous(){if(phase!=='ready'||index<=0)return Promise.resolve();return load(index-1);},
   retry(){if(phase!=='error'||attempt===null)return Promise.resolve();return load(attempt);},
