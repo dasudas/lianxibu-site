@@ -53,7 +53,20 @@ function task(value) {
   return { packageId: id(value.package_id), kind: value.object_kind, id: id(value.object_id), title: text(value.title, 512), reason: text(value.reason, 2048) };
 }
 export function createReportsApi(client) {
-  return Object.freeze({ async detail(identifier, { signal, draft = false } = {}) {
+  return Object.freeze({ async list({ type, page = 1, page_size = 20, signal } = {}) {
+    if (!['daily', 'weekly', 'monthly'].includes(type) || !Number.isSafeInteger(page) || page < 1
+        || !Number.isSafeInteger(page_size) || page_size < 1 || page_size > 50) throw new TypeError('Invalid report page');
+    const { data } = await client.request('GET', '/reports', { signal, query: { type, page, page_size } });
+    if (!data || data.page !== page || data.page_size !== page_size) invalid();
+    const total = integer(data.total), seen = new Set();
+    const prefix = { daily: 'digests', weekly: 'weekly-reports', monthly: 'monthly-reports' }[type];
+    const items = list(data.items, page_size).map(value => {
+      const summary = reportSummary(value); if (seen.has(summary.id)) invalid(); seen.add(summary.id);
+      return { ...summary, href: `/${prefix}/${encodeURIComponent(summary.id)}` };
+    });
+    if (items.length > Math.max(0, total - (page - 1) * page_size)) invalid();
+    return freeze({ items, page, pageSize: page_size, total, type });
+  }, async detail(identifier, { signal, draft = false } = {}) {
     id(identifier); if (typeof draft !== 'boolean') throw new TypeError('Draft mode must be explicit');
     const { data } = await client.request('GET', `${draft ? '/admin/content/report' : '/reports'}/${encodeURIComponent(identifier)}`, { signal });
     const summary = reportSummary(data, { draft }); if (summary.id !== identifier) invalid();
