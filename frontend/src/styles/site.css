@@ -146,3 +146,5 @@
 .answer-comparison{padding:16px;margin:16px 0;border:1px solid var(--line);border-radius:10px}
 
 .answer-manager .button{min-height:44px}
+
+.package-manager .package-description{font-size:16px;white-space:pre-wrap;overflow-wrap:anywhere}
