@@ -1,3 +1,4 @@
+import {createGenerationIntentsApi} from './api/generation-intents.js';
 import { createApiClient } from './api/client.js';
 import { createHomeApi } from './api/home.js';
 import { createIdentityApi } from './api/identity.js';
@@ -28,6 +29,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
   const session = createSessionState(client), home = createHomeApi(client), identityApi = createIdentityApi(client);
   const reports = createReportsApi(client), learningReference = createLearningReferenceApi(client), interpretations = createInterpretationsApi(client);
   const adminContent = createAdminContentApi(client);
+  const generationIntents = createGenerationIntentsApi(client);
   const operationAffected = createOperationAffectedApi(client);
   const articles = createArticlesApi(client), records = createRecordsApi(client), articleRecords = createArticleRecordsApi(client);
   const leaveDialog = notice ? createLeaveDialog(notice) : null;
@@ -74,7 +76,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-07') return mountArticleLearning(main, { scope, api: articleRecords, articleApi: articles, records, url, identity, session, navigate, confirmDiscard });
     if (route?.id === 'UI-08') return mountCatalog(main, { scope, api: interpretations, url, navigate });
     if (route?.id === 'UI-09') return mountInterpretation(main, { scope, api: interpretations, url });
-    if (route?.id === 'UI-10') return mountAdminCatalog(main, { scope, api: adminContent, impactApi: operationAffected, url, identity, session, navigate, confirmDiscard });
+    if (route?.id === 'UI-10') return mountAdminCatalog(main, { scope, api: adminContent, impactApi: operationAffected, intentApi: generationIntents, url, identity, session, navigate, confirmDiscard });
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
