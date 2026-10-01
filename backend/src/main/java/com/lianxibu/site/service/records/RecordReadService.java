@@ -54,7 +54,7 @@ public final class RecordReadService implements RecordsService {
         });
     }
 
-    private static Record project(Row row) {
+    static Record project(Row row) {
         String kind = row.objectKind();
         String latestAnswer = "question".equals(kind) ? row.responseText() : null;
         // New writes keep the general artifact and latest project submission separately;
