@@ -1,0 +1,641 @@
+{
+  "description": "Fictional closed current source schema vectors. Schema validity is not source admission evidence; ID binding and snapshot consistency are provider obligations.",
+  "cases": [
+    {
+      "name": "known_zero_disabled",
+      "schema": "Source",
+      "valid": true,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "unknown_configs_are_null",
+      "schema": "Source",
+      "valid": true,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": null,
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "trial_keeps_structured_config",
+      "schema": "Source",
+      "valid": true,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 2,
+        "config_revision": 1,
+        "activation_stage": "trial",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "config_valid_until": "2026-10-03T00:00:00.000000Z"
+      }
+    },
+    {
+      "name": "production_not_admission_proof",
+      "schema": "Source",
+      "valid": true,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "production",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "terminal_safe_revision_readable",
+      "schema": "Source",
+      "valid": true,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 9007199254740991,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "unicode_name_preserved",
+      "schema": "Source",
+      "valid": true,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional 🙂 来源",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "reference_not_secret",
+      "schema": "Source",
+      "valid": true,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": "secret:fictional"
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "missing_revision",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "unknown_revision_not_in_source_protocol",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": null,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "negative_revision",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": -1,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "unsafe_revision",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 9007199254740992,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "invalid_stage",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "enabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "bad_category",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "rss",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "identity_control",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional\n",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "legacy_raw_extra",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null,
+        "config_json": "fictional forbidden"
+      }
+    },
+    {
+      "name": "probe_payload_extra",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null,
+        "probe_json": "fictional forbidden"
+      }
+    },
+    {
+      "name": "secret_token_extra",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null,
+          "auth_token": "fictional forbidden"
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "http_entry",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "http://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "bad_microsecond_time",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00Z",
+          "auth_secret_ref": null
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    },
+    {
+      "name": "missing_config_field",
+      "schema": "Source",
+      "valid": false,
+      "data": {
+        "id": "fictional-source",
+        "name": "Fictional source",
+        "category": "news_tech",
+        "revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled",
+        "draft_config": {
+          "adapter": "fictional-rss",
+          "entry_urls": [
+            "https://example.invalid/feed"
+          ],
+          "identity_rule": "fictional-guid",
+          "window_rule": "fictional-window",
+          "parser_version": "fictional-v1",
+          "max_items": 20,
+          "max_response_bytes": 1024,
+          "allowed_hosts": [
+            "example.invalid"
+          ],
+          "valid_until": "2026-10-03T00:00:00.000000Z"
+        },
+        "effective_config": null,
+        "config_valid_until": null
+      }
+    }
+  ]
+}

@@ -1,11 +1,11 @@
 # API contracts
 
-Contract package revision: 0.24. Observations accept wire revisions 0.11 and
+Contract package revision: 0.25. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
 surfaces. `schemas.json` is the shared JSON Schema 2020-12 definition set.
-`operation-map.json` lists all 79 operations: 66 business and 13 collector.
+`operation-map.json` lists all 80 operations: 67 business and 13 collector.
 `examples.json`, `wire-examples.json`, and `hn-time-wire-examples.json`
 contain fictional fixtures, including intentionally invalid wire cases.
 
@@ -94,3 +94,7 @@ snapshot. owner-answer-wire-examples.json contains fictional boundary vectors.
 ## Owner current learning package
 
 `GET /admin/learning/packages/{id}` returns a closed `OwnerPackageDetail` for one explicit package, including drafts. Unknown metadata remains null; revision zero and an empty description remain known values. Physical state is not proof of validation or public eligibility. No public read fallback, staged content, answers, raw JSON, hashes or private records. Existing import/actions and public schemas remain unchanged. [27 fictional schema vectors](owner-package-wire-examples.json). This contract is not a deployment claim.
+
+## Owner current source
+
+`GET /admin/sources/{id}` reads one explicit owner source using the existing closed `Source` schema. Draft/effective configuration and known zero revisions remain separate. It does not return raw legacy config, probe payloads or secret values. Missing sources return 404; unsupported legacy projection returns 503 without guessing identity or category. Stage is not probe or seven-day admission proof. A current GET does not prove an uncertain write receipt. Existing source writes/actions, 158 schemas and collector wire versions remain unchanged. [20 fictional schema vectors](owner-source-wire-examples.json). Not a deployment claim.

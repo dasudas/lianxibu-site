@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:lianxibu:contracts:0.24",
+  "$id": "urn:lianxibu:contracts:0.25",
   "$defs": {
     "Id": {
       "type": "string",
