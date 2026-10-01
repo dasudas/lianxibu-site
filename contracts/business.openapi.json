@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lianxibu business API",
-    "version": "0.23",
+    "version": "0.24",
     "description": "Design contract. Observation revisions 0.11/0.12; config/control 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -10365,27 +10365,26 @@
         "x-max-body-bytes": 262144
       }
     },
-    "/admin/learning/packages": {
-      "post": {
-        "operationId": "business_post_admin_learning_packages",
-        "summary": "POST /admin/learning/packages",
-        "description": "Semantics and transaction invariants: api-contract.md. Schema validation precedes service semantic checks.",
+    "/admin/learning/packages/{id}": {
+      "get": {
+        "operationId": "business_get_admin_learning_packages_id",
+        "summary": "GET /admin/learning/packages/{id}",
+        "description": "Owner-only current package including draft/approved/published/withdrawn; exact explicit package id, no query fields, no default-package selection and no public PackageSummary fallback. Closed five-field projection, unknown title/description/revision/state remains null; known revision zero is valid, empty description differs from unknown. Read one consistent snapshot; state is physical publication state, not proof of current relation validation, review eligibility or publicly readable content. No staged chunks, raw JSON, objects, answers, history, hashes, validation diagnostics or private records. Missing exact package 404, owner cookie 401/403 before storage, any query 400, invalid path identity 422, missing provider/corrupt snapshot/storage failure 503 Retry-After. no-store and exact complete response envelope at most 1MiB; never truncate. Existing import stage/commit and package actions remain unchanged.",
         "security": [
           {
-            "sessionCookie": [],
-            "csrf": []
+            "sessionCookie": []
           }
         ],
         "parameters": [
           {
-            "name": "Idempotency-Key",
-            "in": "header",
+            "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "minLength": 1,
-              "maxLength": 128,
-              "pattern": "^[!-~]+$(?![\\s\\S])"
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             }
           }
         ],
@@ -10398,7 +10397,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/PackageImportResult"
+                      "$ref": "#/components/schemas/OwnerPackageDetail"
                     },
                     "meta": {
                       "$ref": "#/components/schemas/Meta"
@@ -10544,21 +10543,8 @@
         },
         "x-authorization": "owner",
         "x-contract-source": "api-contract.md",
-        "x-idempotency": "required; same key and exact command on retry",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PackageCreateCommand"
-              }
-            }
-          }
-        },
-        "x-max-body-bytes": 262144
-      }
-    },
-    "/admin/learning/packages/{id}": {
+        "x-idempotency": "not applicable"
+      },
       "put": {
         "operationId": "business_put_admin_learning_packages_id",
         "summary": "PUT /admin/learning/packages/{id}",
@@ -10755,6 +10741,199 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PackageWriteCommand"
+              }
+            }
+          }
+        },
+        "x-max-body-bytes": 262144
+      }
+    },
+    "/admin/learning/packages": {
+      "post": {
+        "operationId": "business_post_admin_learning_packages",
+        "summary": "POST /admin/learning/packages",
+        "description": "Semantics and transaction invariants: api-contract.md. Schema validation precedes service semantic checks.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[!-~]+$(?![\\s\\S])"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; replay returns the original result. No partial batch omission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PackageImportResult"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                },
+                "description": "Dynamic response; visibility must be revalidated."
+              }
+            }
+          },
+          "400": {
+            "description": "protocol_error: unknown or duplicate JSON keys / malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: current permission checked before replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: includes hidden or invalid public content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "revision_conflict / identity_conflict / run_frozen / stale_claim / input_unchanged / retry_exhausted / review_required / external_result_unresolved / idempotency_result_expired / schema_not_supported / ambiguous_package / recovery_condition_unmet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "gone: retired historical URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "payload_too_large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "validation / target_mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited: Retry-After required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "description": "Retry delay in seconds or HTTP-date; honor before bounded backoff."
+              }
+            }
+          },
+          "503": {
+            "description": "temporarily_unavailable / source_mapping_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "description": "Retry delay in seconds or HTTP-date; honor before bounded backoff."
+              }
+            }
+          }
+        },
+        "x-authorization": "owner",
+        "x-contract-source": "api-contract.md",
+        "x-idempotency": "required; same key and exact command on retry",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageCreateCommand"
               }
             }
           }
@@ -18823,6 +19002,77 @@
         "required": [
           "expected_revision",
           "answer"
+        ],
+        "additionalProperties": false
+      },
+      "OwnerPackageDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 16384
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "approved",
+                  "published",
+                  "withdrawn"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "revision",
+          "state"
         ],
         "additionalProperties": false
       },

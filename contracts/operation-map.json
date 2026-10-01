@@ -952,6 +952,19 @@
   },
   {
     "group": "business",
+    "method": "get",
+    "path": "/admin/learning/packages/{id}",
+    "response": "OwnerPackageDetail",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "Owner-only current package including draft/approved/published/withdrawn; exact explicit package id, no query fields, no default-package selection and no public PackageSummary fallback. Closed five-field projection, unknown title/description/revision/state remains null; known revision zero is valid, empty description differs from unknown. Read one consistent snapshot; state is physical publication state, not proof of current relation validation, review eligibility or publicly readable content. No staged chunks, raw JSON, objects, answers, history, hashes, validation diagnostics or private records. Missing exact package 404, owner cookie 401/403 before storage, any query 400, invalid path identity 422, missing provider/corrupt snapshot/storage failure 503 Retry-After. no-store and exact complete response envelope at most 1MiB; never truncate. Existing import stage/commit and package actions remain unchanged.",
+    "operation_id": "business_get_admin_learning_packages_id"
+  },
+  {
+    "group": "business",
     "method": "post",
     "path": "/admin/learning/packages",
     "response": "PackageImportResult",
