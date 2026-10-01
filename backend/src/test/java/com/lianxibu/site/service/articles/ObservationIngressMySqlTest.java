@@ -1,5 +1,6 @@
 package com.lianxibu.site.service.articles;
 import static org.junit.jupiter.api.Assertions.*;
+import com.zaxxer.hikari.HikariDataSource;
 import com.lianxibu.site.domain.protocol.CanonicalJson;
 import com.lianxibu.site.domain.protocol.CanonicalJson.Domain;
 import com.lianxibu.site.repository.articles.*;
@@ -21,6 +22,10 @@ import tools.jackson.databind.json.JsonMapper;import tools.jackson.databind.node
 /** Real JDBC observation races in one dedicated disposable loopback database. */
 @EnabledIfEnvironmentVariable(named="V03_MYSQL",matches="true")
 class ObservationIngressMySqlTest {
+    private HikariDataSource pool;
+    @org.junit.jupiter.api.AfterEach void closePool(){if(pool!=null)pool.close();}
+    private HikariDataSource pooled(String url){pool=new HikariDataSource();pool.setJdbcUrl(url);pool.setUsername(System.getenv().getOrDefault("V03_MYSQL_USER","root"));pool.setPassword(System.getenv().getOrDefault("V03_MYSQL_PASSWORD",""));pool.setMaximumPoolSize(5);pool.setMinimumIdle(1);pool.setConnectionTimeout(5000);return pool;}
+
  private DataSource db;private JdbcTemplate jdbc;private ObservationIngressService service;
  private final AtomicReference<Wave> holding=new AtomicReference<>();
  private final MutableClock time=new MutableClock();private final TestNodes nodes=new TestNodes();
@@ -28,7 +33,7 @@ class ObservationIngressMySqlTest {
  @BeforeEach void fixture() throws Exception {
   String url=System.getenv("V13_MYSQL_URL");if(url==null||!url.startsWith("jdbc:"))throw new IllegalStateException("isolated database required");
   URI endpoint=URI.create(url.substring(5));if(!"mysql".equals(endpoint.getScheme())||endpoint.getPort()!=13336||endpoint.getHost()==null||!InetAddress.getByName(endpoint.getHost()).isLoopbackAddress()||!"/fictional_v03_observations".equals(endpoint.getPath()))throw new IllegalStateException("dedicated loopback database required");
-  db=new DriverManagerDataSource(url,System.getenv().getOrDefault("V03_MYSQL_USER","root"),System.getenv().getOrDefault("V03_MYSQL_PASSWORD",""));jdbc=new JdbcTemplate(db);
+  db=pooled(url);jdbc=new JdbcTemplate(db);
   assertEquals("8.0.36",jdbc.queryForObject("SELECT VERSION()",String.class));assertEquals("utf8mb4_0900_ai_ci",jdbc.queryForObject("SELECT @@collation_database",String.class));assertEquals("READ-COMMITTED",jdbc.queryForObject("SELECT @@transaction_isolation",String.class));
   for(String table:TABLES)jdbc.execute("DROP TABLE IF EXISTS "+table);
         jdbc.execute("CREATE TABLE worker_lock(id INT PRIMARY KEY)");

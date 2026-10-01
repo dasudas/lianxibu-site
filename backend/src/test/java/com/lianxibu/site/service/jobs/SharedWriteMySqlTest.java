@@ -1,6 +1,7 @@
 package com.lianxibu.site.service.jobs;
 
 import static org.junit.jupiter.api.Assertions.*;
+import com.zaxxer.hikari.HikariDataSource;
 
 import com.lianxibu.site.repository.jobs.JdbcSharedWriteEntry;
 import com.lianxibu.site.service.jobs.SharedWriteExecutor.ActionContext;
@@ -27,6 +28,10 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /** Opt-in destructive fixtures, restricted to one dedicated loopback test database. */
 @EnabledIfEnvironmentVariable(named="V03_MYSQL",matches="true")
 class SharedWriteMySqlTest {
+    private HikariDataSource pool;
+    @org.junit.jupiter.api.AfterEach void closePool(){if(pool!=null)pool.close();}
+    private HikariDataSource pooled(String url){pool=new HikariDataSource();pool.setJdbcUrl(url);pool.setUsername(System.getenv().getOrDefault("V03_MYSQL_USER","root"));pool.setPassword(System.getenv().getOrDefault("V03_MYSQL_PASSWORD",""));pool.setMaximumPoolSize(5);pool.setMinimumIdle(1);pool.setConnectionTimeout(5000);return pool;}
+
     private DataSource source;
     private JdbcTemplate jdbc;
 
@@ -38,8 +43,7 @@ class SharedWriteMySqlTest {
                 ||endpoint.getHost()==null||!InetAddress.getByName(endpoint.getHost()).isLoopbackAddress()
                 ||!"/fictional_v03_shared".equals(endpoint.getPath()))
             throw new IllegalStateException("dedicated loopback database required");
-        source=new DriverManagerDataSource(url,System.getenv().getOrDefault("V03_MYSQL_USER","root"),
-                System.getenv().getOrDefault("V03_MYSQL_PASSWORD",""));
+        source=pooled(url);
         jdbc=new JdbcTemplate(source);
         assertEquals("8.0.36",jdbc.queryForObject("SELECT VERSION()",String.class));
         assertEquals("utf8mb4_0900_ai_ci",jdbc.queryForObject("SELECT @@collation_database",String.class));
