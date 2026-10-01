@@ -1,11 +1,11 @@
 # API contracts
 
-Contract package revision: 0.18. Observations accept wire revisions 0.11 and
+Contract package revision: 0.19. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
 surfaces. `schemas.json` is the shared JSON Schema 2020-12 definition set.
-`operation-map.json` lists all 74 operations: 61 business and 13 collector.
+`operation-map.json` lists all 75 operations: 62 business and 13 collector.
 `examples.json`, `wire-examples.json`, and `hn-time-wire-examples.json`
 contain fictional fixtures, including intentionally invalid wire cases.
 
@@ -53,3 +53,9 @@ unique news_tech article/source relationship is eligible. Unknown fields remain
 null; counts and first/last times are never inferred from article metadata.
 This package does not advertise deployed support; existing wire definitions
 and runtime capability constants remain unchanged.
+
+operation-affected-wire-examples.json covers owner-only frozen impact pages.
+GET /admin/operations/{id}/affected reads an operation_ref from its receipt.
+Pending enumeration has unknown total and no page; completed impact sets are
+immutable and paged with operation-bound opaque cursors. Existing receipts
+are unchanged. This package does not advertise deployed support.

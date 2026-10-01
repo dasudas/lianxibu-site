@@ -1,0 +1,408 @@
+[
+  {
+    "name": "fictional pending is unknown",
+    "schema": "OperationAffectedPage",
+    "valid": true,
+    "value": {
+      "operation_ref": "fictional-operation",
+      "state": "pending",
+      "total": null,
+      "items": [],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional complete page",
+    "schema": "OperationAffectedPage",
+    "valid": true,
+    "value": {
+      "operation_ref": "fictional-operation",
+      "state": "complete",
+      "total": 51,
+      "items": [
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        }
+      ],
+      "next_cursor": "fictional-opaque-cursor"
+    }
+  },
+  {
+    "name": "fictional complete zero",
+    "schema": "OperationAffectedPage",
+    "valid": true,
+    "value": {
+      "operation_ref": "fictional-operation",
+      "state": "complete",
+      "total": 0,
+      "items": [],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional pending zero",
+    "schema": "OperationAffectedPage",
+    "valid": false,
+    "value": {
+      "operation_ref": "fictional-operation",
+      "state": "pending",
+      "total": 0,
+      "items": [],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional pending items",
+    "schema": "OperationAffectedPage",
+    "valid": false,
+    "value": {
+      "operation_ref": "fictional-operation",
+      "state": "pending",
+      "total": null,
+      "items": [
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional pending cursor",
+    "schema": "OperationAffectedPage",
+    "valid": false,
+    "value": {
+      "operation_ref": "fictional-operation",
+      "state": "pending",
+      "total": null,
+      "items": [],
+      "next_cursor": "fictional-cursor"
+    }
+  },
+  {
+    "name": "fictional unknown state",
+    "schema": "OperationAffectedPage",
+    "valid": false,
+    "value": {
+      "operation_ref": "fictional-operation",
+      "state": "finished",
+      "total": null,
+      "items": [],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional raw payload",
+    "schema": "OperationAffectedPage",
+    "valid": false,
+    "value": {
+      "operation_ref": "fictional-operation",
+      "state": "pending",
+      "total": null,
+      "items": [],
+      "next_cursor": null,
+      "raw_json": "Fictional forbidden"
+    }
+  },
+  {
+    "name": "fictional missing identity",
+    "schema": "OperationAffectedPage",
+    "valid": false,
+    "value": {
+      "state": "pending",
+      "total": null,
+      "items": [],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional unsafe total",
+    "schema": "OperationAffectedPage",
+    "valid": false,
+    "value": {
+      "operation_ref": "fictional-operation",
+      "state": "complete",
+      "total": 9007199254740992,
+      "items": [
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        }
+      ],
+      "next_cursor": "fictional-opaque-cursor"
+    }
+  },
+  {
+    "name": "fictional oversize page",
+    "schema": "OperationAffectedPage",
+    "valid": false,
+    "value": {
+      "operation_ref": "fictional-operation",
+      "state": "complete",
+      "total": 51,
+      "items": [
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        },
+        {
+          "kind": "content",
+          "id": "fictional-content",
+          "package_id": null
+        }
+      ],
+      "next_cursor": "fictional-opaque-cursor"
+    }
+  }
+]

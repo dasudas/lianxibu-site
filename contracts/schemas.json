@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:lianxibu:contracts:0.18",
+  "$id": "urn:lianxibu:contracts:0.19",
   "$defs": {
     "Id": {
       "type": "string",
@@ -10498,6 +10498,93 @@
         "result_hash"
       ],
       "additionalProperties": false
+    },
+    "OperationAffectedPage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "operation_ref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ResourceRef"
+              },
+              "minItems": 0,
+              "maxItems": 0
+            },
+            "next_cursor": {
+              "type": "null"
+            },
+            "state": {
+              "const": "pending"
+            },
+            "total": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "operation_ref",
+            "items",
+            "next_cursor",
+            "state",
+            "total"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "operation_ref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ResourceRef"
+              },
+              "minItems": 0,
+              "maxItems": 50
+            },
+            "next_cursor": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "state": {
+              "const": "complete"
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "operation_ref",
+            "items",
+            "next_cursor",
+            "state",
+            "total"
+          ],
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

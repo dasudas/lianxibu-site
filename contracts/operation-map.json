@@ -1308,5 +1308,30 @@
     },
     "description": "Authenticated current article records only. q is literal title substring, status and favorite filter the collection before pagination; stats count all current article records owned by the actor independently of these filters. Missing article metadata is null and retained without q. Read rows/count/stats in one repeatable-read snapshot. Existing PUT /private/records/article/{id} remains the sole writer.",
     "operation_id": "business_get_private_article_records"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/operations/{id}/affected",
+    "response": "OperationAffectedPage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {
+      "cursor": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "default": 20
+      }
+    },
+    "description": "Owner-only read of the frozen complete transitive affected-resource set identified by the command receipt operation_ref. No mutation or AI request. Original ActionResult remains immutable. Pending enumeration returns state=pending,total=null,items=[],next_cursor=null; never claim zero/complete before durable traversal finishes. Complete set is immutable, full resource identity deduplicated and sorted by kind/id/package_id before pagination; total is the full set size, not the page size. Cursor is opaque and bound to this operation, frozen-set fingerprint, page position and requested limit; cannot carry actor data or internal payload. Every page rechecks current owner permission. Pending can be polled by GET; cursor on pending or invalid cursor is 422, cross-operation/limit/snapshot cursor is 409 cursor_scope_conflict. Unknown/duplicate query 400, invalid ID/limit 422, unknown operation 404, unavailable/unprovable storage 503 with Retry-After. Safe ResourceRef only, no current publication inference, source body, user notes, job payload or automatic republication. Provider must prove durable operation identity and enumeration completion; absent runtime wiring must fail closed.",
+    "operation_id": "business_get_admin_operations_id_affected"
   }
 ]

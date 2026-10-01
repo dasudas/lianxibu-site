@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lianxibu business API",
-    "version": "0.18",
+    "version": "0.19",
     "description": "Design contract. Observation revisions 0.11/0.12; config/control 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -12376,6 +12376,208 @@
         "x-contract-source": "api-contract.md",
         "x-idempotency": "not applicable"
       }
+    },
+    "/admin/operations/{id}/affected": {
+      "get": {
+        "operationId": "business_get_admin_operations_id_affected",
+        "summary": "GET /admin/operations/{id}/affected",
+        "description": "Owner-only read of the frozen complete transitive affected-resource set identified by the command receipt operation_ref. No mutation or AI request. Original ActionResult remains immutable. Pending enumeration returns state=pending,total=null,items=[],next_cursor=null; never claim zero/complete before durable traversal finishes. Complete set is immutable, full resource identity deduplicated and sorted by kind/id/package_id before pagination; total is the full set size, not the page size. Cursor is opaque and bound to this operation, frozen-set fingerprint, page position and requested limit; cannot carry actor data or internal payload. Every page rechecks current owner permission. Pending can be polled by GET; cursor on pending or invalid cursor is 422, cross-operation/limit/snapshot cursor is 409 cursor_scope_conflict. Unknown/duplicate query 400, invalid ID/limit 422, unknown operation 404, unavailable/unprovable storage 503 with Retry-After. Safe ResourceRef only, no current publication inference, source body, user notes, job payload or automatic republication. Provider must prove durable operation identity and enumeration completion; absent runtime wiring must fail closed.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; replay returns the original result. No partial batch omission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OperationAffectedPage"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                },
+                "description": "Dynamic response; visibility must be revalidated."
+              }
+            }
+          },
+          "400": {
+            "description": "protocol_error: unknown or duplicate JSON keys / malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: current permission checked before replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: includes hidden or invalid public content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "revision_conflict / identity_conflict / run_frozen / stale_claim / input_unchanged / retry_exhausted / review_required / external_result_unresolved / idempotency_result_expired / schema_not_supported / ambiguous_package / recovery_condition_unmet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "gone: retired historical URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "payload_too_large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "validation / target_mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited: Retry-After required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "description": "Retry delay in seconds or HTTP-date; honor before bounded backoff."
+              }
+            }
+          },
+          "503": {
+            "description": "temporarily_unavailable / source_mapping_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "description": "Retry delay in seconds or HTTP-date; honor before bounded backoff."
+              }
+            }
+          }
+        },
+        "x-authorization": "owner",
+        "x-contract-source": "api-contract.md",
+        "x-idempotency": "not applicable"
+      }
     }
   },
   "components": {
@@ -22876,6 +23078,93 @@
           "result_hash"
         ],
         "additionalProperties": false
+      },
+      "OperationAffectedPage": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "operation_ref": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ResourceRef"
+                },
+                "minItems": 0,
+                "maxItems": 0
+              },
+              "next_cursor": {
+                "type": "null"
+              },
+              "state": {
+                "const": "pending"
+              },
+              "total": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "operation_ref",
+              "items",
+              "next_cursor",
+              "state",
+              "total"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation_ref": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ResourceRef"
+                },
+                "minItems": 0,
+                "maxItems": 50
+              },
+              "next_cursor": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "state": {
+                "const": "complete"
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "operation_ref",
+              "items",
+              "next_cursor",
+              "state",
+              "total"
+            ],
+            "additionalProperties": false
+          }
+        ]
       }
     },
     "securitySchemes": {
