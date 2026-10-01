@@ -150,7 +150,9 @@ public final class SourcesController {
         if (!SOURCE_ACTIONS.contains(action)) throw validation("unknown source action");
         var command = new SourcesService.SourceAction(number(value.get("expected_revision")), action,
                 text(value.get("reason"), 1, 2048));
-        return success(action(service().sourceAction(actor, sourceId(sourceId), command, key, csrf, origin)));
+        String exactSourceId = sourceId(sourceId);
+        return success(sourceActionResult(service().sourceAction(actor, exactSourceId, command, key, csrf, origin),
+                exactSourceId, command));
     }
 
     @PostMapping(path = "/admin/source-runs", consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -422,6 +424,34 @@ public final class SourcesController {
         if (value == null) throw unavailable();
         return new SourcesDtos.ResourceRef(value.kind(), value.id(), value.packageId());
     }
+    private static SourcesDtos.ActionResult sourceActionResult(SourcesService.ActionResult value,
+                                                               String sourceId, SourcesService.SourceAction command) {
+        try {
+            if (value == null || value.resultResourceRef() == null || value.affected() == null
+                    || !value.affected().isEmpty() || value.cutoff() != null || value.coverage() != null
+                    || value.nextCursor() != null || value.resultRevision() < 0
+                    || value.resultRevision() > CanonicalJson.MAX_SAFE_INTEGER) throw unavailable();
+            WireValues.id(value.operationRef(), false);
+            var root = value.resultResourceRef();
+            if (root.packageId() != null) throw unavailable();
+            if ("probe".equals(command.action())) {
+                if (!"source_run".equals(root.kind()) || value.generation() == null
+                        || value.generation() < 1 || value.generation() > CanonicalJson.MAX_SAFE_INTEGER) {
+                    throw unavailable();
+                }
+                WireValues.id(root.id(), false);
+            } else {
+                WireValues.id(root.id(), true);
+                long expected = command.expectedRevision();
+                boolean revisionMatches = value.resultRevision() == expected + 1
+                        || "disable".equals(command.action()) && value.resultRevision() == expected;
+                if (!"source".equals(root.kind()) || !sourceId.equals(root.id())
+                        || value.generation() != null || !revisionMatches) throw unavailable();
+            }
+            return action(value);
+        } catch (IllegalArgumentException invalid) { throw unavailable(); }
+    }
+
     private static SourcesDtos.ActionResult action(SourcesService.ActionResult value) {
         if (value == null || value.affected() == null) throw unavailable();
         return new SourcesDtos.ActionResult(value.operationRef(), ref(value.resultResourceRef()),

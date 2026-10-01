@@ -103,7 +103,9 @@ class SourcesControllerTest {
                         + "\"category\":\"news_tech\",\"config\":" + CONFIG + "}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value("fixture"));
         when(service.sourceAction(eq(OWNER), eq("fixture"), any(), eq("fixture-key"),
-                eq("fixture-csrf"), eq(ORIGIN))).thenReturn(ACTION);
+                eq("fixture-csrf"), eq(ORIGIN))).thenReturn(new SourcesService.ActionResult("fixture-operation",
+                        new SourcesService.ResourceRef("source_run", "fictional-probe", null), 0, 1L,
+                        null, null, List.of(), null));
         mvc.perform(write(post("/admin/sources/fixture/actions"),
                         "{\"expected_revision\":0,\"action\":\"probe\",\"reason\":\"fixture\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.operation_ref").value("fixture-operation"));
@@ -125,6 +127,60 @@ class SourcesControllerTest {
         verify(service).itemAction(eq(OWNER), eq("fixture-run"), eq("fixture-item"),
                 eq(new SourcesService.ItemAction(0, "link_existing", "fixture", "fixture-entity",
                         null, null, null)), eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN));
+    }
+
+    @Test void sourceActionsRejectMismatchedReceiptsAndAllowProbeRunOrDisabledNoop() throws Exception {
+        var runReceipt = new SourcesService.ActionResult("fictional-operation",
+                new SourcesService.ResourceRef("source_run", "fictional-probe", null), 0, 1L,
+                null, null, List.of(), null);
+        stubSourceAction(runReceipt);
+        mvc.perform(sourceActionRequest("fixture", "probe", 0)).andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.data.result_resource_ref.kind").value("source_run"))
+                .andExpect(jsonPath("$.data.result_revision").value(0))
+                .andExpect(jsonPath("$.data.generation").value(1));
+        stubSourceAction(ACTION);
+        mvc.perform(sourceActionRequest("fixture", "probe", 0)).andExpect(status().isServiceUnavailable());
+        for (var invalid : List.of(
+                new SourcesService.ActionResult("fictional-operation", new SourcesService.ResourceRef("source", "fictional-other", null), 1, null, null, null, List.of(), null),
+                new SourcesService.ActionResult("fictional-operation", new SourcesService.ResourceRef("source", "fixture", "fictional-package"), 1, null, null, null, List.of(), null),
+                new SourcesService.ActionResult("fictional-operation", new SourcesService.ResourceRef("source", "fixture", null), 0, null, null, null, List.of(), null),
+                new SourcesService.ActionResult("fictional-operation", new SourcesService.ResourceRef("source", "fixture", null), 1, 1L, null, null, List.of(), null),
+                new SourcesService.ActionResult("fictional-operation", new SourcesService.ResourceRef("source", "fixture", null), 1, null, null, null, List.of(ACTION.resultResourceRef()), null),
+                new SourcesService.ActionResult("fictional-operation", new SourcesService.ResourceRef("source", "fixture", null), 1, null, null, null, List.of(), "fictional-cursor"))) {
+            stubSourceAction(invalid);
+            mvc.perform(sourceActionRequest("fixture", "start_trial", 0)).andExpect(status().isServiceUnavailable());
+        }
+        stubSourceAction(new SourcesService.ActionResult("fictional-operation", ACTION.resultResourceRef(), 0, null, null, null, List.of(), null));
+        mvc.perform(sourceActionRequest("fixture", "disable", 0)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.result_revision").value(0));
+        stubSourceAction(ACTION);
+        mvc.perform(sourceActionRequest("fixture", "disable", 0)).andExpect(status().isOk());
+    }
+
+    @Test void sourceActionLongUnicodeIdentityAndSafeCounterAreNotTruncated() throws Exception {
+        String sourceId = "\uD83D\uDE42".repeat(80);
+        stubSourceAction(new SourcesService.ActionResult("fictional-operation",
+                new SourcesService.ResourceRef("source", sourceId, null), 1, null, null, null, List.of(), null));
+        mvc.perform(sourceActionRequest(sourceId, "start_trial", 0)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.result_resource_ref.id").value(sourceId));
+        stubSourceAction(new SourcesService.ActionResult("fictional-operation",
+                new SourcesService.ResourceRef("source", sourceId, null), 9007199254740992L, null, null, null, List.of(), null));
+        mvc.perform(sourceActionRequest(sourceId, "start_trial", 9007199254740991L))
+                .andExpect(status().isServiceUnavailable());
+        stubSourceAction(new SourcesService.ActionResult("fictional-operation",
+                new SourcesService.ResourceRef("source_run", "fictional-probe", null), 0, 0L, null, null, List.of(), null));
+        mvc.perform(sourceActionRequest(sourceId, "probe", 0)).andExpect(status().isServiceUnavailable());
+        stubSourceAction(new SourcesService.ActionResult("fictional\n", ACTION.resultResourceRef(), 1, null, null, null, List.of(), null));
+        mvc.perform(sourceActionRequest("fixture", "start_trial", 0)).andExpect(status().isServiceUnavailable());
+    }
+
+    private void stubSourceAction(SourcesService.ActionResult result) {
+        when(service.sourceAction(eq(OWNER), any(), any(), eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN))).thenReturn(result);
+    }
+    private MockHttpServletRequestBuilder sourceActionRequest(String id, String action, long revision) {
+        return write(post("/admin/sources/{id}/actions", id), "{\"expected_revision\":" + revision
+                + ",\"action\":\"" + action + "\",\"reason\":\"fictional reason\"}");
     }
 
     @Test
