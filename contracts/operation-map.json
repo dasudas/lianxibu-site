@@ -149,7 +149,7 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 80,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "q": {
         "type": "string",
@@ -205,7 +205,7 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "kind": {
         "type": "string",
@@ -273,13 +273,13 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "module_id": {
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "q": {
         "type": "string",
@@ -304,13 +304,13 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "module_id": {
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "q": {
         "type": "string",
@@ -335,13 +335,13 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "module_id": {
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "q": {
         "type": "string",
@@ -366,13 +366,13 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "module_id": {
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "q": {
         "type": "string",
@@ -401,7 +401,7 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       }
     },
     "description": "",
@@ -421,13 +421,13 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "module_id": {
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "q": {
         "type": "string",
@@ -438,7 +438,7 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       }
     },
     "description": "",
@@ -497,7 +497,7 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "cursor": {
         "type": "string",
@@ -531,7 +531,7 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       }
     },
     "description": "",
@@ -564,12 +564,12 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 80,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "business_date": {
         "type": "string",
         "format": "date",
-        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
       }
     },
     "description": "",
@@ -925,13 +925,13 @@
       },
       "body_hash": {
         "type": "string",
-        "pattern": "^[0-9a-f]{64}$"
+        "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
       },
       "input_job_id": {
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       }
     },
     "description": "Owner-only active conclusion-invalidations for one exact body version of the path content. revision and body_hash are required; omitted input_job_id means explicit null, never inferred from current body. Response repeats complete target and independent validity revision/effective flag from one repeatable-read snapshot. Fold only canonical disposition records matching full target, subtract explicit reversals of active invalidation IDs; count and stable created_at/id pagination after folding. Return actual invalidation IDs, safe reason and UTC creation time, no raw payload/history body. All active IDs contribute to validity even outside this page; reversing one need not restore validity. Unknown or duplicate query keys 400; invalid/missing required values 422; exact missing version 404; unreadable proof or unavailable provider 503. Operation receipts are not invalidation IDs. Existing actions, version summaries and definitions are unchanged.",
@@ -1149,7 +1149,7 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 80,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       }
     },
     "description": "",

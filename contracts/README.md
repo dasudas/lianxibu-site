@@ -1,6 +1,6 @@
 # API contracts
 
-Contract package revision: 0.21. Observations accept wire revisions 0.11 and
+Contract package revision: 0.22. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
@@ -78,3 +78,9 @@ old snapshots. Opaque pagination is bound to report, snapshot, projection
 and limit. report-input-summary-wire-examples.json includes 29 fictional
 schema and semantic cases; schema validation alone cannot prove cross-page
 membership, arithmetic totals, period order or durable associations.
+
+Anchored scalar patterns consume the entire wire string, including rejection
+of an unwanted final newline. Existing valid fields, ranges, operations and
+protocol revisions remain unchanged. scalar-tail-wire-examples.json contains
+33 fictional scalar cases with inline schemas. Static schema validation does
+not replace identity, association, duplicate, replay or result-hash checks.

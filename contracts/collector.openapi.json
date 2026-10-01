@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lianxibu collector API",
-    "version": "0.21",
+    "version": "0.22",
     "description": "Design contract. Observation revisions 0.11/0.12; config/control 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -232,7 +232,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[!-~]+$"
+              "pattern": "^[!-~]+$(?![\\s\\S])"
             }
           }
         ],
@@ -425,7 +425,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             }
           },
           {
@@ -436,7 +436,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[!-~]+$"
+              "pattern": "^[!-~]+$(?![\\s\\S])"
             }
           }
         ],
@@ -649,7 +649,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 80,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             }
           }
         ],
@@ -831,7 +831,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             }
           }
         ],
@@ -1013,7 +1013,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             }
           },
           {
@@ -1203,7 +1203,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             }
           },
           {
@@ -1214,7 +1214,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[!-~]+$"
+              "pattern": "^[!-~]+$(?![\\s\\S])"
             }
           }
         ],
@@ -1407,7 +1407,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             }
           },
           {
@@ -1418,7 +1418,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[!-~]+$"
+              "pattern": "^[!-~]+$(?![\\s\\S])"
             }
           }
         ],
@@ -1611,7 +1611,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             }
           },
           {
@@ -1622,7 +1622,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             }
           },
           {
@@ -1633,7 +1633,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[!-~]+$"
+              "pattern": "^[!-~]+$(?![\\s\\S])"
             }
           }
         ],
@@ -2188,7 +2188,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[!-~]+$"
+              "pattern": "^[!-~]+$(?![\\s\\S])"
             }
           }
         ],
@@ -2384,7 +2384,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             }
           },
           {
@@ -2395,7 +2395,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 128,
-              "pattern": "^[!-~]+$"
+              "pattern": "^[!-~]+$(?![\\s\\S])"
             }
           }
         ],
@@ -2576,13 +2576,13 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 64,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "SourceId": {
         "type": "string",
         "minLength": 1,
         "maxLength": 80,
-        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
       },
       "SafeInteger": {
         "type": "integer",
@@ -2592,11 +2592,11 @@
       "Timestamp": {
         "type": "string",
         "format": "date-time",
-        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
       },
       "Hash": {
         "type": "string",
-        "pattern": "^[0-9a-f]{64}$"
+        "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
       },
       "Meta": {
         "type": "object",
@@ -2605,7 +2605,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           }
         },
         "required": [
@@ -2625,7 +2625,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "package_id": {
             "anyOf": [
@@ -2633,7 +2633,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -2667,7 +2667,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -2735,7 +2735,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "revision": {
             "type": "integer",
@@ -2744,7 +2744,7 @@
           },
           "body_hash": {
             "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
           },
           "input_job_id": {
             "anyOf": [
@@ -2752,7 +2752,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -2777,7 +2777,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "object_kind": {
             "type": "string",
@@ -2791,7 +2791,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "title": {
             "type": "string",
@@ -2832,7 +2832,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -2852,7 +2852,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "kind": {
             "type": "string",
@@ -2897,7 +2897,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -2929,7 +2929,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -2941,7 +2941,7 @@
               {
                 "type": "string",
                 "format": "date",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -2986,7 +2986,7 @@
             "items": {
               "type": "string",
               "format": "date",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 366
@@ -2996,7 +2996,7 @@
             "items": {
               "type": "string",
               "format": "date",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 366
@@ -3032,7 +3032,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -3048,12 +3048,12 @@
           "period_start": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "period_end": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "timezone": {
             "const": "Asia/Shanghai"
@@ -3103,7 +3103,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -3121,7 +3121,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           }
         },
         "required": [
@@ -3152,7 +3152,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "kind": {
                 "const": "report"
@@ -3186,7 +3186,7 @@
                   {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3199,7 +3199,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3223,7 +3223,7 @@
                   {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3255,7 +3255,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3289,7 +3289,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "kind": {
                 "type": "string",
@@ -3329,7 +3329,7 @@
                   {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3342,7 +3342,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3366,7 +3366,7 @@
                   {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3398,7 +3398,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3449,7 +3449,7 @@
                   {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3527,7 +3527,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "kind": {
                 "const": "report"
@@ -3561,7 +3561,7 @@
                   {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3574,7 +3574,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3598,7 +3598,7 @@
                   {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3630,7 +3630,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3677,7 +3677,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "kind": {
                 "type": "string",
@@ -3717,7 +3717,7 @@
                   {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3730,7 +3730,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3754,7 +3754,7 @@
                   {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3786,7 +3786,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3848,7 +3848,7 @@
                   {
                     "type": "string",
                     "format": "date-time",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -3952,7 +3952,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -4047,7 +4047,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -4069,7 +4069,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "title": {
             "type": "string",
@@ -4092,7 +4092,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "source_name": {
             "type": "string",
@@ -4111,7 +4111,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -4121,7 +4121,7 @@
           "observed_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "topic": {
             "anyOf": [
@@ -4311,7 +4311,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "object_kind": {
                 "const": "node"
@@ -4377,7 +4377,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "object_kind": {
                 "const": "question"
@@ -4449,7 +4449,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "object_kind": {
                 "const": "project"
@@ -4492,7 +4492,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -4512,7 +4512,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "revision": {
             "type": "integer",
@@ -4597,7 +4597,7 @@
           "updated_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "is_read": {
             "type": "boolean"
@@ -4635,7 +4635,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "title": {
             "type": "string",
@@ -4700,19 +4700,19 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "module_id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "title": {
             "type": "string",
@@ -4750,7 +4750,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -4792,13 +4792,13 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "title": {
                 "type": "string",
@@ -4883,13 +4883,13 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "title": {
                 "type": "string",
@@ -4975,13 +4975,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "title": {
             "type": "string",
@@ -5070,13 +5070,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "title": {
             "type": "string",
@@ -5089,7 +5089,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -5108,7 +5108,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^(0(\\.[0-9]{1,8})?|1(\\.0{1,8})?)$"
+                "pattern": "^(0(\\.[0-9]{1,8})?|1(\\.0{1,8})?)$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -5134,13 +5134,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "title": {
             "type": "string",
@@ -5153,7 +5153,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -5174,13 +5174,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "to_id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "kind": {
             "type": "string",
@@ -5244,7 +5244,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "kind": {
             "type": "string",
@@ -5259,7 +5259,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           }
         },
         "required": [
@@ -5327,7 +5327,7 @@
           "valid_until": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "auth_secret_ref": {
             "anyOf": [
@@ -5398,7 +5398,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "name": {
             "type": "string",
@@ -5434,7 +5434,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "name": {
             "type": "string",
@@ -5494,7 +5494,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -5522,13 +5522,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "source_id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 80,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "run_kind": {
             "type": "string",
@@ -5544,7 +5544,7 @@
           "business_date": {
             "type": "string",
             "format": "date",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
           },
           "generation": {
             "type": "integer",
@@ -5554,12 +5554,12 @@
           "window_start": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "window_end": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "fetch_mode": {
             "type": "string",
@@ -5658,7 +5658,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -5672,7 +5672,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -5683,7 +5683,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -5725,22 +5725,22 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "business_date": {
             "type": "string",
             "format": "date",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
           },
           "window_start": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "window_end": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "run_kind": {
             "type": "string",
@@ -5784,19 +5784,19 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "run_id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "member_id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "source_item_id": {
             "anyOf": [
@@ -5833,7 +5833,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -5938,7 +5938,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "category": {
             "type": "string",
@@ -5970,14 +5970,14 @@
           "first_recorded_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "first_seen_business_date": {
             "anyOf": [
               {
                 "type": "string",
                 "format": "date",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -5987,7 +5987,7 @@
           "last_seen_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "occurrence_count": {
             "anyOf": [
@@ -6058,7 +6058,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 80,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -6096,7 +6096,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "name": {
             "type": "string",
@@ -6109,7 +6109,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 80,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -6137,7 +6137,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6208,7 +6208,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 30,
-                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6230,7 +6230,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "attempt_no": {
             "type": "integer",
@@ -6257,7 +6257,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6294,7 +6294,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "record_kind": {
             "type": "string",
@@ -6339,7 +6339,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6364,7 +6364,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6407,7 +6407,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6419,7 +6419,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6434,7 +6434,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6482,7 +6482,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6506,7 +6506,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6582,7 +6582,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "rule_id": {
             "type": "string",
@@ -6616,12 +6616,12 @@
           "first_seen_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "last_seen_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "observed_value": {
             "anyOf": [
@@ -6629,7 +6629,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 30,
-                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6640,7 +6640,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 30,
-            "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+            "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
           },
           "acknowledged": {
             "type": "boolean"
@@ -6650,7 +6650,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6686,19 +6686,19 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 30,
-            "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+            "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
           },
           "critical_threshold": {
             "type": "string",
             "minLength": 1,
             "maxLength": 30,
-            "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+            "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
           },
           "recovery_threshold": {
             "type": "string",
             "minLength": 1,
             "maxLength": 30,
-            "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+            "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
           },
           "notification_secret_ref": {
             "anyOf": [
@@ -6722,13 +6722,13 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[a-z][a-z0-9_]*$"
+              "pattern": "^[a-z][a-z0-9_]*$(?![\\s\\S])"
             },
             "additionalProperties": {
               "type": "string",
               "minLength": 1,
               "maxLength": 30,
-              "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+              "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
             }
           }
         },
@@ -6779,7 +6779,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6866,7 +6866,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -6904,7 +6904,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "result_resource_ref": {
             "$ref": "#/components/schemas/ResourceRef"
@@ -6931,7 +6931,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -7153,7 +7153,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 80,
-                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                 },
                 "minItems": 0,
                 "maxItems": 1000
@@ -7458,7 +7458,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               }
             },
             "required": [
@@ -7524,7 +7524,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               }
             },
             "required": [
@@ -7584,7 +7584,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               }
             },
             "required": [
@@ -7653,7 +7653,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 64,
-                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                 },
                 "minItems": 1,
                 "maxItems": 100
@@ -7726,19 +7726,19 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "old_entity_id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "new_entity_id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "expected_item_revision": {
             "type": "integer",
@@ -7885,7 +7885,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               }
             },
             "required": [
@@ -7967,7 +7967,7 @@
               },
               "result_hash": {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               }
             },
             "required": [
@@ -7999,7 +7999,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "external_state": {
                 "type": "string",
@@ -8015,7 +8015,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 64,
-                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                 },
                 "minItems": 1,
                 "maxItems": 100
@@ -8102,7 +8102,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 64,
-                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                 },
                 "minItems": 0,
                 "maxItems": 1000
@@ -8118,12 +8118,12 @@
               "period_start": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "period_end": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "timezone": {
                 "const": "Asia/Shanghai"
@@ -8179,7 +8179,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 64,
-                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                 },
                 "minItems": 0,
                 "maxItems": 1000
@@ -8197,7 +8197,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               }
             },
             "required": [
@@ -8248,12 +8248,12 @@
               "period_start": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "period_end": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "timezone": {
                 "const": "Asia/Shanghai"
@@ -8291,12 +8291,12 @@
               "period_start": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "period_end": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "timezone": {
                 "const": "Asia/Shanghai"
@@ -8505,7 +8505,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 2000,
-            "pattern": "^https://[^\\s]+$"
+            "pattern": "^https://[^\\s]+$(?![\\s\\S])"
           },
           "version": {
             "anyOf": [
@@ -8523,7 +8523,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -8534,7 +8534,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -8575,7 +8575,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 2000,
-                  "pattern": "^https://[^\\s]+$"
+                  "pattern": "^https://[^\\s]+$(?![\\s\\S])"
                 },
                 "revision": {
                   "anyOf": [
@@ -8605,7 +8605,7 @@
                   "anyOf": [
                     {
                       "type": "string",
-                      "pattern": "^[0-9a-f]{64}$"
+                      "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
                     },
                     {
                       "type": "null"
@@ -8730,7 +8730,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -8750,7 +8750,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -8761,7 +8761,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -8775,7 +8775,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -8863,7 +8863,7 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 2000,
-                  "pattern": "^https://[^\\s]+$"
+                  "pattern": "^https://[^\\s]+$(?![\\s\\S])"
                 },
                 "revision": {
                   "anyOf": [
@@ -8893,7 +8893,7 @@
                   "anyOf": [
                     {
                       "type": "string",
-                      "pattern": "^[0-9a-f]{64}$"
+                      "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
                     },
                     {
                       "type": "null"
@@ -9028,7 +9028,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -9040,7 +9040,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -9140,7 +9140,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -9152,7 +9152,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -9221,7 +9221,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -9259,7 +9259,7 @@
                 "submitted_at": {
                   "type": "string",
                   "format": "date-time",
-                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                 },
                 "published_at": {
                   "type": "null"
@@ -9297,7 +9297,7 @@
                 "published_at": {
                   "type": "string",
                   "format": "date-time",
-                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                 }
               }
             }
@@ -9315,7 +9315,7 @@
                 "updated_at": {
                   "type": "string",
                   "format": "date-time",
-                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
                 }
               }
             }
@@ -9334,30 +9334,30 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "member_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "run_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "business_date": {
                 "type": "string",
                 "format": "date",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
               },
               "source_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 80,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "source_revision": {
                 "type": "integer",
@@ -9372,7 +9372,7 @@
               "retrieved_at": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "replaces_observation_id": {
                 "anyOf": [
@@ -9380,7 +9380,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -9389,7 +9389,7 @@
               },
               "payload_hash": {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               "kind": {
                 "const": "article"
@@ -9425,30 +9425,30 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "member_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "run_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "business_date": {
                 "type": "string",
                 "format": "date",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
               },
               "source_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 80,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "source_revision": {
                 "type": "integer",
@@ -9463,7 +9463,7 @@
               "retrieved_at": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "replaces_observation_id": {
                 "anyOf": [
@@ -9471,7 +9471,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -9480,7 +9480,7 @@
               },
               "payload_hash": {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               "kind": {
                 "const": "catalog"
@@ -9516,30 +9516,30 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "member_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "run_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "business_date": {
                 "type": "string",
                 "format": "date",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
               },
               "source_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 80,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "source_revision": {
                 "type": "integer",
@@ -9554,7 +9554,7 @@
               "retrieved_at": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "replaces_observation_id": {
                 "anyOf": [
@@ -9562,7 +9562,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -9571,7 +9571,7 @@
               },
               "payload_hash": {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               "kind": {
                 "const": "metric"
@@ -9607,30 +9607,30 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "member_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "run_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "business_date": {
                 "type": "string",
                 "format": "date",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
               },
               "source_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 80,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "source_revision": {
                 "type": "integer",
@@ -9645,7 +9645,7 @@
               "retrieved_at": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "replaces_observation_id": {
                 "anyOf": [
@@ -9653,7 +9653,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -9662,7 +9662,7 @@
               },
               "payload_hash": {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               "kind": {
                 "const": "article"
@@ -9698,30 +9698,30 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "member_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "run_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "business_date": {
                 "type": "string",
                 "format": "date",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
               },
               "source_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 80,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "source_revision": {
                 "type": "integer",
@@ -9736,7 +9736,7 @@
               "retrieved_at": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "replaces_observation_id": {
                 "anyOf": [
@@ -9744,7 +9744,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -9753,7 +9753,7 @@
               },
               "payload_hash": {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               "kind": {
                 "const": "catalog"
@@ -9789,30 +9789,30 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "member_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "run_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "business_date": {
                 "type": "string",
                 "format": "date",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
               },
               "source_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 80,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "source_revision": {
                 "type": "integer",
@@ -9827,7 +9827,7 @@
               "retrieved_at": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "replaces_observation_id": {
                 "anyOf": [
@@ -9835,7 +9835,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                    "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
                   },
                   {
                     "type": "null"
@@ -9844,7 +9844,7 @@
               },
               "payload_hash": {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               "kind": {
                 "const": "metric"
@@ -9924,13 +9924,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "member_id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "status": {
             "type": "string",
@@ -9960,7 +9960,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -9972,7 +9972,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -10058,7 +10058,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "source_item_id": {
             "anyOf": [
@@ -10076,11 +10076,11 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "payload_hash": {
             "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
           },
           "replaces_observation_id": {
             "anyOf": [
@@ -10088,7 +10088,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -10112,7 +10112,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "part_no": {
             "type": "integer",
@@ -10121,7 +10121,7 @@
           },
           "part_hash": {
             "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
           },
           "members": {
             "type": "array",
@@ -10147,7 +10147,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "parts": {
             "type": "array",
@@ -10197,7 +10197,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -10231,7 +10231,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "config_version": {
             "type": "integer",
@@ -10287,7 +10287,7 @@
           "valid_until": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           }
         },
         "required": [
@@ -10307,7 +10307,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 80,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -10371,7 +10371,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -10399,13 +10399,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "source_id": {
             "type": "string",
             "minLength": 1,
             "maxLength": 80,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "config": {
             "$ref": "#/components/schemas/FrozenConfig"
@@ -10427,7 +10427,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -10478,7 +10478,7 @@
           "checked_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "error_code": {
             "anyOf": [
@@ -10527,7 +10527,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "action": {
                 "type": "string",
@@ -10610,11 +10610,11 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "manifest_hash": {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               "part_count": {
                 "type": "integer",
@@ -10685,13 +10685,13 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "member_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "expected_member_revision": {
                 "type": "integer",
@@ -10753,7 +10753,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "result": {
                 "$ref": "#/components/schemas/ProbeResult"
@@ -10795,7 +10795,7 @@
         "properties": {
           "business_hash": {
             "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
           },
           "run_id": {
             "anyOf": [
@@ -10803,7 +10803,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -10816,7 +10816,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -10863,7 +10863,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -10874,7 +10874,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           }
         },
         "required": [
@@ -10895,7 +10895,7 @@
           "observed_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "pending_observations": {
             "type": "integer",
@@ -10927,7 +10927,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -10952,7 +10952,7 @@
           "received_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           }
         },
         "required": [
@@ -11518,7 +11518,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "kind": {
             "type": "string",
@@ -11665,7 +11665,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "reason": {
             "type": "string",
@@ -11675,7 +11675,7 @@
           "created_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           }
         },
         "required": [
@@ -11827,7 +11827,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "part_no": {
             "type": "integer",
@@ -11841,7 +11841,7 @@
           },
           "part_hash": {
             "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
           },
           "items": {
             "type": "array",
@@ -11887,7 +11887,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "title": {
             "type": "string",
@@ -11906,7 +11906,7 @@
           },
           "manifest_hash": {
             "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
           }
         },
         "required": [
@@ -12009,7 +12009,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "accepted_part_no": {
             "type": "integer",
@@ -12018,12 +12018,12 @@
           },
           "part_hash": {
             "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
           },
           "expires_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           }
         },
         "required": [
@@ -12051,7 +12051,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "category": {
             "const": "news_tech"
@@ -12061,7 +12061,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -12073,7 +12073,7 @@
               {
                 "type": "string",
                 "format": "date",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -12085,7 +12085,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -12193,7 +12193,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "title": {
             "type": "string",
@@ -12216,7 +12216,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "source_name": {
             "type": "string",
@@ -12235,7 +12235,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -12245,7 +12245,7 @@
           "observed_at": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
           },
           "topic": {
             "anyOf": [
@@ -12382,7 +12382,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "title": {
             "type": "string",
@@ -12435,7 +12435,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "revision": {
                 "type": "integer",
@@ -12520,7 +12520,7 @@
               "updated_at": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "is_read": {
                 "type": "boolean"
@@ -12659,7 +12659,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 30,
-                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$"
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]{1,8})?$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -12681,7 +12681,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -12745,7 +12745,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 80,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -12774,7 +12774,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "category": {
             "type": "string",
@@ -12800,7 +12800,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -12814,7 +12814,7 @@
           },
           "confidence": {
             "type": "string",
-            "pattern": "^(0(\\.[0-9]{1,8})?|1(\\.0{1,8})?)$"
+            "pattern": "^(0(\\.[0-9]{1,8})?|1(\\.0{1,8})?)$(?![\\s\\S])"
           },
           "suggested_title": {
             "type": "string",
@@ -12884,7 +12884,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
           },
           "category": {
             "type": "string",
@@ -12933,7 +12933,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 5,
@@ -13010,7 +13010,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 64,
-              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
             },
             "minItems": 0,
             "maxItems": 1000
@@ -13051,14 +13051,14 @@
           },
           "input_hash": {
             "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
           },
           "payload": {
             "$ref": "#/components/schemas/AIResultPayload"
           },
           "result_hash": {
             "type": "string",
-            "pattern": "^[0-9a-f]{64}$"
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
           }
         },
         "required": [
@@ -13078,7 +13078,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "items": {
                 "type": "array",
@@ -13114,7 +13114,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "items": {
                 "type": "array",
@@ -13165,7 +13165,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "job_revision": {
                 "type": "integer",
@@ -13202,7 +13202,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "job_revision": {
                 "type": "integer",
@@ -13226,7 +13226,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "current_content_revision": {
                 "type": "integer",
@@ -13246,13 +13246,13 @@
               },
               "result_hash": {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
               },
               "input_snapshot_id": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 64,
-                "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
               },
               "generation": {
                 "type": "integer",
@@ -13262,7 +13262,7 @@
               "input_cutoff_at": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "coverage": {
                 "$ref": "#/components/schemas/Coverage"
@@ -13561,7 +13561,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$",
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])",
                 "minLength": 64,
                 "maxLength": 64
               },
@@ -13614,7 +13614,7 @@
               {
                 "type": "string",
                 "format": "date",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$(?![\\s\\S])"
               },
               {
                 "type": "null"
@@ -13874,7 +13874,7 @@
               },
               "input_hash": {
                 "type": "string",
-                "pattern": "^[0-9a-f]{64}$",
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])",
                 "minLength": 64,
                 "maxLength": 64
               },
@@ -13886,7 +13886,7 @@
               "input_cutoff_at": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "report_type": {
                 "type": "string",
@@ -13899,12 +13899,12 @@
               "period_start": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "period_end": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
               },
               "timezone": {
                 "const": "Asia/Shanghai"
