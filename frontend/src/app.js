@@ -1,3 +1,5 @@
+import {createSourceActionsApi} from './api/source-actions.js';
+import {createSourceRunsApi} from './api/source-runs.js';
 import {createSourcesApi} from './api/sources.js';
 import {mountSources} from './pages/admin/sources.js';
 import {createLearningImportApi} from './api/learning-import.js';
@@ -37,7 +39,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
   const session = createSessionState(client), home = createHomeApi(client), identityApi = createIdentityApi(client);
   const reports = createReportsApi(client), learningReference = createLearningReferenceApi(client), interpretations = createInterpretationsApi(client);
   const adminContent = createAdminContentApi(client), ownerAnswers = createOwnerAnswersApi(client), ownerPackages = createOwnerPackagesApi(client), learningImport = createLearningImportApi(client);
-  const generationIntents = createGenerationIntentsApi(client), sources = createSourcesApi(client);
+  const generationIntents = createGenerationIntentsApi(client), sources = createSourcesApi(client), sourceActions = createSourceActionsApi(client), sourceRuns = createSourceRunsApi(client);
   const resultComparisons = createJobResultComparisonApi(client), resultActions = createJobResultActionsApi(client);
   const operationAffected = createOperationAffectedApi(client), inputSummaries = createReportInputSummaryApi(client);
   const articles = createArticlesApi(client), records = createRecordsApi(client), articleRecords = createArticleRecordsApi(client);
@@ -86,7 +88,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-08') return mountCatalog(main, { scope, api: interpretations, url, navigate });
     if (route?.id === 'UI-09') return mountInterpretation(main, { scope, api: interpretations, url });
     if (route?.id === 'UI-10') return mountAdminCatalog(main, { scope, api: adminContent, impactApi: operationAffected, intentApi: generationIntents, comparisonApi: resultComparisons, resultActionsApi: resultActions, inputSummaryApi: inputSummaries, ownerAnswersApi: ownerAnswers, ownerPackagesApi: ownerPackages, learningImportApi: learningImport, url, identity, session, navigate, confirmDiscard });
-    if (route?.id === 'UI-11') return mountSources(main, {scope,api:sources,url,identity,session,confirmDiscard});
+    if (route?.id === 'UI-11') return mountSources(main, {scope,api:sources,actionsApi:sourceActions,runApi:sourceRuns,url,identity,session,confirmDiscard});
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
