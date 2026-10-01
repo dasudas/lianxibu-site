@@ -1,5 +1,5 @@
 export function createPageScope(session, { onCleanupError = () => {} } = {}) {
-  const controller = new AbortController(), resources = [], requests = new Map();
+  const controller = new AbortController(), resources = [], requests = new Map(), editGuards = new Set();
   const generation = session.snapshot.generation;
   let active = true;
   const current = () => active && generation === session.snapshot.generation;
@@ -10,7 +10,7 @@ export function createPageScope(session, { onCleanupError = () => {} } = {}) {
   }
   function dispose() {
     if (!active) return;
-    active = false; controller.abort(); requests.clear();
+    active = false; controller.abort(); requests.clear(); editGuards.clear();
     const errors = [];
     for (const cleanup of resources.reverse()) { try { cleanup(); } catch (error) { errors.push(error); } }
     resources.length = 0;
@@ -19,6 +19,19 @@ export function createPageScope(session, { onCleanupError = () => {} } = {}) {
   own(session.subscribe(() => { if (!current()) dispose(); }));
   return Object.freeze({
     get active() { return current(); }, signal: controller.signal, own, dispose,
+    protectEdits(dirty, confirm) {
+      if (typeof dirty !== 'function' || typeof confirm !== 'function') throw new TypeError('Edit guard callbacks required');
+      const guard = { dirty, confirm }; if (current()) editGuards.add(guard);
+      const remove = () => editGuards.delete(guard); own(remove); return remove;
+    },
+    get hasUnsavedChanges() {
+      if (!current()) return false;
+      try { return [...editGuards].some(guard => guard.dirty()); } catch { return true; }
+    },
+    canLeave() {
+      if (!current()) return true;
+      try { return [...editGuards].every(guard => !guard.dirty() || guard.confirm() === true); } catch { return false; }
+    },
     listen(target, type, listener, options) {
       const guarded = event => { if (current()) listener(event); };
       target.addEventListener(type, guarded, options);

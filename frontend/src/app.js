@@ -27,6 +27,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
   }
   async function logout(retry = false) {
     if (logoutPending || stopped) return;
+    if (!router.canLeave()) return;
     logoutPending = true; notify('正在退出…');
     try {
       // A retry refreshes the transport token without restoring identity in the view.
@@ -38,7 +39,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
       notify('退出尚未确认。私人内容已清空，请重试。', () => logout(true));
     } finally { logoutPending = false; }
   }
-  function navigate(path) { router.navigate(path); root.querySelector('#main')?.focus({ preventScroll: true }); }
+  function navigate(path) { if (router.navigate(path)) root.querySelector('#main')?.focus({ preventScroll: true }); }
   const router = createPageRouter({ browser, session, mount({ route, url, scope, session: identity }) {
     const main = mountShell(root, { pathname: url.pathname, user: identity.user, scope, navigate, logout: () => logout() });
     if (route?.id === 'UI-01') return mountHome(main, { scope, api: home });
