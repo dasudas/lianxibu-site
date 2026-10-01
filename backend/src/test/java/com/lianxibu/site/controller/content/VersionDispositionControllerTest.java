@@ -1,0 +1,22 @@
+package com.lianxibu.site.controller.content;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.lianxibu.site.service.identity.IdentityService;
+import com.lianxibu.site.service.identity.IdentityService.Actor;
+import com.lianxibu.site.service.content.VersionDispositionReadService;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+class VersionDispositionControllerTest {
+ private final Actor owner=new Actor("fictional-owner","owner");private IdentityService identity;private VersionDispositionReadService reads;private MockMvc mvc;
+ @BeforeEach @SuppressWarnings("unchecked") void setup(){identity=mock(IdentityService.class);reads=mock(VersionDispositionReadService.class);ObjectProvider<IdentityService> auth=mock(ObjectProvider.class);ObjectProvider<VersionDispositionReadService> provider=mock(ObjectProvider.class);when(auth.getIfAvailable()).thenReturn(identity);when(provider.getIfAvailable()).thenReturn(reads);when(identity.authenticate("fictional-session")).thenReturn(owner);mvc=MockMvcBuilders.standaloneSetup(new VersionDispositionController(auth,provider)).build();}
+ @Test void ownerReadsExactVersionWithNullableInputAndSafeActiveRecordIDs()throws Exception{var target=new com.lianxibu.site.domain.protocol.ContentVersionKey("report","fictional-content",1,"a".repeat(64),null);when(reads.list(owner,"report","fictional-content",1,"a".repeat(64),null,2,1)).thenReturn(new VersionDispositionReadService.Page(target,4,false,List.of(new VersionDispositionReadService.Item("fictional-invalidation","Fictional reason",java.time.Instant.parse("2026-01-01T00:00:00Z"))),2,1,2));mvc.perform(get(path()).cookie(cookie()).param("revision","1").param("body_hash","a".repeat(64)).param("page","2").param("page_size","1")).andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store")).andExpect(jsonPath("$.data.target.content_kind").value("report")).andExpect(jsonPath("$.data.target.input_job_id").value(org.hamcrest.Matchers.nullValue())).andExpect(jsonPath("$.data.validity_revision").value(4)).andExpect(jsonPath("$.data.items[0].id").value("fictional-invalidation")).andExpect(jsonPath("$.data.items[0].created_at").value("2026-01-01T00:00:00.000000Z")).andExpect(jsonPath("$.data.items[0].action_payload").doesNotExist());}
+ @Test void anonymousOrOrdinaryUserCannotReadBeforeProofLookup()throws Exception{mvc.perform(get(path())).andExpect(status().isUnauthorized());when(identity.authenticate("fictional-session")).thenReturn(new Actor("fictional-user","user"));mvc.perform(get(path()).cookie(cookie()).param("revision","1").param("body_hash","a".repeat(64))).andExpect(status().isForbidden());verifyNoInteractions(reads);}
+ @Test void closedQueriesMissingProofAndUnreadableStorageKeepSafeRecovery()throws Exception{mvc.perform(get(path()).cookie(cookie()).param("revision","1","1").param("body_hash","a".repeat(64))).andExpect(status().isBadRequest());mvc.perform(get(path()).cookie(cookie()).param("unknown","fictional")).andExpect(status().isBadRequest());for(String query:List.of("","?revision=-1&body_hash="+"a".repeat(64),"?revision=1&body_hash=unknown"))mvc.perform(get(path()+query).cookie(cookie())).andExpect(status().isUnprocessableEntity());verifyNoInteractions(reads);when(reads.list(owner,"report","fictional-content",1,"a".repeat(64),null,1,20)).thenThrow(new VersionDispositionReadService.Missing());mvc.perform(get(path()).cookie(cookie()).param("revision","1").param("body_hash","a".repeat(64))).andExpect(status().isNotFound());doThrow(new IllegalStateException("Fictional raw proof detail")).when(reads).list(owner,"report","fictional-content",1,"a".repeat(64),null,1,20);mvc.perform(get(path()).cookie(cookie()).param("revision","1").param("body_hash","a".repeat(64))).andExpect(status().isServiceUnavailable()).andExpect(header().string("Retry-After","1")).andExpect(jsonPath("$.error.message").value("temporarily_unavailable"));}
+ private static String path(){return "/admin/content/report/fictional-content/version-dispositions";}
+ private static jakarta.servlet.http.Cookie cookie(){return new jakarta.servlet.http.Cookie("lianxibu_session","fictional-session");}
+}
