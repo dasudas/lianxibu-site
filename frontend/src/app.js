@@ -10,6 +10,7 @@ import { createStatusView } from './components/common/status-view.js';
 import { mountHome } from './pages/home/index.js';
 import { mountLogin } from './pages/auth/index.js';
 import { mountReport } from './pages/reports/detail.js';
+import { mountReportList } from './pages/reports/list.js';
 
 export function createApplication({ root, browser, client = createApiClient(), notice = null }) {
   const session = createSessionState(client), home = createHomeApi(client), identityApi = createIdentityApi(client);
@@ -46,6 +47,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
       let identifier; try { identifier = decodeURIComponent(url.pathname.split('/')[2]); } catch { identifier = ''; }
       return mountReport(main, { scope, api: reports, learning: learningReference, identifier, draft: url.searchParams.get('draft') === '1', identity, session, hash: url.hash });
     }
+    if (route?.id === 'UI-04') return mountReportList(main, { scope, api: reports, url });
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');

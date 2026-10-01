@@ -72,3 +72,4 @@
 .report-input summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
 .report-input summary:focus-visible{outline:3px solid #388569;outline-offset:3px}
 @media(max-width:1100px){.knowledge-entry{grid-template-columns:minmax(0,1fr)}.knowledge-preview{display:none}}
+.pagination{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:24px}.pagination .button{min-height:44px}
