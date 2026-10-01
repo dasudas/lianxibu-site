@@ -73,3 +73,8 @@
 .report-input summary:focus-visible{outline:3px solid #388569;outline-offset:3px}
 @media(max-width:1100px){.knowledge-entry{grid-template-columns:minmax(0,1fr)}.knowledge-preview{display:none}}
 .pagination{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:24px}.pagination .button{min-height:44px}
+
+.article-record-toolbar>form{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.article-record-list{max-height:52dvh;min-height:160px}.article-record-editor{margin-top:24px;max-width:760px}
+
+
+.article-record-toolbar .search-box{display:grid;gap:4px;min-width:200px;max-width:none}.article-record-toolbar .search-box input{width:100%}

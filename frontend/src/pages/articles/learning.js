@@ -1,0 +1,42 @@
+import { createStatusView } from '../../components/common/status-view.js';
+import { createArticleEditor } from './editor.js';
+import { editorMarkup } from './index.js';
+const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+const tabs={all:'全部',favorite:'已收藏',planned:'计划中',learning:'学习中',completed:'已完成'};
+const statuses={not_started:'尚未加入计划',planned:'计划中',learning:'学习中',completed:'已完成'};
+export function learningQuery(url){
+    for(const key of ['tab','q','page','edit'])if(url.searchParams.getAll(key).length>1)throw new TypeError('Duplicate record query');
+    const tab=url.searchParams.get('tab')??'all',q=url.searchParams.get('q')||null,raw=url.searchParams.get('page')??'1',edit=url.searchParams.get('edit');
+    if(!Object.hasOwn(tabs,tab)||q&&[...q].length>256||!/^[1-9]\d*$/.test(raw)||!Number.isSafeInteger(Number(raw))||edit!==null&&(!edit||[...edit].length>64||/[\u0000-\u001f\u007f]/.test(edit)))throw new TypeError('Invalid record query');
+    return {tab,q,page:Number(raw),edit,status:['planned','learning','completed'].includes(tab)?tab:null,favorite:tab==='favorite'?true:null};
+}
+function href(query,{tab=query.tab,page=query.page,edit=null}={}){
+    const params=new URLSearchParams();params.set('tab',tab);if(query.q)params.set('q',query.q);params.set('page',String(page));if(edit)params.set('edit',edit);return '/app/learning?'+params;
+}
+export function learningMarkup(data,query){
+    const pages=Math.max(1,Math.ceil(data.total/data.pageSize));
+    return `<div class="notice">资讯学习记录 <a class="text-link" href="/app/learning/roadmaps" data-route>进入路线学习记录</a></div><div class="page-heading"><div><h1>学习记录</h1><p>收藏是开始，亲手实践才是收获。笔记始终只对自己可见。</p></div><a class="button" href="/app/articles" data-route>去资讯池发现内容</a></div><small>统计覆盖你的全部 ${data.stats.total} 条资讯记录；下方显示筛选结果。</small><div class="learning-stats">${[['已收藏','favorite'],['计划中','planned'],['学习中','learning'],['已完成','completed']].map(([label,key])=>`<div><span>${label}</span><strong>${data.stats[key]}<small> 条</small></strong></div>`).join('')}</div><div class="list-toolbar article-record-toolbar"><nav class="tabs" aria-label="记录筛选">${Object.entries(tabs).map(([tab,label])=>`<a href="${escape(href(query,{tab,page:1}))}" data-route${query.tab===tab?' class="selected" aria-current="page"':''}>${label}</a>`).join('')}</nav><form data-learning-filter><label class="search-box">标题关键词<input type="search" name="q" aria-label="标题关键词" value="${escape(query.q??'')}"></label><button class="button" type="submit">搜索</button></form></div><div class="section-heading"><span>筛选结果共 ${data.total} 条</span><button class="button" type="button" data-learning-refresh>刷新记录</button></div><p id="list-feedback" role="status"></p><div class="learning-list article-record-list" tabindex="0" role="region" aria-label="学习记录列表">${data.items.map(({article,record})=>`<article class="learning-row"><span class="source-mark" aria-hidden="true">${escape(article?.sourceName?[...article.sourceName][0]:'记')}</span><div><h3>${article?`<a href="${escape(article.href)}" data-route>${escape(article.title)}</a>`:'原资讯暂不可用'}</h3><p>${escape(record.note||'还没有笔记，记录一个想法或一次实践结果。')}</p><small>${escape(article?.sourceName??'来源未知')}${record.isFavorite?' · 已收藏':''}${record.isRead?' · 已读':''}${record.isIgnored?' · 已忽略':''}</small></div><span class="badge">${statuses[record.status]}</span>${article?`<a class="button" href="${escape(href(query,{edit:record.id}))}" data-route data-record-edit>编辑笔记</a>`:'<small>原资讯不可用，保留私人记录。</small>'}</article>`).join('')||`<section class="empty" role="status"><h2>给好奇心留一个位置</h2><p>当前筛选没有记录。试试其他条件，或从资讯池开始。</p><a class="button" href="${escape(href({...query,q:null},{tab:'all',page:1}))}" data-route>查看全部记录</a><a class="button" href="/app/articles" data-route>去资讯池</a></section>`}</div><nav class="pagination" aria-label="学习记录分页">${data.page>1?`<a class="button" href="${escape(href(query,{page:data.page-1}))}" data-route>上一页</a>`:''}<span>第 ${data.page} 页 · 共 ${pages} 页</span>${data.page<pages?`<a class="button" href="${escape(href(query,{page:data.page+1}))}" data-route>下一页</a>`:''}</nav>${query.edit?'<section class="panel article-record-editor" id="article-editor" tabindex="-1" aria-label="编辑资讯记录"></section>':''}`;
+}
+export function mountArticleLearning(root,{scope,api,articleApi,records,url,identity,session,navigate,confirmDiscard=()=>false,makeKey}){
+    const status=createStatusView(root);let disposed=false,query,data,editor=null,selectedTitle='';
+    function dispose(){if(disposed)return;disposed=true;editor?.dispose();editor=null;data=null;selectedTitle='';scope.dispose();status.dispose();root.innerHTML='';}scope.own(dispose);
+    try{query=learningQuery(url);}catch{status.show('error',{message:'筛选条件无效，请通过学习记录入口重新选择。'});return dispose;}
+    function paintEditor(){const panel=root.querySelector('#article-editor');if(panel&&!disposed&&editor)panel.innerHTML=`<h2>${escape(selectedTitle)}</h2>${editorMarkup(editor.snapshot)}<a class="text-link" href="${escape(href(query))}" data-route>返回记录列表</a>`;}
+    function render(){if(disposed)return;root.innerHTML=learningMarkup(data,query);paintEditor();}
+    function filters(signal){return {q:query.q,status:query.status,favorite:query.favorite,page:query.page,signal};}
+    function changed(state){paintEditor();if(state?.phase==='saved')scope.run('record-stats-refresh',signal=>api.list(filters(signal)),value=>{data=value;render();},()=>{const feedback=root.querySelector('#list-feedback');if(feedback)feedback.textContent='记录已保存，列表暂时无法更新。请刷新记录。';});}
+    scope.listen(root,'input',event=>{if(editor&&event.target.matches('[data-record-field="note"]')){editor.change('note',event.target.value);const count=root.querySelector('#note-count'),feedback=root.querySelector('#save-feedback');if(count)count.textContent=String([...event.target.value].length);if(feedback)feedback.textContent='更改尚未保存。';}});
+    scope.listen(root,'change',event=>{if(editor&&event.target.matches('[data-record-field="status"]')){editor.change('status',event.target.value);const feedback=root.querySelector('#save-feedback');if(feedback)feedback.textContent='更改尚未保存。';}});
+    scope.listen(root,'click',event=>{const toggle=event.target.closest('[data-record-toggle]');if(toggle&&editor){const field=toggle.dataset.recordToggle;editor.change(field,!editor.snapshot.draft[field]);paintEditor();}else if(event.target.closest('[data-learning-refresh]'))navigate(href(query));else if(event.target.closest('[data-record-reload]'))editor?.reload();else if(event.target.closest('[data-record-accept]'))editor?.acceptRemote();});
+    scope.listen(root,'submit',event=>{if(event.target.matches('[data-record-form]')){event.preventDefault();editor?.save();}else if(event.target.matches('[data-learning-filter]')){event.preventDefault();const form=new FormData(event.target);navigate(href({...query,q:form.get('q')||null},{page:1}));}});
+    function load(){
+        if(disposed||!scope.active)return;if(identity.phase==='loading'){status.show('loading');return;}if(identity.phase==='error'){status.show('error',{message:'身份服务暂时不可用，请重试。',retry:()=>session.refresh()});return;}if(!identity.user){status.show('unauthorized');return;}
+        status.show('loading');scope.run('article-learning-list',signal=>api.list(filters(signal)),value=>{
+            if(disposed)return;data=value;status.show('ready');render();
+            if(query.edit){const item=data.items.find(item=>item.record.id===query.edit);if(!item?.article){const panel=root.querySelector('#article-editor');if(panel)panel.innerHTML='<p role="status">此记录不在当前结果，或原资讯已不可用。请返回列表重新选择。</p>';else root.innerHTML+='<p>此记录不在当前结果。</p>';return;}
+                selectedTitle=item.article.title;editor=createArticleEditor({article:{id:item.record.id,record:item.record},api:articleApi,records,scope,onChange:changed,makeKey});scope.protectEdits(()=>editor?.dirty===true,()=>confirmDiscard('记录仍有未保存或未确认的更改。继续离开？'));paintEditor();root.querySelector('#article-editor')?.focus?.({preventScroll:false});
+            }
+        },error=>{if(error.status===401)status.show('unauthorized');else if(error.status===403)status.show('error',{message:'无权查看这些学习记录。'});else if(error.status===404)status.show('empty',{message:'记录暂时不可用，请返回资讯池。'});else if(error.status===410)status.show('withdrawn');else status.show('error',{retry:load});});
+    }
+    load();return dispose;
+}

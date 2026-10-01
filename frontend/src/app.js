@@ -5,6 +5,7 @@ import { createReportsApi } from './api/reports.js';
 import { createLearningReferenceApi } from './api/learning-reference.js';
 import { createArticlesApi } from './api/articles.js';
 import { createRecordsApi } from './api/records.js';
+import { createArticleRecordsApi } from './api/article-records.js';
 import { createSessionState } from './state/session.js';
 import { createPageRouter } from './router/lifecycle.js';
 import { mountShell } from './components/layout/shell.js';
@@ -15,11 +16,12 @@ import { mountReport } from './pages/reports/detail.js';
 import { mountReportList } from './pages/reports/list.js';
 import { createLeaveDialog } from './components/common/leave-dialog.js';
 import { mountArticles } from './pages/articles/index.js';
+import { mountArticleLearning } from './pages/articles/learning.js';
 
 export function createApplication({ root, browser, client = createApiClient(), notice = null, confirmDiscard = () => false }) {
   const session = createSessionState(client), home = createHomeApi(client), identityApi = createIdentityApi(client);
   const reports = createReportsApi(client), learningReference = createLearningReferenceApi(client);
-  const articles = createArticlesApi(client), records = createRecordsApi(client);
+  const articles = createArticlesApi(client), records = createRecordsApi(client), articleRecords = createArticleRecordsApi(client);
   const leaveDialog = notice ? createLeaveDialog(notice) : null;
   const unsubscribeDialog = session.subscribe(() => leaveDialog?.clear());
   let logoutPending = false, stopped = false;
@@ -61,6 +63,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
       return mountReport(main, { scope, api: reports, learning: learningReference, identifier, expectedType: url.pathname.startsWith('/weekly-reports/') ? 'weekly' : 'monthly', draft: url.searchParams.get('draft') === '1', identity, session, hash: url.hash });
     }
     if (route?.id === 'UI-06') return mountArticles(main, { scope, api: articles, records, url, identity, session, navigate, confirmDiscard });
+    if (route?.id === 'UI-07') return mountArticleLearning(main, { scope, api: articleRecords, articleApi: articles, records, url, identity, session, navigate, confirmDiscard });
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
