@@ -67,4 +67,8 @@
 .knowledge-entry .button{min-height:44px}
 .knowledge-preview{color:#8dae99;min-width:0}
 .knowledge-preview svg{display:block;width:100%;height:auto}
+.report-text{white-space:pre-wrap;overflow-wrap:anywhere}
+.report-citations,.report-input{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.report-input summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.report-input summary:focus-visible{outline:3px solid #388569;outline-offset:3px}
 @media(max-width:1100px){.knowledge-entry{grid-template-columns:minmax(0,1fr)}.knowledge-preview{display:none}}
