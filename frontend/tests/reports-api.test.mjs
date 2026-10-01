@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createReportsApi } from '../src/api/reports.js';
+const fixture = () => ({ id: 'fictional/1', kind: 'report', title: 'Fictional', revision: 2, body_revision: 1, publication_state: 'published', published_at: null, input_snapshot_id: 'fictional-snapshot', generation: 1, input_cutoff_at: '2026-01-02T00:00:00.000000Z', coverage: { state: 'partial', missing_inputs: [{ kind: 'source', id: 'fictional-source', business_date: '2026-01-01', reason: 'Fictional unavailable' }], missing_dates: ['2026-01-01'], no_update_dates: [] }, review_required: false, blocking_reasons: [], affected_by_correction: false, supersedes_job_id: null, body: { title: 'Fictional', sections: [{ heading: 'Fictional heading', text: '<script>Fictional text</script>', citation_ids: ['fictional-citation'] }], citation_ids: ['fictional-citation'], type: 'daily', period_start: '2026-01-01T16:00:00.000000Z', period_end: '2026-01-02T16:00:00.000000Z', timezone: 'Asia/Shanghai', learning_task: { package_id: 'package A', object_kind: 'node', object_id: 'fictional-node', title: 'Fictional node', reason: 'Fictional reason' } }, citations: [{ id: 'fictional-citation', kind: 'article_revision', title: 'Fictional reference', source_url: 'https://example.invalid/story', revision: 1, body_hash: 'a'.repeat(64) }] });
+test('report detail preserves input/coverage and citation identity, uses exact path and drops unknown fields', async () => {
+  const data = fixture(); data.internal_text = 'Fictional secret'; data.body.sections[0].raw_source = 'Fictional internal'; const signal = new AbortController().signal;
+  const api = createReportsApi({ request: async (method, path, options) => { assert.equal(method, 'GET'); assert.equal(path, '/reports/fictional%2F1'); assert.equal(options.signal, signal); return { data }; } });
+  const report = await api.detail('fictional/1', { signal }); assert.equal(report.inputSnapshotId, 'fictional-snapshot'); assert.equal(report.coverage.missingDates[0], '2026-01-01'); assert.equal(report.sections[0].text, data.body.sections[0].text);
+  assert.equal(report.learningTask.packageId, 'package A'); assert.equal(report.citations[0].id, 'fictional-citation'); assert.ok(Object.isFrozen(report.sections[0])); assert.equal(JSON.stringify(report).includes('Fictional secret'), false); assert.equal(JSON.stringify(report).includes('raw_source'), false);
+});
+test('public report refuses hidden/blocked data, mismatched identity, absent references, unsafe URLs and invalid chronology', async () => {
+  for (const change of [d => d.id = 'another', d => d.publication_state = 'draft', d => d.review_required = true, d => d.blocking_reasons.push('blocked'), d => d.citations[0].source_url = 'javascript:alert(1)', d => d.citations[0].source_url = 'https://user:pass@example.invalid/', d => d.citations[0].source_url = 'https://example.invalid/\npath', d => d.body.sections[0].citation_ids = ['missing'], d => d.citations.push(d.citations[0]), d => d.body.period_end = d.body.period_start, d => d.coverage.missing_dates = ['2026-02-31'], d => d.body.type = 'weekly', d => d.body.sections = Array(101).fill(d.body.sections[0])]) {
+    const data = fixture(); change(data); await assert.rejects(createReportsApi({ request: async () => ({ data }) }).detail('fictional/1'), error => error.code === 'invalid_response');
+  }
+});
+test('explicit private draft uses admin detail and service withdrawal is preserved without fallback', async () => {
+  const data = fixture(); data.publication_state = 'draft'; data.review_required = true;
+  const api = createReportsApi({ request: async (_m, path) => { assert.equal(path, '/admin/content/report/fictional%2F1'); return { data }; } }); assert.equal((await api.detail('fictional/1', { draft: true })).publicationState, 'draft');
+  const failure = { status: 410, code: 'withdrawn' }; await assert.rejects(createReportsApi({ request: async () => { throw failure; } }).detail('fictional/1'), e => e === failure);
+});
