@@ -52,7 +52,19 @@ class JobsControllerTest {
         when(identityProvider.getIfAvailable()).thenReturn(identity);
         when(jobsProvider.getIfAvailable()).thenReturn(service);
         when(identity.authenticate("fixture-session")).thenReturn(OWNER);
+        when(identity.authorizeWrite("fixture-session","fixture-csrf",ORIGIN)).thenReturn(OWNER);
         mvc = MockMvcBuilders.standaloneSetup(new JobsController(identityProvider, jobsProvider)).build();
+    }
+
+    @Test
+    void incorrectWriteAuthorizationCannotCreateOrDisposeJobs() throws Exception {
+        when(identity.authorizeWrite("fixture-session","fixture-csrf",ORIGIN))
+                .thenThrow(new IdentityService.Rejected(IdentityService.Refusal.FORBIDDEN,null));
+        mvc.perform(write(post("/admin/jobs"),"{}" )).andExpect(status().isForbidden());
+        mvc.perform(write(post("/admin/jobs/fixture/actions"),"{}" )).andExpect(status().isForbidden());
+        when(identity.authorizeWrite("fixture-session","fixture-csrf",ORIGIN)).thenReturn(new Actor("fixture-user","user"));
+        mvc.perform(write(post("/admin/jobs/fixture/actions"),"{}" )).andExpect(status().isForbidden());
+        verify(service,never()).create(any(),any(),any(),any(),any());verify(service,never()).action(any(),any(),any(),any(),any(),any());
     }
 
     @Test

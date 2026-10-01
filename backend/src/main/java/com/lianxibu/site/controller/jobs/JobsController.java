@@ -88,7 +88,7 @@ public final class JobsController {
             @RequestHeader(name = "Origin", required = false) String origin,
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
-        Actor actor = owner(cookie); writeHeaders(csrf, origin, key);
+        Actor actor = ownerWrite(cookie,csrf,origin,key);
         JsonNode value = parse(raw);
         fields(value, Set.of("task_type", "target", "expected_revision", "reason"));
         var command = new JobsService.JobCreate(text(value.get("task_type"), 1, 32),
@@ -106,7 +106,7 @@ public final class JobsController {
             @RequestHeader(name = "Origin", required = false) String origin,
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
-        Actor actor = owner(cookie); writeHeaders(csrf, origin, key);
+        Actor actor = ownerWrite(cookie,csrf,origin,key);
         JsonNode value = parse(raw);
         var command = action(value);
         return success(result(service().action(actor, id(id), command, key, csrf, origin)));
@@ -152,6 +152,14 @@ public final class JobsController {
         return response.body(new JobsDtos.ErrorEnvelope(new JobsDtos.ErrorDetail(code, code), new JobsDtos.Meta(requestId())));
     }
 
+    private Actor ownerWrite(String cookie,String csrf,String origin,String key) {
+        Actor actor=owner(cookie);writeHeaders(csrf,origin,key);
+        Actor authorized=identity.getIfAvailable().authorizeWrite(cookie,csrf,origin);
+        if(authorized==null||authorized.userId()==null||authorized.userId().isBlank()
+                ||!"owner".equals(authorized.role())||!actor.userId().equals(authorized.userId()))
+            throw new BoundaryFailure(403,"forbidden","owner write authorization required");
+        return authorized;
+    }
     private Actor owner(String cookie) {
         if (cookie == null || cookie.isBlank()) throw new BoundaryFailure(401, "unauthenticated", "session required");
         IdentityService auth = identity.getIfAvailable();

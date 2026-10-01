@@ -26,6 +26,7 @@ class OperationalJobsHttpTest {
     @BeforeEach @SuppressWarnings("unchecked") void setup(){
         fixture=new OperationalPersistenceFixture();store=fixture.store();monitor=fixture.monitor(store);
         identity=mock(IdentityService.class);when(identity.authenticate("fictional-session")).thenReturn(new Actor("fictional-owner","owner"));
+        when(identity.authorizeWrite("fictional-session","fictional-csrf","https://site.example.invalid")).thenReturn(new Actor("fictional-owner","owner"));
         ObjectProvider<IdentityService> auth=mock(ObjectProvider.class);when(auth.getIfAvailable()).thenReturn(identity);
         ObjectProvider<JobsService> jobs=mock(ObjectProvider.class);when(jobs.getIfAvailable()).thenReturn(new OperationalJobsService(store,monitor,null,fixture.tx,fixture.clock));
         mvc=MockMvcBuilders.standaloneSetup(new JobsController(auth,jobs)).build();
