@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lianxibu business API",
-    "version": "0.22",
+    "version": "0.23",
     "description": "Design contract. Observation revisions 0.11/0.12; config/control 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -10967,6 +10967,196 @@
       }
     },
     "/admin/learning/packages/{id}/questions/{question_id}/answer": {
+      "get": {
+        "operationId": "business_get_admin_learning_packages_id_questions_question_id_answer",
+        "summary": "GET /admin/learning/packages/{id}/questions/{question_id}/answer",
+        "description": "Owner-only current answer including drafts; exact package/question composite identity; no query fields or history. Unknown version/state/text stays null. review_state is unknown/unreviewed/current/stale from one proven snapshot; publicly_readable is true/false/null from package/question visibility, answer state and matching current review. Known published/current review require nonempty answer. No public Question fallback. 401/403 before query; 404 exact composite missing; 400 duplicate/unknown query; 422 invalid identity; 503 missing provider, inconsistent snapshot or storage failure with Retry-After; no-store and exact envelope at most 1MiB. Existing write/action endpoints and public Question schema unchanged.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            }
+          },
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; replay returns the original result. No partial batch omission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OwnerAnswerDetail"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                },
+                "description": "Dynamic response; visibility must be revalidated."
+              }
+            }
+          },
+          "400": {
+            "description": "protocol_error: unknown or duplicate JSON keys / malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: current permission checked before replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: includes hidden or invalid public content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "revision_conflict / identity_conflict / run_frozen / stale_claim / input_unchanged / retry_exhausted / review_required / external_result_unresolved / idempotency_result_expired / schema_not_supported / ambiguous_package / recovery_condition_unmet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "gone: retired historical URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "payload_too_large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "validation / target_mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited: Retry-After required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "description": "Retry delay in seconds or HTTP-date; honor before bounded backoff."
+              }
+            }
+          },
+          "503": {
+            "description": "temporarily_unavailable / source_mapping_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "description": "Retry delay in seconds or HTTP-date; honor before bounded backoff."
+              }
+            }
+          }
+        },
+        "x-authorization": "owner",
+        "x-contract-source": "api-contract.md",
+        "x-idempotency": "not applicable"
+      },
       "put": {
         "operationId": "business_put_admin_learning_packages_id_questions_question_id_answer",
         "summary": "PUT /admin/learning/packages/{id}/questions/{question_id}/answer",
@@ -18635,6 +18825,197 @@
           "answer"
         ],
         "additionalProperties": false
+      },
+      "OwnerAnswerDetail": {
+        "type": "object",
+        "properties": {
+          "package_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "question_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "question_title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answer_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 50000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answer_state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "approved",
+                  "published",
+                  "withdrawn"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "generation_state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "not_generated",
+                  "generated",
+                  "reviewed",
+                  "needs_revision"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "review_state": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "unreviewed",
+              "current",
+              "stale"
+            ]
+          },
+          "publicly_readable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "package_id",
+          "question_id",
+          "question_title",
+          "revision",
+          "answer_revision",
+          "answer",
+          "answer_state",
+          "generation_state",
+          "review_state",
+          "publicly_readable"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "answer_state": {
+                  "const": "published"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "answer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50000
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "review_state": {
+                  "const": "current"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "answer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50000
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "publicly_readable": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "answer_state": {
+                  "const": "published"
+                },
+                "review_state": {
+                  "const": "current"
+                },
+                "answer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 50000
+                }
+              }
+            }
+          }
+        ]
       },
       "GenerationIntentWrite": {
         "oneOf": [

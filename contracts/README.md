@@ -1,11 +1,11 @@
 # API contracts
 
-Contract package revision: 0.22. Observations accept wire revisions 0.11 and
+Contract package revision: 0.23. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
 surfaces. `schemas.json` is the shared JSON Schema 2020-12 definition set.
-`operation-map.json` lists all 77 operations: 64 business and 13 collector.
+`operation-map.json` lists all 78 operations: 65 business and 13 collector.
 `examples.json`, `wire-examples.json`, and `hn-time-wire-examples.json`
 contain fictional fixtures, including intentionally invalid wire cases.
 
@@ -84,3 +84,9 @@ of an unwanted final newline. Existing valid fields, ranges, operations and
 protocol revisions remain unchanged. scalar-tail-wire-examples.json contains
 33 fictional scalar cases with inline schemas. Static schema validation does
 not replace identity, association, duplicate, replay or result-hash checks.
+
+Owner current answer reads use an explicit package/question composite identity.
+The closed OwnerAnswerDetail includes drafts only behind owner authorization;
+public Question reads are unchanged. Unknown version, text and visibility facts
+remain null. Review and public visibility conclusions require one consistent
+snapshot. owner-answer-wire-examples.json contains fictional boundary vectors.

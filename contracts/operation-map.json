@@ -991,6 +991,19 @@
   },
   {
     "group": "business",
+    "method": "get",
+    "path": "/admin/learning/packages/{id}/questions/{question_id}/answer",
+    "response": "OwnerAnswerDetail",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "Owner-only current answer including drafts; exact package/question composite identity; no query fields or history. Unknown version/state/text stays null. review_state is unknown/unreviewed/current/stale from one proven snapshot; publicly_readable is true/false/null from package/question visibility, answer state and matching current review. Known published/current review require nonempty answer. No public Question fallback. 401/403 before query; 404 exact composite missing; 400 duplicate/unknown query; 422 invalid identity; 503 missing provider, inconsistent snapshot or storage failure with Retry-After; no-store and exact envelope at most 1MiB. Existing write/action endpoints and public Question schema unchanged.",
+    "operation_id": "business_get_admin_learning_packages_id_questions_question_id_answer"
+  },
+  {
+    "group": "business",
     "method": "put",
     "path": "/admin/learning/packages/{id}/questions/{question_id}/answer",
     "response": "ActionResult",
