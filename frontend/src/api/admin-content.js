@@ -1,13 +1,34 @@
 import {ApiError} from './client.js';
-import {createReportsApi} from './reports.js';
-import {createInterpretationsApi} from './interpretations.js';
+import {createReportsApi,reportDetail} from './reports.js';
+import {createInterpretationsApi,interpretationDetail} from './interpretations.js';
 const kinds=['report','model','agent','skill','workflow'],states=['draft','approved','published','withdrawn'],types=['daily','weekly','monthly'];
 const invalid=()=>{throw new ApiError(200,'invalid_response','Content catalog is unavailable');};
 const freeze=value=>{if(value&&typeof value==='object'){for(const child of Object.values(value))freeze(child);Object.freeze(value);}return value;};
 function text(value,max){if(typeof value!=='string'||!value||[...value].length>max)invalid();return value;}
 function number(value){if(!Number.isSafeInteger(value)||value<0)invalid();return value;}
 function one(value,choices){if(!choices.includes(value))invalid();return value;}
+
+function closed(value,keys){if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==keys.length||keys.some(k=>!Object.hasOwn(value,k)))throw new TypeError('Invalid content command fields');}
+function identifier(value){text(value,64);if(/[\u0000-\u001f\u007f]/.test(value))throw new TypeError('Invalid content identity');return value;}
+function references(value){if(!Array.isArray(value)||value.length>1000)throw new TypeError('Invalid content references');const result=value.map(identifier);if(new Set(result).size!==result.length)throw new TypeError('Duplicate content reference');return result;}
+function instant(value){if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(value)||!Number.isFinite(Date.parse(value))||new Date(value).toISOString().slice(0,23)!==value.slice(0,23))throw new TypeError('Invalid period');return value;}
+function command(kind,value){
+ const common=['expected_revision','title','sections','citation_ids'],extra=kind==='report'?['type','period_start','period_end','timezone','learning_task']:['category','entity_id'];closed(value,[...common,...extra]);
+ const citationIds=references(value.citation_ids);if(!Array.isArray(value.sections)||value.sections.length>100)throw new TypeError('Invalid sections');
+ const result={expected_revision:number(value.expected_revision),title:text(value.title,512),sections:value.sections.map(section=>{closed(section,['heading','text','citation_ids']);const refs=references(section.citation_ids);if(refs.some(id=>!citationIds.includes(id)))throw new TypeError('Unknown section reference');if(typeof section.text!=='string'||[...section.text].length>200000)throw new TypeError('Invalid section text');return {heading:text(section.heading,512),text:section.text,citation_ids:refs};}),citation_ids:citationIds};
+ if(kind==='report'){
+  result.type=one(value.type,types);result.period_start=instant(value.period_start);result.period_end=instant(value.period_end);if(result.period_start>=result.period_end)throw new TypeError('Invalid period order');result.timezone=one(value.timezone,['Asia/Shanghai']);
+  if(value.learning_task===null)result.learning_task=null;else{if(result.type!=='daily')throw new TypeError('Only daily report has learning task');const task=value.learning_task;closed(task,['package_id','object_kind','object_id','title','reason']);result.learning_task={package_id:identifier(task.package_id),object_kind:one(task.object_kind,['node','question','project']),object_id:identifier(task.object_id),title:text(task.title,512),reason:text(task.reason,2048)};}
+ }else{if(value.category!==kind)throw new TypeError('Content category mismatch');result.category=kind;result.entity_id=identifier(value.entity_id);}
+ if(new TextEncoder().encode(JSON.stringify(result)).length>262144)throw new TypeError('Content command exceeds transport limit');return result;
+}
+
 export function createAdminContentApi(client){return Object.freeze({
+ async save(identifierValue,{kind,fields,signal,idempotencyKey}={}){
+  if(!kinds.includes(kind)||typeof idempotencyKey!=='string'||!/^[!-~]{1,128}$/.test(idempotencyKey))throw new TypeError('Explicit content identity/key required');const target=identifier(identifierValue),body=command(kind,fields);
+  const {data}=await client.request('PUT','/admin/content/'+kind+'/'+encodeURIComponent(target),{signal,idempotencyKey,body});
+  const value=kind==='report'?reportDetail(data,target,{draft:true}):interpretationDetail(data,target,kind,{draft:true});return freeze({...value,kind});
+ },
  async detail(identifier,{kind,signal}={}){
   if(!kinds.includes(kind))throw new TypeError('Invalid owner content kind');
   const value=kind==='report'?await createReportsApi(client).detail(identifier,{signal,draft:true}):await createInterpretationsApi(client).detail(identifier,{kind,signal,draft:true});

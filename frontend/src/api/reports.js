@@ -69,6 +69,11 @@ export function createReportsApi(client) {
   }, async detail(identifier, { signal, draft = false } = {}) {
     id(identifier); if (typeof draft !== 'boolean') throw new TypeError('Draft mode must be explicit');
     const { data } = await client.request('GET', `${draft ? '/admin/content/report' : '/reports'}/${encodeURIComponent(identifier)}`, { signal });
+    return reportDetail(data, identifier, {draft});
+  } });
+}
+
+export function reportDetail(data,identifier,{draft=false}={}) {
     const summary = reportSummary(data, { draft }); if (summary.id !== identifier) invalid();
     const body = data.body;
     if (!body || !['daily', 'weekly', 'monthly'].includes(body.type) || body.timezone !== 'Asia/Shanghai') invalid();
@@ -84,5 +89,4 @@ export function createReportsApi(client) {
       return { heading: text(section.heading, 512), text: text(section.text, 200000, true), citationIds: sectionRefs };
     });
     return freeze({ ...summary, bodyTitle: text(body.title, 512), type: body.type, periodStart, periodEnd, timezone: body.timezone, sections, citationIds, citations, learningTask });
-  } });
 }

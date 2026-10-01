@@ -27,11 +27,7 @@ export function createInterpretationsApi(client){return Object.freeze({
     async detail(identifier,{kind,signal,draft=false}={}){
         if(!Object.hasOwn(routes,kind)||typeof draft!=='boolean')throw new TypeError('Invalid interpretation kind or owner mode');id(identifier);
         const {data}=await client.request('GET',(draft?'/admin/content/'+kind+'/':'/interpretations/')+encodeURIComponent(identifier),{signal});
-        const summary=interpretationSummary(data,kind,{draft});if(summary.id!==identifier)invalid();const body=data.body;if(!body||body.category!==kind)invalid();
-        const citations=array(data.citations,1000).map(citation),known=new Set(citations.map(item=>item.id));if(known.size!==citations.length)invalid();
-        const references=values=>array(values,1000).map(value=>{const key=id(value);if(!known.has(key))invalid();return key;});
-        const citationIds=references(body.citation_ids),sections=array(body.sections,100).map(section=>{if(!section)invalid();const refs=references(section.citation_ids);if(refs.some(key=>!citationIds.includes(key)))invalid();return {heading:text(section.heading,512),text:text(section.text,200000,true),citationIds:refs};});
-        return freeze({...summary,bodyTitle:text(body.title,512),entityId:id(body.entity_id),sections,citations,citationIds});
+        return interpretationDetail(data,identifier,kind,{draft});
     },
     async list({kind,page=1,page_size=20,signal}={}){
         if(!Object.hasOwn(routes,kind)||!Number.isSafeInteger(page)||page<1||!Number.isSafeInteger(page_size)||page_size<1||page_size>50)throw new TypeError('Invalid interpretation page');
@@ -41,3 +37,11 @@ export function createInterpretationsApi(client){return Object.freeze({
         if(items.length>Math.max(0,total-(page-1)*page_size))invalid();return freeze({kind,items,page,pageSize:page_size,total});
     }
 });}
+
+export function interpretationDetail(data,identifier,kind,{draft=false}={}) {
+        const summary=interpretationSummary(data,kind,{draft});if(summary.id!==identifier)invalid();const body=data.body;if(!body||body.category!==kind)invalid();
+        const citations=array(data.citations,1000).map(citation),known=new Set(citations.map(item=>item.id));if(known.size!==citations.length)invalid();
+        const references=values=>array(values,1000).map(value=>{const key=id(value);if(!known.has(key))invalid();return key;});
+        const citationIds=references(body.citation_ids),sections=array(body.sections,100).map(section=>{if(!section)invalid();const refs=references(section.citation_ids);if(refs.some(key=>!citationIds.includes(key)))invalid();return {heading:text(section.heading,512),text:text(section.text,200000,true),citationIds:refs};});
+        return freeze({...summary,bodyTitle:text(body.title,512),entityId:id(body.entity_id),sections,citations,citationIds});
+}
