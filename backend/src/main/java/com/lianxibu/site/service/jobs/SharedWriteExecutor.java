@@ -80,6 +80,9 @@ public final class SharedWriteExecutor {
             try {
                 T value = writes.execute(status -> {
                     entry.lock();
+                    // Another caller may have committed this key while we waited for the writer lock.
+                    T committed = receipt.find(context.actionKey());
+                    if (committed != null) return committed;
                     T result = work.apply(context);
                     if (result == null) throw new IllegalStateException("write result required");
                     return result;
