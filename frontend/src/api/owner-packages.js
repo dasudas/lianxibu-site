@@ -1,0 +1,20 @@
+import {ApiError} from './client.js';
+import {actionResult} from './action-result.js';
+const states=['draft','approved','published','withdrawn'];
+const invalid=()=>{throw new ApiError(200,'invalid_response');};
+const freeze=value=>{if(value&&typeof value==='object'){for(const child of Object.values(value))freeze(child);Object.freeze(value);}return value;};
+function closed(value,fields){if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==fields.length||fields.some(k=>!Object.hasOwn(value,k)))throw new TypeError('Invalid package fields');}
+function options(value,fields){if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(k=>!fields.includes(k)))throw new TypeError('Invalid package options');}
+function text(value,min,max){if(typeof value!=='string'||[...value].length<min||[...value].length>max||[...value].some(c=>c.length===1&&/[\ud800-\udfff]/.test(c)))throw new TypeError('Invalid package text');return value;}
+function id(value){text(value,1,64);if(/[\u0000-\u001f\u007f]/.test(value))throw new TypeError('Invalid package identity');return value;}
+function number(value){if(!Number.isSafeInteger(value)||value<0)throw new TypeError('Invalid package revision');return value;}
+const nullable=(value,parse)=>value===null?null:parse(value);
+function one(value,allowed){if(!allowed.includes(value))throw new TypeError('Invalid package state');return value;}
+function bytes(value,max){if(new TextEncoder().encode(JSON.stringify(value)).length>max)throw new TypeError('Package transport limit exceeded');}
+function path(packageId){return '/admin/learning/packages/'+encodeURIComponent(id(packageId));}
+export function ownerPackageDetail(value,packageId){try{closed(value,['id','title','description','revision','state']);bytes(value,1048576);if(id(value.id)!==packageId)invalid();return freeze({packageId,title:nullable(value.title,v=>text(v,1,200)),description:nullable(value.description,v=>text(v,0,16384)),revision:nullable(value.revision,number),state:nullable(value.state,v=>one(v,states))});}catch{invalid();}}
+function receipt(value,packageId,expected){try{closed(value,['operation_ref','result_resource_ref','result_revision','generation','cutoff','coverage','affected','next_cursor']);bytes(value,1048576);closed(value.result_resource_ref,['kind','id','package_id']);if(value.result_resource_ref.kind!=='package'||id(value.result_resource_ref.id)!==packageId||value.result_resource_ref.package_id!==null||number(value.result_revision)!==expected+1||value.generation!==null||value.cutoff!==null||value.coverage!==null)invalid();id(value.operation_ref);nullable(value.next_cursor,v=>text(v,1,512));if(!Array.isArray(value.affected)||value.affected.length>50)invalid();for(const ref of value.affected){closed(ref,['kind','id','package_id']);text(ref.kind,1,32);id(ref.id);nullable(ref.package_id,id);}return actionResult(value);}catch{invalid();}}
+export function createOwnerPackagesApi(client){return Object.freeze({
+ async read(packageId,opts={}){options(opts,['signal']);const endpoint=path(packageId),{data}=await client.request('GET',endpoint,{signal:opts.signal});return ownerPackageDetail(data,packageId);},
+ async action(packageId,opts={}){options(opts,['fields','signal','idempotencyKey']);const endpoint=path(packageId);if(typeof opts.idempotencyKey!=='string'||opts.idempotencyKey.length<1||opts.idempotencyKey.length>128||/[^!-~]/.test(opts.idempotencyKey))throw new TypeError('Stable package command key required');closed(opts.fields,['expected_revision','action','reason']);const expected=number(opts.fields.expected_revision);if(expected===Number.MAX_SAFE_INTEGER)throw new TypeError('Package revision exhausted');const reason=text(opts.fields.reason,1,2048);if(!reason.trim())throw new TypeError('Package reason required');const body=freeze({expected_revision:expected,action:one(opts.fields.action,['approve','reject','publish','withdraw']),reason});bytes(body,262144);const {data}=await client.request('POST',endpoint+'/actions',{body,idempotencyKey:opts.idempotencyKey,signal:opts.signal});return receipt(data,packageId,expected);}
+});}
