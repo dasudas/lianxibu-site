@@ -1,0 +1,24 @@
+const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+export function createContentImpact({scope,api,limit=20,onChange=()=>{}}){
+ let receipt=null,source=null,page=null,index=0,phase='ready',message='',attempt=null,pending=null,disposed=false,epoch=0,total=null,cursors=[null],identities=new Map();
+ const snapshot=()=>disposed||!receipt?null:Object.freeze({receipt,source,page,index,phase,message,busy:phase==='loading'});
+ const notify=()=>{if(!disposed&&scope.active)onChange(snapshot());};
+ function clear(){epoch++;receipt=null;source=null;page=null;index=0;phase='ready';message='';attempt=null;pending=null;total=null;cursors=[null];identities.clear();notify();}
+ function load(position){if(disposed||!scope.active||!receipt)return Promise.resolve();if(pending)return pending;if(position<0||position>=cursors.length)throw new TypeError('Choose an available impact page');const op=receipt.operationRef,cursor=cursors[position],current=epoch;attempt=position;phase='loading';message='正在核对完整影响范围…';notify();
+  const request=scope.run('owner-operation-impact',signal=>api.read(op,{cursor,limit,signal}),value=>{if(disposed||current!==epoch)return;try{
+   if(value.operationRef!==op||value.state==='pending'&&position!==0||total!==null&&(value.state!=='complete'||value.total!==total))throw new TypeError('Impact proof changed');
+   const keys=value.items.map(ref=>JSON.stringify([ref.kind,ref.id,ref.packageId]));for(const [previous,seen]of identities)if(previous!==position&&keys.some(key=>seen.includes(key)))throw new TypeError('Repeated impact identity');
+   if(value.state==='complete'){let counted=keys.length;for(const [previous,seen]of identities)if(previous!==position)counted+=seen.length;if(counted>value.total||value.nextCursor===null&&position>0&&counted!==value.total)throw new TypeError('Incomplete impact proof');total=value.total;}
+   identities.set(position,keys);page=value;index=position;cursors[position+1]=value.nextCursor;cursors.length=position+2;phase='ready';message=value.state==='pending'?'影响范围仍在核对，总数未知。稍后再次核对。':'完整影响集合已确认；撤销失效仍需重新审核和发布。';attempt=null;notify();
+  }catch{phase='conflict';message='影响集合无法一致核对，请从第一页重新读取。';notify();}},error=>{if(disposed||current!==epoch)return;phase=error.status===409?'conflict':error.status===401||error.status===403?'forbidden':'error';if(phase==='forbidden'){page=null;identities.clear();}message=phase==='conflict'?'分页依据已变化，请从第一页重新核对。':phase==='forbidden'?'当前无权查看影响范围。':error.status===404||error.status===410?'此操作影响证明不可用，请重新核对回执。':'影响范围暂时无法读取，已确认页面保留。重试只读取原页面。';notify();}).finally(()=>{if(current===epoch)pending=null;});pending=request;return request;
+ }
+ function dispose(){if(disposed)return;clear();disposed=true;}scope.own(dispose);
+ return Object.freeze({get snapshot(){return snapshot();},clear,dispose,
+  open(value,origin){if(disposed||!scope.active)return Promise.resolve();if(!value?.operationRef||!['actions','versions'].includes(origin))throw new TypeError('Explicit confirmed operation receipt required');clear();receipt=Object.freeze({operationRef:value.operationRef});source=origin;return load(0);},
+  next(){if(phase!=='ready'||!page?.nextCursor||page.state!=='complete')return Promise.resolve();return load(index+1);},
+  previous(){if(phase!=='ready'||index<=0)return Promise.resolve();return load(index-1);},
+  retry(){if(phase!=='error'||attempt===null)return Promise.resolve();return load(attempt);},
+  refresh(){if(disposed||!receipt||pending||phase==='forbidden')return Promise.resolve();const prior=receipt,origin=source;return this.open(prior,origin);}
+ });
+}
+export function contentImpactMarkup(state){if(!state)return '';const locked=state.busy||state.phase!=='ready',value=state.page;return `<h2>完整影响范围</h2><p>本次操作 ${escape(state.receipt.operationRef)}</p><p role="status" aria-live="polite">${escape(state.message)}</p><div aria-busy="${state.busy}">${value?.state==='complete'?`<p>${value.total===0?'已确认没有受影响资源。':'共 '+value.total+' 个受影响资源 · 第 '+(state.index+1)+' 页'}</p><ul class="content-impact-list">${value.items.map(ref=>`<li>${escape({content:'稿件',job:'任务',evidence:'证据'}[ref.kind]??ref.kind)} · ${escape(ref.id)}${ref.packageId?' · 学习包 '+escape(ref.packageId):''}</li>`).join('')}</ul>`:''}</div><nav class="pagination" aria-label="完整影响范围分页"><button class="button" type="button" data-impact-previous${locked||state.index===0?' disabled':''}>上一页影响</button><button class="button" type="button" data-impact-next${locked||!value?.nextCursor?' disabled':''}>下一页影响</button>${state.phase==='error'?'<button class="button" type="button" data-impact-retry>重试影响读取</button>':''}<button class="button" type="button" data-impact-refresh${state.busy||state.phase==='forbidden'?' disabled':''}>从第一页重新核对影响</button></nav>`;}
