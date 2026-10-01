@@ -130,7 +130,8 @@ class ContentControllerTest {
                         "{\"kind\":\"daily\",\"period_start\":\"2026-09-27T00:00:00.000000Z\","
                         + "\"period_end\":\"2026-09-28T00:00:00.000000Z\","
                         + "\"timezone\":\"Asia/Shanghai\",\"mode\":\"initial\",\"reason\":\"fixture\"}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.data.record_kind").value("generation_intent"));
+                .andExpect(status().isAccepted()).andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.data.record_kind").value("generation_intent"));
     }
 
     @Test
@@ -187,7 +188,7 @@ class ContentControllerTest {
                         + "\"period_end\":\"2026-09-28T00:00:00.000000Z\","
                         + "\"timezone\":\"Asia/Shanghai\",\"mode\":\"supplement\","
                         + "\"intent_revision\":2,\"reason\":\"fixture\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isAccepted()).andExpect(header().string("Cache-Control", "no-store"));
         verify(service).generationIntent(eq(OWNER), eq(new ContentService.GenerationIntentWrite(
                 "daily", START, END, "Asia/Shanghai", "supplement", 2L, "fixture")),
                 eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN));
@@ -253,6 +254,23 @@ class ContentControllerTest {
                         .content("{}"))).andExpect(status().isForbidden());
         verify(service, never()).action(any(), any(), any(), any(), any(), any(), any());
         verify(service, never()).versionAction(any(), any(), any(), any(), any(), any(), any());
+        verify(service, never()).generationIntent(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void generationIntentRejectsUntrustedActorsAndInvalidPeriodWithoutDelegation() throws Exception {
+        String body = "{\"kind\":\"daily\",\"period_start\":\"2026-09-28T00:00:00.000000Z\","
+                + "\"period_end\":\"2026-09-27T00:00:00.000000Z\","
+                + "\"timezone\":\"Asia/Shanghai\",\"mode\":\"initial\",\"reason\":\"fixture\"}";
+        mvc.perform(post("/admin/reports/generation-intents")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isUnauthorized());
+        when(identity.authenticate("fixture-session")).thenReturn(new Actor("fixture-user", "user"));
+        mvc.perform(write(post("/admin/reports/generation-intents"), body))
+                .andExpect(status().isForbidden());
+        when(identity.authenticate("fixture-session")).thenReturn(OWNER);
+        mvc.perform(write(post("/admin/reports/generation-intents"), body))
+                .andExpect(status().isUnprocessableEntity());
         verify(service, never()).generationIntent(any(), any(), any(), any(), any());
     }
 

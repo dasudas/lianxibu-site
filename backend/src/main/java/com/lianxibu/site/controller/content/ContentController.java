@@ -209,7 +209,12 @@ public final class ContentController {
         Actor actor = owner(cookie);
         writeHeaders(csrf, origin, key);
         var command = generationIntent(parse(raw));
-        try { return success(ContentDtos.job(service().generationIntent(actor, command, key, csrf, origin))); }
+        try {
+            return ResponseEntity.accepted().header(HttpHeaders.CACHE_CONTROL, "no-store")
+                    .body(new ContentDtos.Envelope<>(ContentDtos.job(
+                            service().generationIntent(actor, command, key, csrf, origin)),
+                            new ContentDtos.Meta(requestId())));
+        }
         catch (IllegalArgumentException error) { throw unavailable(); }
     }
 
