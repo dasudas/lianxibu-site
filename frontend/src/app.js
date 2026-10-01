@@ -11,10 +11,13 @@ import { mountHome } from './pages/home/index.js';
 import { mountLogin } from './pages/auth/index.js';
 import { mountReport } from './pages/reports/detail.js';
 import { mountReportList } from './pages/reports/list.js';
+import { createLeaveDialog } from './components/common/leave-dialog.js';
 
 export function createApplication({ root, browser, client = createApiClient(), notice = null }) {
   const session = createSessionState(client), home = createHomeApi(client), identityApi = createIdentityApi(client);
   const reports = createReportsApi(client), learningReference = createLearningReferenceApi(client);
+  const leaveDialog = notice ? createLeaveDialog(notice) : null;
+  const unsubscribeDialog = session.subscribe(() => leaveDialog?.clear());
   let logoutPending = false, stopped = false;
   function notify(message, retry = null) {
     if (!notice || stopped) return;
@@ -25,9 +28,9 @@ export function createApplication({ root, browser, client = createApiClient(), n
       button.addEventListener('click', retry, { once: true }); notice.append(button);
     }
   }
-  async function logout(retry = false) {
+  async function logout(retry = false, confirmed = false) {
     if (logoutPending || stopped) return;
-    if (!router.canLeave()) return;
+    if (!confirmed && !router.canLeave()) { const generation=session.snapshot.generation;leaveDialog?.request(()=>{if(!stopped&&session.snapshot.generation===generation)logout(retry,true);});return; }
     logoutPending = true; notify('正在退出…');
     try {
       // A retry refreshes the transport token without restoring identity in the view.
@@ -61,10 +64,10 @@ export function createApplication({ root, browser, client = createApiClient(), n
     else if (privatePage && !identity.user) status.show('unauthorized');
     else if (url.pathname.startsWith('/admin/') && identity.user?.role !== 'owner') status.show('error', { message: '无权访问此页面。' });
     else status.show('error', { message: '此页面正在接入服务，请稍后再试。' });
-  }, onError: () => notify('页面暂时无法显示，请刷新重试。') });
+  }, onLeaveBlocked: action => leaveDialog?.request(() => { action(); root.querySelector('#main')?.focus({ preventScroll: true }); }), onError: () => notify('页面暂时无法显示，请刷新重试。') });
   router.start(); session.refresh();
   return Object.freeze({ session, router, dispose() {
-    if (stopped) return; stopped = true; router.dispose(); session.dispose(); notice?.replaceChildren();
+    if (stopped) return; stopped = true; leaveDialog?.dispose();unsubscribeDialog();router.dispose(); session.dispose(); notice?.replaceChildren();
   } });
 }
 

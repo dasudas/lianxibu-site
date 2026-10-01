@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPageRouter } from '../src/router/lifecycle.js';
+test('blocked navigation offers one resumable operation and confirmed navigation follows its original target',()=>{
+  let href='https://example.invalid/app/articles',resume;
+  const session={snapshot:{generation:0},subscribe:()=>()=>{}},browser={events:new EventTarget(),location:{get href(){return href;}},history:{pushState(_s,_t,u){href=String(u);}}};
+  const router=createPageRouter({browser,session,onLeaveBlocked:action=>resume=action,mount:({scope})=>{scope.protectEdits(()=>true,()=>false);}});
+  router.start();router.navigate('/monthly-reports?page=2');assert.equal(href,'https://example.invalid/app/articles');assert.equal(typeof resume,'function');resume();assert.equal(href,'https://example.invalid/monthly-reports?page=2');router.dispose();
+});
 test('unsaved edits cancel navigation/history departure and refresh, then confirmed departure disposes once',()=>{
  let href='https://example.invalid/app/articles/fictional-article',allow=false,dirty=true,currentScope,disposed=0;
  const listeners=new Set(),session={snapshot:{generation:0},subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn);}};
