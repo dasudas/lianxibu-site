@@ -19,6 +19,7 @@ import { createLeaveDialog } from './components/common/leave-dialog.js';
 import { mountArticles } from './pages/articles/index.js';
 import { mountArticleLearning } from './pages/articles/learning.js';
 import { mountCatalog } from './pages/catalog/index.js';
+import { mountInterpretation } from './pages/catalog/detail.js';
 
 export function createApplication({ root, browser, client = createApiClient(), notice = null, confirmDiscard = () => false }) {
   const session = createSessionState(client), home = createHomeApi(client), identityApi = createIdentityApi(client);
@@ -67,6 +68,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-06') return mountArticles(main, { scope, api: articles, records, url, identity, session, navigate, confirmDiscard });
     if (route?.id === 'UI-07') return mountArticleLearning(main, { scope, api: articleRecords, articleApi: articles, records, url, identity, session, navigate, confirmDiscard });
     if (route?.id === 'UI-08') return mountCatalog(main, { scope, api: interpretations, url, navigate });
+    if (route?.id === 'UI-09') return mountInterpretation(main, { scope, api: interpretations, url });
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
