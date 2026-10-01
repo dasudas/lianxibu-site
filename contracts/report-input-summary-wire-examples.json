@@ -252,7 +252,7 @@
       "state": "summary",
       "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "generation": 2,
-      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "input_cutoff_at": "2026-01-05T01:00:00.000000Z",
       "report_type": "weekly",
       "period_start": "2025-12-28T16:00:00.000000Z",
       "period_end": "2026-01-04T16:00:00.000000Z",
@@ -279,7 +279,7 @@
           "member_id": "fictional-member",
           "group": "upstream_reports",
           "resource_ref": {
-            "kind": "article_revision",
+            "kind": "report",
             "id": "fictional-revision",
             "package_id": null
           },
@@ -313,7 +313,7 @@
       "state": "summary",
       "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "generation": 2,
-      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "input_cutoff_at": "2026-02-01T01:00:00.000000Z",
       "report_type": "monthly",
       "period_start": "2025-12-31T16:00:00.000000Z",
       "period_end": "2026-01-31T16:00:00.000000Z",
@@ -340,7 +340,7 @@
           "member_id": "fictional-member",
           "group": "upstream_reports",
           "resource_ref": {
-            "kind": "article_revision",
+            "kind": "report",
             "id": "fictional-revision",
             "package_id": null
           },
