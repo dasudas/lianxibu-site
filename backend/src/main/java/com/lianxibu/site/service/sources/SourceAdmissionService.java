@@ -1,6 +1,7 @@
 package com.lianxibu.site.service.sources;
 
 import com.lianxibu.site.domain.protocol.CanonicalJson;
+import com.lianxibu.site.domain.protocol.WireValues;
 import com.lianxibu.site.repository.sources.JdbcSourceAdmission;
 import com.lianxibu.site.repository.sources.JdbcSourceAdmission.Row;
 import com.lianxibu.site.service.identity.IdentityService.Actor;
@@ -195,6 +196,20 @@ public final class SourceAdmissionService {
             throw new AdmissionDenied();
         }
     }
-    private static boolean validId(String id) { return id != null && !id.isBlank() && id.length() <= 80; }
-    private static boolean validName(String value) { return value != null && !value.isBlank() && value.length() <= 200; }
+    private static boolean validId(String id) {
+        if (id == null || id.isBlank()) return false;
+        try { WireValues.id(id, true); return true; }
+        catch (IllegalArgumentException invalid) { return false; }
+    }
+    private static boolean validName(String value) {
+        if (value == null || value.isBlank() || value.codePointCount(0, value.length()) > 200
+                || value.codePoints().anyMatch(Character::isISOControl)) return false;
+        for (int index = 0; index < value.length(); index++) {
+            char unit = value.charAt(index);
+            if (Character.isHighSurrogate(unit)) {
+                if (++index >= value.length() || !Character.isLowSurrogate(value.charAt(index))) return false;
+            } else if (Character.isLowSurrogate(unit)) return false;
+        }
+        return true;
+    }
 }

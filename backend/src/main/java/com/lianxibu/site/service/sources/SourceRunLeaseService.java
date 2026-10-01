@@ -1,5 +1,7 @@
 package com.lianxibu.site.service.sources;
 
+import com.lianxibu.site.domain.protocol.WireValues;
+
 import com.lianxibu.site.domain.protocol.CanonicalJson;
 import com.lianxibu.site.domain.sources.RunActionReceipt;
 import com.lianxibu.site.domain.sources.RunActionReceipt.Store;
@@ -136,7 +138,9 @@ public final class SourceRunLeaseService {
     private Scheduled schedule(String sourceId, String requestedKind, LocalDate day,
                                Instant start, Instant end, String fetchMode,
                                String baseRunId, ActionContext action) {
-        if (sourceId == null || sourceId.isBlank() || sourceId.length() > 80
+        try { WireValues.id(sourceId, true); }
+        catch (IllegalArgumentException invalid) { throw new LeaseRejected(); }
+        if (sourceId.isBlank()
                 || action == null || !start.isBefore(end)) throw new LeaseRejected();
         String requestScope = scope(sourceId, requestedKind, day, start, end, fetchMode, baseRunId);
         return writes.execute(action, key -> {

@@ -76,6 +76,22 @@ class SourceRunLeaseServiceTest {
                 nodes, new JdbcSourceRunReceipts(db, time), time);
     }
 
+    @Test void probeSchedulePreservesEightyScalarSourceIdentityAndRejectsInvalidIds() {
+        jdbc.execute("ALTER TABLE sources ALTER COLUMN id VARCHAR(320)");
+        jdbc.execute("ALTER TABLE source_runs ALTER COLUMN source_id VARCHAR(320)");
+        String emoji = "\uD83D\uDE42", unicodeId = emoji.repeat(80);
+        jdbc.update("UPDATE sources SET id=?,activation_stage='disabled' WHERE id=?", unicodeId, sourceId);
+        var probe = service.scheduleProbe(unicodeId, action("unicode-probe"));
+        assertEquals(unicodeId, runs.byId(probe.runId()).sourceId());
+        assertEquals("probe", probe.runKind());
+        assertEquals(1, probe.generation());
+        assertEquals(probe, service.scheduleProbe(unicodeId, action("unicode-probe")));
+        for (String invalid : List.of(emoji.repeat(81), "fixture\n", "fixture\u007f", "fixture\uD800", "fixture\uDC00")) {
+            assertThrows(LeaseRejected.class, () -> service.scheduleProbe(invalid, action("invalid-probe")));
+        }
+        assertEquals(1L, count("source_runs"));
+    }
+
     @Test void capacityStopsOnlyNewRunAllocationAndKeepsPermanentReceiptAndLeaseControls() {
         time.set("2026-01-02T16:10:00Z");
         assertThrows(SourceRunLeaseService.CapacityGuarded.class, () -> unconfigured.scheduleDaily(sourceId, action("unconfigured")));

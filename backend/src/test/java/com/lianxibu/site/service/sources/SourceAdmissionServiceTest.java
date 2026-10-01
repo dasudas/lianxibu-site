@@ -166,6 +166,37 @@ class SourceAdmissionServiceTest {
                         created.revision(), action("reader-disable")));
     }
 
+    @Test void unicodeIdentityAndNameUseScalarBoundsWithoutTruncation() {
+        // H2 VARCHAR precision counts UTF-16 units; these fixture columns accommodate MySQL scalar widths.
+        jdbc.execute("ALTER TABLE sources ALTER COLUMN id VARCHAR(320)");
+        jdbc.execute("ALTER TABLE sources ALTER COLUMN name VARCHAR(800)");
+        jdbc.execute("ALTER TABLE source_action_receipts ALTER COLUMN source_id VARCHAR(320)");
+        String id = "\uD83D\uDE42".repeat(80), name = "\uD83D\uDE42".repeat(200);
+        var created = service.create(owner, new SourceCreate(id, name, "news_tech", config("fixture-parser")), action("unicode-create"));
+        assertEquals(id, created.sourceId());
+        assertEquals(name, store.locked(id).name());
+        assertEquals(1, created.revision());
+        var edited = service.edit(owner, id, new SourceWrite(1, name, "news_tech", config("fixture-parser")), action("unicode-edit"));
+        assertEquals(id, edited.sourceId());
+        assertEquals(2, edited.revision());
+        assertEquals(2, service.disable(owner, id, 2, action("unicode-disable")).revision());
+        assertEquals(name, store.locked(id).name());
+    }
+
+    @Test void invalidIdentityOrNameCannotReachSharedWriteEntry() {
+        String emoji = "\uD83D\uDE42";
+        for (String id : List.of(emoji.repeat(81), "fixture\n", "fixture\u007f", "fixture\uD800", "fixture\uDC00")) {
+            assertThrows(IllegalArgumentException.class, () -> service.create(owner,
+                    new SourceCreate(id, "Fixture", "news_tech", config("fixture-parser")), action("invalid-id")));
+        }
+        for (String name : List.of(emoji.repeat(201), "Fixture\uD800", "Fixture\uDC00", "Fixture\u0000")) {
+            assertThrows(IllegalArgumentException.class, () -> service.create(owner,
+                    new SourceCreate("fixture-invalid", name, "news_tech", config("fixture-parser")), action("invalid-name")));
+        }
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM sources", Integer.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM source_action_receipts", Integer.class));
+    }
+
     private SourceAdmissionService.Decision create() {
         return service.create(owner,
                 new SourceCreate("fixture:feed", "Fixture", "news_tech", config("fixture-parser")),
