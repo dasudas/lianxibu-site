@@ -1,13 +1,15 @@
 import { createApiClient } from './api/client.js';
 import { createHomeApi } from './api/home.js';
+import { createIdentityApi } from './api/identity.js';
 import { createSessionState } from './state/session.js';
 import { createPageRouter } from './router/lifecycle.js';
 import { mountShell } from './components/layout/shell.js';
 import { createStatusView } from './components/common/status-view.js';
 import { mountHome } from './pages/home/index.js';
+import { mountLogin } from './pages/auth/index.js';
 
 export function createApplication({ root, browser, client = createApiClient(), notice = null }) {
-  const session = createSessionState(client), home = createHomeApi(client);
+  const session = createSessionState(client), home = createHomeApi(client), identityApi = createIdentityApi(client);
   let logoutPending = false, stopped = false;
   function notify(message, retry = null) {
     if (!notice || stopped) return;
@@ -35,6 +37,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
   const router = createPageRouter({ browser, session, mount({ route, url, scope, session: identity }) {
     const main = mountShell(root, { pathname: url.pathname, user: identity.user, scope, navigate, logout: () => logout() });
     if (route?.id === 'UI-01') return mountHome(main, { scope, api: home });
+    if (route?.id === 'UI-02') return mountLogin(main, { scope, api: identityApi, identity, session, next: url.searchParams.get('next'), navigate });
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
