@@ -6,6 +6,7 @@ import { createLearningReferenceApi } from './api/learning-reference.js';
 import { createArticlesApi } from './api/articles.js';
 import { createRecordsApi } from './api/records.js';
 import { createArticleRecordsApi } from './api/article-records.js';
+import { createInterpretationsApi } from './api/interpretations.js';
 import { createSessionState } from './state/session.js';
 import { createPageRouter } from './router/lifecycle.js';
 import { mountShell } from './components/layout/shell.js';
@@ -17,10 +18,11 @@ import { mountReportList } from './pages/reports/list.js';
 import { createLeaveDialog } from './components/common/leave-dialog.js';
 import { mountArticles } from './pages/articles/index.js';
 import { mountArticleLearning } from './pages/articles/learning.js';
+import { mountCatalog } from './pages/catalog/index.js';
 
 export function createApplication({ root, browser, client = createApiClient(), notice = null, confirmDiscard = () => false }) {
   const session = createSessionState(client), home = createHomeApi(client), identityApi = createIdentityApi(client);
-  const reports = createReportsApi(client), learningReference = createLearningReferenceApi(client);
+  const reports = createReportsApi(client), learningReference = createLearningReferenceApi(client), interpretations = createInterpretationsApi(client);
   const articles = createArticlesApi(client), records = createRecordsApi(client), articleRecords = createArticleRecordsApi(client);
   const leaveDialog = notice ? createLeaveDialog(notice) : null;
   const unsubscribeDialog = session.subscribe(() => leaveDialog?.clear());
@@ -64,6 +66,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     }
     if (route?.id === 'UI-06') return mountArticles(main, { scope, api: articles, records, url, identity, session, navigate, confirmDiscard });
     if (route?.id === 'UI-07') return mountArticleLearning(main, { scope, api: articleRecords, articleApi: articles, records, url, identity, session, navigate, confirmDiscard });
+    if (route?.id === 'UI-08') return mountCatalog(main, { scope, api: interpretations, url, navigate });
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
