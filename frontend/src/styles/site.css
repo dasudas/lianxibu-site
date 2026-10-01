@@ -150,3 +150,6 @@
 .package-manager .package-description{font-size:16px;white-space:pre-wrap;overflow-wrap:anywhere}
 
 .import-manager input[type=file],.import-manager select{min-height:44px;max-width:100%;font-size:16px}.import-manager .import-confirm{display:flex;align-items:center;gap:12px;min-height:44px}.import-manager .import-confirm input{width:20px;height:20px}.import-manager .import-format{font-size:16px;overflow-wrap:anywhere}
+
+.source-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px}.source-card{padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:16px}.source-config summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-size:16px}.source-entry-list{padding-left:20px;overflow-wrap:anywhere}.source-evidence-gap{font-size:16px;color:var(--ink)}
+.source-card p,.source-card .source-status,.source-card .source-entry-list{font-size:16px;line-height:1.7}.source-card .source-status dd{overflow-wrap:anywhere}
