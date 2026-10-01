@@ -71,6 +71,7 @@ public final class GenerationFlowService {
     private final RequestBuilder requests;
     private final Clock clock;
     private final java.util.function.BooleanSupplier preparationAllowed;
+    private final ReportInputSnapshotService reportInputs;
 
     public GenerationFlowService(SharedWriteExecutor writes, FrozenStore store,
                                  RequestBuilder requests, Clock clock) {
@@ -79,6 +80,22 @@ public final class GenerationFlowService {
     public GenerationFlowService(SharedWriteExecutor writes, FrozenStore store,
                                  RequestBuilder requests, Clock clock,
                                  java.util.function.BooleanSupplier preparationAllowed) {
+        this(writes,store,requests,clock,(ReportInputSnapshotService)null,preparationAllowed);
+    }
+
+    /** New report runtime composition must install this provider. The older constructors
+     * retain isolated legacy behavior and must not be used to enable report writers. */
+    public GenerationFlowService(SharedWriteExecutor writes, FrozenStore store,
+                                 RequestBuilder requests, Clock clock,
+                                 java.util.function.BooleanSupplier preparationAllowed,
+                                 ReportInputSnapshotService reportInputs) {
+        this(writes,store,requests,clock,java.util.Objects.requireNonNull(reportInputs,
+                "complete report input provider required"),preparationAllowed);
+    }
+    private GenerationFlowService(SharedWriteExecutor writes, FrozenStore store,
+                                  RequestBuilder requests, Clock clock,
+                                  ReportInputSnapshotService reportInputs,
+                                  java.util.function.BooleanSupplier preparationAllowed) {
         if (writes == null || store == null || requests == null || clock == null || preparationAllowed == null)
             throw new IllegalArgumentException("generation dependencies required");
         this.writes = writes;
@@ -86,6 +103,7 @@ public final class GenerationFlowService {
         this.requests = requests;
         this.clock = clock;
         this.preparationAllowed = preparationAllowed;
+        this.reportInputs = reportInputs;
     }
 
     public Frozen prepare(Prepare command, ActionContext action) {
@@ -100,6 +118,22 @@ public final class GenerationFlowService {
                         null, null, null, command.stage().priority(), nextEligible(now), "waiting_input");
                 store.save(waiting, context.actionKey());
                 return waiting;
+            }
+            if (command.stage().report() && reportInputs != null) {
+                // Source lookup, selection, full request and persistence share this exact
+                // transaction. No command-evidence fallback can bypass missing proof.
+                var input = reportInputs.freeze(command, cutoff);
+                String request = null;
+                if (input.hasContent()) {
+                    request = requests.build(command.stage(), input.snapshotJson(), input.inputHash());
+                    requireCompleteRequest(request, input.inputHash());
+                }
+                Frozen frozen = new Frozen(context.preallocatedResourceId(), command.logicalKey(),
+                        command.generation(), command.stage(), cutoff, input.coverageState(),
+                        input.missing(), input.snapshotJson(), input.inputHash(), request,
+                        command.stage().priority(), nextEligible(now), input.state());
+                store.save(frozen, context.actionKey());
+                return frozen;
             }
             List<Evidence> selected = selected(command, cutoff);
             List<String> missing = missing(command, cutoff, selected);
@@ -165,7 +199,8 @@ public final class GenerationFlowService {
         };
     }
     private static Instant cutoff(Prepare value, Instant now) {
-        if (value.stage().report()) return value.explicitSupplement() ? now
+        if (value.stage().report()) return value.explicitSupplement()
+                ? now.truncatedTo(java.time.temporal.ChronoUnit.MICROS)
                 : plannedCutoff(value.businessDate());
         if ((value.stage() == Stage.NEWS_VALUE || value.stage().analysis())
                 && !value.explicitSupplement()) {
