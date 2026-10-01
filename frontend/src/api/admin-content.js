@@ -24,7 +24,20 @@ function command(kind,value){
  if(new TextEncoder().encode(JSON.stringify(result)).length>262144)throw new TypeError('Content command exceeds transport limit');return result;
 }
 
+
+function versionTarget(value){closed(value,['kind','content_kind','content_id','revision','body_hash','input_job_id']);if(value.kind!=='content_version'||typeof value.body_hash!=='string'||!/^[0-9a-f]{64}$/.test(value.body_hash))throw new TypeError('Invalid content version target');return {kind:'content_version',content_kind:one(value.content_kind,kinds),content_id:identifier(value.content_id),revision:number(value.revision),body_hash:value.body_hash,input_job_id:value.input_job_id===null?null:identifier(value.input_job_id)};}
+
 export function createAdminContentApi(client){return Object.freeze({
+ async versions(identifierValue,{kind,page=1,page_size=20,signal}={}){
+  if(!kinds.includes(kind)||!Number.isSafeInteger(page)||page<1||!Number.isSafeInteger(page_size)||page_size<1||page_size>50)throw new TypeError('Invalid referenced-version page');const target=identifier(identifierValue);
+  const {data}=await client.request('GET','/admin/content/'+kind+'/'+encodeURIComponent(target)+'/referenced-versions',{signal,query:{page,page_size}});if(!data||data.page!==page||data.page_size!==page_size||!Array.isArray(data.items)||data.items.length>page_size)invalid();const total=number(data.total),seen=new Set();
+  const items=data.items.map(value=>{if(!value||value.version_kind!=='body'||typeof value.effective_valid!=='boolean')invalid();const target=versionTarget(value.target),key=JSON.stringify(target);if(target.content_kind!==kind||target.content_id!==identifierValue)invalid();if(seen.has(key))invalid();seen.add(key);return {target,versionKind:'body',validityRevision:number(value.validity_revision),effectiveValid:value.effective_valid};});if(items.length>Math.max(0,total-(page-1)*page_size))invalid();return freeze({items,page,pageSize:page_size,total});
+ },
+ async versionAction(identifierValue,{kind,fields,signal,idempotencyKey}={}){
+  if(!kinds.includes(kind)||typeof idempotencyKey!=='string'||!/^[!-~]{1,128}$/.test(idempotencyKey))throw new TypeError('Explicit version action identity/key required');const target=identifier(identifierValue);if(!fields||!['invalidate_conclusion','reverse_invalidation'].includes(fields.action))throw new TypeError('Invalid version action');closed(fields,['expected_validity_revision','action','reason','target',...(fields.action==='reverse_invalidation'?['invalidation_id']:[])]);
+  const body={expected_validity_revision:number(fields.expected_validity_revision),action:fields.action,reason:text(fields.reason,2048),target:versionTarget(fields.target)};if(body.target.content_kind!==kind||body.target.content_id!==target)throw new TypeError('Version target does not match path');if(!body.reason.trim())throw new TypeError('Disposition reason required');if(fields.action==='reverse_invalidation')body.invalidation_id=identifier(fields.invalidation_id);
+  const {data}=await client.request('POST','/admin/content/'+kind+'/'+encodeURIComponent(target)+'/version-actions',{signal,idempotencyKey,body});return actionResult(data);
+ },
  async action(identifierValue,{kind,fields,signal,idempotencyKey}={}){
   if(!kinds.includes(kind)||typeof idempotencyKey!=='string'||!/^[!-~]{1,128}$/.test(idempotencyKey))throw new TypeError('Explicit content identity/key required');const target=identifier(identifierValue);
   if(!fields||!['approve','reject','publish','withdraw'].includes(fields.action))throw new TypeError('Invalid publication action');closed(fields,['expected_revision','action','reason',...(fields.action==='withdraw'?['withdrawal_reason']:[])]);
