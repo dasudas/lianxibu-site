@@ -148,3 +148,5 @@
 .answer-manager .button{min-height:44px}
 
 .package-manager .package-description{font-size:16px;white-space:pre-wrap;overflow-wrap:anywhere}
+
+.import-manager input[type=file],.import-manager select{min-height:44px;max-width:100%;font-size:16px}.import-manager .import-confirm{display:flex;align-items:center;gap:12px;min-height:44px}.import-manager .import-confirm input{width:20px;height:20px}.import-manager .import-format{font-size:16px;overflow-wrap:anywhere}
