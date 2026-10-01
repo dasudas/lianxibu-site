@@ -1,0 +1,767 @@
+{
+  "description": "Fictional owner source action schema and command-specific semantic vectors. A schema-readable generic action is not a command receipt proof; no real source admission evidence or activation is included.",
+  "cases": [
+    {
+      "name": "start_trial_known_zero",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "source_id_80_supported",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "context": {
+        "source_id": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "source_id_65_supported",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "context": {
+        "source_id": "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "source_id_81_rejected",
+      "schema": "SourceActionResult",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "source_control_rejected",
+      "schema": "SourceActionResult",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional\n",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "source_emoji_80_scalar",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "context": {
+        "source_id": "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "wrong_source_identity",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-other",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "source_package_not_null",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": "fictional-package"
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "wrong_start_trial_revision",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 0,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "promote_one_revision",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "promote_production",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "trial"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "disable_active_increments",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "disable",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "production"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "disable_disabled_noop_zero",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "disable",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 0,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "disable_disabled_not_incremented",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "disable",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "source_generation_not_allowed",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": 1,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "probe_run_zero_revision",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "probe",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run",
+          "id": "fictional-probe-run",
+          "package_id": null
+        },
+        "result_revision": 0,
+        "generation": 1,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "probe_same_source_root_wrong",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "probe",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "probe_generation_zero",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "probe",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run",
+          "id": "fictional-probe-run",
+          "package_id": null
+        },
+        "result_revision": 0,
+        "generation": 0,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "probe_generation_unknown",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "probe",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run",
+          "id": "fictional-probe-run",
+          "package_id": null
+        },
+        "result_revision": 0,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "probe_run_id_65_rejected",
+      "schema": "SourceActionResult",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "probe",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run",
+          "id": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+          "package_id": null
+        },
+        "result_revision": 0,
+        "generation": 1,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "probe_other_known_revision",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "probe",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run",
+          "id": "fictional-probe-run",
+          "package_id": null
+        },
+        "result_revision": 7,
+        "generation": 1,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "generic_other_kind_schema_retained",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "article",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "affected_not_source_action_receipt",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [
+          {
+            "kind": "source",
+            "id": "fictional-source",
+            "package_id": null
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "unexpected_next_cursor",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": "fictional-cursor"
+      }
+    },
+    {
+      "name": "unexpected_cutoff",
+      "schema": "SourceActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": "2026-10-02T00:00:00.000000Z",
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "negative_revision_rejected",
+      "schema": "SourceActionResult",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": -1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "unsafe_revision_rejected",
+      "schema": "SourceActionResult",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 9007199254740992,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "raw_probe_extra_rejected",
+      "schema": "SourceActionResult",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "probe_json": "fictional forbidden"
+      }
+    },
+    {
+      "name": "missing_generation_rejected",
+      "schema": "SourceActionResult",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "context": {
+        "source_id": "fictional-source",
+        "action": "start_trial",
+        "expected_revision": 0,
+        "config_revision": 0,
+        "activation_stage": "disabled"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source",
+          "id": "fictional-source",
+          "package_id": null
+        },
+        "result_revision": 1,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    }
+  ]
+}

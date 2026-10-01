@@ -715,13 +715,13 @@
     "group": "business",
     "method": "post",
     "path": "/admin/sources/{id}/actions",
-    "response": "ActionResult",
+    "response": "SourceActionResult",
     "request": "SourceAction",
     "access": "owner",
     "scope": null,
     "paging": false,
     "query": {},
-    "description": "",
+    "description": "Owner-only explicit source action; current permission and CSRF/origin checks precede effects. SourceAction request remains unchanged; SourceActionResult keeps the existing eight fields and adds support for the existing 80-character SourceId in its root reference. Generic ActionResult, ResourceRef and other operations remain unchanged. Command semantics are mandatory in addition to schema: probe returns result_resource_ref={kind:source_run,id:created run_id,package_id:null}, result_revision is the frozen created run revision (not source expected_revision+1), generation is the frozen positive run generation. Probe leaves the source disabled and is only a scheduling receipt, not probe success or admission proof. start_trial/promote_production/disable return result_resource_ref={kind:source,id:exact requested source_id,package_id:null}, generation:null. start_trial and promote_production have result_revision=expected_revision+1; disable on an already disabled source is a no-op with result_revision=expected_revision, otherwise expected_revision+1. Configuration revision is unchanged by these actions. For all four actions cutoff:null, coverage:null, affected:[], next_cursor:null. Start trial and promotion still require persisted version/hash/parser-bound server evidence; no browser score or elapsed-time claim authorizes activation. Shared transaction freezes the original wire receipt, including probe run identity/revision/generation; lookup of a now-evolved run must never rewrite the old receipt. After a verified probe receipt, GET /admin/source-runs/{id} must bind source_id, run_kind=probe, config_version, generation and a current revision at least the frozen revision. After verified other receipts GET /admin/sources/{id} reads current state; later changes are shown separately and cannot rewrite the receipt. An uncertain command retries only the original key/body; current GET or a matching latest stage cannot replace the original receipt. Expired receipt requires explicit reconciliation, not a new command. CAS conflict retains the reason and requires explicit fresh state adoption before a new-key command. Errors follow existing owner source boundary: missing 404/410, invalid request 400/422, stale revision or unavailable admission evidence 409, permission 401/403, transient unavailability 503. Unknown or mismatched successful payloads are not proofs. No-store; no raw evidence/config/token or collector claim values. This is an additive response-schema repair on the existing operation; older legal receipts remain schema-valid. There is no new endpoint or collector wire change. Permanent facade assembly and frozen receipt projection must satisfy these semantics before release.",
     "operation_id": "business_post_admin_sources_id_actions"
   },
   {

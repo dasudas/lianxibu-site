@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lianxibu business API",
-    "version": "0.25",
+    "version": "0.26",
     "description": "Design contract. Observation revisions 0.11/0.12; config/control 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -7720,7 +7720,7 @@
       "post": {
         "operationId": "business_post_admin_sources_id_actions",
         "summary": "POST /admin/sources/{id}/actions",
-        "description": "Semantics and transaction invariants: api-contract.md. Schema validation precedes service semantic checks.",
+        "description": "Owner-only explicit source action; current permission and CSRF/origin checks precede effects. SourceAction request remains unchanged; SourceActionResult keeps the existing eight fields and adds support for the existing 80-character SourceId in its root reference. Generic ActionResult, ResourceRef and other operations remain unchanged. Command semantics are mandatory in addition to schema: probe returns result_resource_ref={kind:source_run,id:created run_id,package_id:null}, result_revision is the frozen created run revision (not source expected_revision+1), generation is the frozen positive run generation. Probe leaves the source disabled and is only a scheduling receipt, not probe success or admission proof. start_trial/promote_production/disable return result_resource_ref={kind:source,id:exact requested source_id,package_id:null}, generation:null. start_trial and promote_production have result_revision=expected_revision+1; disable on an already disabled source is a no-op with result_revision=expected_revision, otherwise expected_revision+1. Configuration revision is unchanged by these actions. For all four actions cutoff:null, coverage:null, affected:[], next_cursor:null. Start trial and promotion still require persisted version/hash/parser-bound server evidence; no browser score or elapsed-time claim authorizes activation. Shared transaction freezes the original wire receipt, including probe run identity/revision/generation; lookup of a now-evolved run must never rewrite the old receipt. After a verified probe receipt, GET /admin/source-runs/{id} must bind source_id, run_kind=probe, config_version, generation and a current revision at least the frozen revision. After verified other receipts GET /admin/sources/{id} reads current state; later changes are shown separately and cannot rewrite the receipt. An uncertain command retries only the original key/body; current GET or a matching latest stage cannot replace the original receipt. Expired receipt requires explicit reconciliation, not a new command. CAS conflict retains the reason and requires explicit fresh state adoption before a new-key command. Errors follow existing owner source boundary: missing 404/410, invalid request 400/422, stale revision or unavailable admission evidence 409, permission 401/403, transient unavailability 503. Unknown or mismatched successful payloads are not proofs. No-store; no raw evidence/config/token or collector claim values. This is an additive response-schema repair on the existing operation; older legal receipts remain schema-valid. There is no new endpoint or collector wire change. Permanent facade assembly and frozen receipt projection must satisfy these semantics before release.",
         "security": [
           {
             "sessionCookie": [],
@@ -7760,7 +7760,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/ActionResult"
+                      "$ref": "#/components/schemas/SourceActionResult"
                     },
                     "meta": {
                       "$ref": "#/components/schemas/Meta"
@@ -25343,6 +25343,119 @@
             ]
           }
         ]
+      },
+      "SourceActionResourceRef": {
+        "description": "Additive source action root reference: all prior ResourceRef values remain schema-readable; a source root also supports the existing 80-character SourceId. Command-specific semantics only accept source or source_run; generic schema validity is not an action receipt proof.",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ResourceRef"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "source"
+              },
+              "id": {
+                "$ref": "#/components/schemas/SourceId"
+              },
+              "package_id": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "package_id"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "SourceActionResult": {
+        "type": "object",
+        "properties": {
+          "operation_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "result_resource_ref": {
+            "$ref": "#/components/schemas/SourceActionResourceRef"
+          },
+          "result_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cutoff": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Coverage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "affected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceRef"
+            },
+            "minItems": 0,
+            "maxItems": 50
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "operation_ref",
+          "result_resource_ref",
+          "result_revision",
+          "generation",
+          "cutoff",
+          "coverage",
+          "affected",
+          "next_cursor"
+        ],
+        "additionalProperties": false,
+        "description": "Existing eight-field action envelope with an additive owner-source root identity bound. Generic ActionResult and all other operations are unchanged. Source actions use empty affected, null next_cursor/cutoff/coverage; probe targets a source_run with positive generation, other actions target the exact source with null generation. See command-specific operation description."
       }
     },
     "securitySchemes": {

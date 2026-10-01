@@ -1,6 +1,6 @@
 # API contracts
 
-Contract package revision: 0.25. Observations accept wire revisions 0.11 and
+Contract package revision: 0.26. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
@@ -97,4 +97,8 @@ snapshot. owner-answer-wire-examples.json contains fictional boundary vectors.
 
 ## Owner current source
 
-`GET /admin/sources/{id}` reads one explicit owner source using the existing closed `Source` schema. Draft/effective configuration and known zero revisions remain separate. It does not return raw legacy config, probe payloads or secret values. Missing sources return 404; unsupported legacy projection returns 503 without guessing identity or category. Stage is not probe or seven-day admission proof. A current GET does not prove an uncertain write receipt. Existing source writes/actions, 158 schemas and collector wire versions remain unchanged. [20 fictional schema vectors](owner-source-wire-examples.json). Not a deployment claim.
+`GET /admin/sources/{id}` reads one explicit owner source using the existing closed `Source` schema. Draft/effective configuration and known zero revisions remain separate. It does not return raw legacy config, probe payloads or secret values. Missing sources return 404; unsupported legacy projection returns 503 without guessing identity or category. Stage is not probe or seven-day admission proof. A current GET does not prove an uncertain write receipt. Existing source requests and collector wire versions remain unchanged; the 158 definitions present in 0.25 are retained. [20 fictional schema vectors](owner-source-wire-examples.json). Not a deployment claim.
+
+## Owner source action receipts
+
+The existing `POST /admin/sources/{id}/actions` now returns `SourceActionResult`, keeping the existing eight-field envelope and adding an 80-character source root reference. All prior `ResourceRef` values remain schema-readable; `ActionResult`, `ResourceRef`, source requests and the other 79 operations are unchanged. Command validation remains mandatory: probe receipts identify a scheduled `source_run` and frozen generation, not successful admission; other receipts identify the exact source. Disabling an already disabled source is a version-preserving no-op. Current reads do not prove uncertain commands. Provider facades must freeze original receipts before release. [28 fictional schema and semantic vectors](owner-source-action-wire-examples.json). No new endpoint or collector wire revision.
