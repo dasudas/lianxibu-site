@@ -75,7 +75,8 @@ export function createApiClient({
     }
     if (write && !csrfToken) throw new ApiError(0, 'csrf_required', 'Session CSRF token is required');
 
-    const key = write && !(method === 'DELETE' && path === '/session')
+    const sessionCommand = path === '/session' && (method === 'POST' || method === 'DELETE');
+    const key = write && !sessionCommand
       ? (idempotencyKey ?? makeKey()) : null;
     if (key !== null && (!/^[\x21-\x7e]{1,128}$/.test(key))) {
       throw new TypeError('Invalid Idempotency-Key');
@@ -116,7 +117,7 @@ export function createApiClient({
         const envelope = response.status === 204 ? null : await response.json();
         if (capturedGeneration !== generation) throw new StaleSessionError();
         controller.signal.throwIfAborted();
-        if (response.status === 401) clearSession('unauthorized');
+        if (response.status === 401 && !(method === 'POST' && path === '/session')) clearSession('unauthorized');
         if (!response.ok) {
           throw new ApiError(response.status, envelope?.error?.code,
             envelope?.error?.message, envelope?.meta?.request_id);
