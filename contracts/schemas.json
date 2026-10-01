@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:lianxibu:contracts:0.19",
+  "$id": "urn:lianxibu:contracts:0.20",
   "$defs": {
     "Id": {
       "type": "string",
@@ -10583,6 +10583,333 @@
             "total"
           ],
           "additionalProperties": false
+        }
+      ]
+    },
+    "JobResultComparison": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "job_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            },
+            "job_revision": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "state": {
+              "const": "unavailable"
+            },
+            "reason": {
+              "type": "string",
+              "enum": [
+                "not_ready",
+                "no_retained_result",
+                "not_content_result",
+                "no_current_content",
+                "unproven_input",
+                "unproven_current_version"
+              ]
+            }
+          },
+          "required": [
+            "job_id",
+            "job_revision",
+            "state",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "job_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            },
+            "job_revision": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "state": {
+              "const": "comparison"
+            },
+            "content_kind": {
+              "type": "string",
+              "enum": [
+                "report",
+                "agent",
+                "skill",
+                "workflow",
+                "model"
+              ]
+            },
+            "content_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            },
+            "current_content_revision": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "current_body_revision": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "current_body": {
+              "$ref": "#/$defs/ContentBody"
+            },
+            "candidate_body": {
+              "$ref": "#/$defs/ContentBody"
+            },
+            "result_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "input_snapshot_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            },
+            "generation": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "input_cutoff_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            },
+            "coverage": {
+              "$ref": "#/$defs/Coverage"
+            },
+            "can_apply": {
+              "type": "boolean"
+            },
+            "blocking_reasons": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "already_applied",
+                  "discarded",
+                  "superseded",
+                  "invalid_evidence",
+                  "application_state_not_conflict"
+                ]
+              },
+              "minItems": 0,
+              "maxItems": 5,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "job_id",
+            "job_revision",
+            "state",
+            "content_kind",
+            "content_id",
+            "current_content_revision",
+            "current_body_revision",
+            "current_body",
+            "candidate_body",
+            "result_hash",
+            "input_snapshot_id",
+            "generation",
+            "input_cutoff_at",
+            "coverage",
+            "can_apply",
+            "blocking_reasons"
+          ],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "can_apply": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "blocking_reasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    },
+                    "minItems": 0,
+                    "maxItems": 0
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "blocking_reasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    },
+                    "minItems": 1,
+                    "maxItems": 5
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "content_kind": {
+                    "const": "report"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "current_body": {
+                    "$ref": "#/$defs/ReportBody"
+                  },
+                  "candidate_body": {
+                    "$ref": "#/$defs/ReportBody"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "content_kind": {
+                    "const": "agent"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "current_body": {
+                    "$ref": "#/$defs/InterpretationBody",
+                    "properties": {
+                      "category": {
+                        "const": "agent"
+                      }
+                    }
+                  },
+                  "candidate_body": {
+                    "$ref": "#/$defs/InterpretationBody",
+                    "properties": {
+                      "category": {
+                        "const": "agent"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "content_kind": {
+                    "const": "skill"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "current_body": {
+                    "$ref": "#/$defs/InterpretationBody",
+                    "properties": {
+                      "category": {
+                        "const": "skill"
+                      }
+                    }
+                  },
+                  "candidate_body": {
+                    "$ref": "#/$defs/InterpretationBody",
+                    "properties": {
+                      "category": {
+                        "const": "skill"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "content_kind": {
+                    "const": "workflow"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "current_body": {
+                    "$ref": "#/$defs/InterpretationBody",
+                    "properties": {
+                      "category": {
+                        "const": "workflow"
+                      }
+                    }
+                  },
+                  "candidate_body": {
+                    "$ref": "#/$defs/InterpretationBody",
+                    "properties": {
+                      "category": {
+                        "const": "workflow"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "content_kind": {
+                    "const": "model"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "current_body": {
+                    "$ref": "#/$defs/InterpretationBody",
+                    "properties": {
+                      "category": {
+                        "const": "model"
+                      }
+                    }
+                  },
+                  "candidate_body": {
+                    "$ref": "#/$defs/InterpretationBody",
+                    "properties": {
+                      "category": {
+                        "const": "model"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
         }
       ]
     }

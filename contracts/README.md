@@ -1,11 +1,11 @@
 # API contracts
 
-Contract package revision: 0.19. Observations accept wire revisions 0.11 and
+Contract package revision: 0.20. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
 surfaces. `schemas.json` is the shared JSON Schema 2020-12 definition set.
-`operation-map.json` lists all 75 operations: 62 business and 13 collector.
+`operation-map.json` lists all 76 operations: 63 business and 13 collector.
 `examples.json`, `wire-examples.json`, and `hn-time-wire-examples.json`
 contain fictional fixtures, including intentionally invalid wire cases.
 
@@ -59,3 +59,11 @@ GET /admin/operations/{id}/affected reads an operation_ref from its receipt.
 Pending enumeration has unknown total and no page; completed impact sets are
 immutable and paged with operation-bound opaque cursors. Existing receipts
 are unchanged. This package does not advertise deployed support.
+
+job-result-comparison-wire-examples.json contains fictional retained-content
+comparison cases. Owner reads expose only validated current/candidate bodies
+and their exact identities, independent content revisions, result hash and
+frozen input metadata. Unavailable proof is explicit, never an invented body.
+A read does not authorize applying a result; commands recheck both revisions,
+result identity, generation and evidence in their transaction. Storage and
+runtime providers must be connected separately; these contracts do not deploy them.

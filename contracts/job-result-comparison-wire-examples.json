@@ -1,0 +1,726 @@
+[
+  {
+    "name": "fictional available comparison",
+    "schema": "JobResultComparison",
+    "valid": true,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": true,
+      "blocking_reasons": []
+    }
+  },
+  {
+    "name": "fictional blocked read",
+    "schema": "JobResultComparison",
+    "valid": true,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": false,
+      "blocking_reasons": [
+        "invalid_evidence"
+      ]
+    }
+  },
+  {
+    "name": "fictional unavailable has no invented body",
+    "schema": "JobResultComparison",
+    "valid": true,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "unavailable",
+      "reason": "no_retained_result"
+    }
+  },
+  {
+    "name": "fictional unsafe task revision",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 9007199254740992,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": true,
+      "blocking_reasons": []
+    }
+  },
+  {
+    "name": "fictional extra prompt",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": true,
+      "blocking_reasons": [],
+      "prompt": "Fictional hidden"
+    }
+  },
+  {
+    "name": "fictional missing result hash",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": true,
+      "blocking_reasons": []
+    }
+  },
+  {
+    "name": "fictional bad result hash",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "Fictional bad",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": true,
+      "blocking_reasons": []
+    }
+  },
+  {
+    "name": "fictional no frozen generation",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 0,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": true,
+      "blocking_reasons": []
+    }
+  },
+  {
+    "name": "fictional unsafe timestamp",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-02-30T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": true,
+      "blocking_reasons": []
+    }
+  },
+  {
+    "name": "fictional null current body revision",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": null,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": true,
+      "blocking_reasons": []
+    }
+  },
+  {
+    "name": "fictional actionable blocked result",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": true,
+      "blocking_reasons": [
+        "superseded"
+      ]
+    }
+  },
+  {
+    "name": "fictional false without reason",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": false,
+      "blocking_reasons": []
+    }
+  },
+  {
+    "name": "fictional wrong kind body",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "agent",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": true,
+      "blocking_reasons": []
+    }
+  },
+  {
+    "name": "fictional unknown block reason",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": false,
+      "blocking_reasons": [
+        "Fictional unknown"
+      ]
+    }
+  },
+  {
+    "name": "fictional duplicate block reasons",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "comparison",
+      "content_kind": "report",
+      "content_id": "fictional-content",
+      "current_content_revision": 5,
+      "current_body_revision": 3,
+      "current_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "candidate_body": {
+        "title": "Fictional retained report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      },
+      "result_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_snapshot_id": "fictional-input",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-03T01:00:00.000000Z",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "can_apply": false,
+      "blocking_reasons": [
+        "superseded",
+        "superseded"
+      ]
+    }
+  },
+  {
+    "name": "fictional unavailable candidate leakage",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "unavailable",
+      "reason": "no_retained_result",
+      "candidate_body": {
+        "title": "Fictional report",
+        "sections": [],
+        "citation_ids": [],
+        "type": "daily",
+        "period_start": "2026-01-01T16:00:00.000000Z",
+        "period_end": "2026-01-02T16:00:00.000000Z",
+        "timezone": "Asia/Shanghai",
+        "learning_task": null
+      }
+    }
+  },
+  {
+    "name": "fictional unavailable unknown reason",
+    "schema": "JobResultComparison",
+    "valid": false,
+    "value": {
+      "job_id": "fictional-job",
+      "job_revision": 2,
+      "state": "unavailable",
+      "reason": "success"
+    }
+  }
+]
