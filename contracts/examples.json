@@ -1880,6 +1880,36 @@
           "request_id": "fictional-request"
         }
       }
+    },
+    {
+      "operation_id": "business_get_admin_content_kind_id_version_dispositions",
+      "response": {
+        "data": {
+          "target": {
+            "kind": "content_version",
+            "content_kind": "report",
+            "content_id": "fictional-content",
+            "revision": 1,
+            "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "input_job_id": null
+          },
+          "validity_revision": 2,
+          "effective_valid": false,
+          "items": [
+            {
+              "id": "fictional-invalidation",
+              "reason": "Fictional conclusion invalidation",
+              "created_at": "2026-01-01T00:00:00.000000Z"
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "total": 1
+        },
+        "meta": {
+          "request_id": "fictional-version-disposition-read"
+        }
+      }
     }
   ]
 }

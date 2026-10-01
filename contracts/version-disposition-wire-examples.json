@@ -1,0 +1,264 @@
+[
+  {
+    "name": "fictional active conclusion invalidation with explicit null input",
+    "schema": "ActiveVersionInvalidationsPage",
+    "valid": true,
+    "value": {
+      "target": {
+        "kind": "content_version",
+        "content_kind": "report",
+        "content_id": "fictional-content",
+        "revision": 1,
+        "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "input_job_id": null
+      },
+      "validity_revision": 2,
+      "effective_valid": false,
+      "items": [
+        {
+          "id": "fictional-invalidation",
+          "reason": "Fictional conclusion invalidation",
+          "created_at": "2026-01-01T00:00:00.000000Z"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional all invalidations reversed",
+    "schema": "ActiveVersionInvalidationsPage",
+    "valid": true,
+    "value": {
+      "target": {
+        "kind": "content_version",
+        "content_kind": "report",
+        "content_id": "fictional-content",
+        "revision": 1,
+        "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "input_job_id": null
+      },
+      "validity_revision": 2,
+      "effective_valid": true,
+      "items": [],
+      "page": 1,
+      "page_size": 20,
+      "total": 0
+    }
+  },
+  {
+    "name": "fictional missing version",
+    "schema": "ActiveVersionInvalidationsPage",
+    "valid": false,
+    "value": {
+      "target": {
+        "kind": "content_version",
+        "content_kind": "report",
+        "content_id": "fictional-content",
+        "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "input_job_id": null
+      },
+      "validity_revision": 2,
+      "effective_valid": false,
+      "items": [
+        {
+          "id": "fictional-invalidation",
+          "reason": "Fictional conclusion invalidation",
+          "created_at": "2026-01-01T00:00:00.000000Z"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional unknown hash",
+    "schema": "ActiveVersionInvalidationsPage",
+    "valid": false,
+    "value": {
+      "target": {
+        "kind": "content_version",
+        "content_kind": "report",
+        "content_id": "fictional-content",
+        "revision": 1,
+        "body_hash": "unknown",
+        "input_job_id": null
+      },
+      "validity_revision": 2,
+      "effective_valid": false,
+      "items": [
+        {
+          "id": "fictional-invalidation",
+          "reason": "Fictional conclusion invalidation",
+          "created_at": "2026-01-01T00:00:00.000000Z"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional missing input identity",
+    "schema": "ActiveVersionInvalidationsPage",
+    "valid": false,
+    "value": {
+      "target": {
+        "kind": "content_version",
+        "content_kind": "report",
+        "content_id": "fictional-content",
+        "revision": 1,
+        "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "validity_revision": 2,
+      "effective_valid": false,
+      "items": [
+        {
+          "id": "fictional-invalidation",
+          "reason": "Fictional conclusion invalidation",
+          "created_at": "2026-01-01T00:00:00.000000Z"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional private payload",
+    "schema": "ActiveVersionInvalidationsPage",
+    "valid": false,
+    "value": {
+      "target": {
+        "kind": "content_version",
+        "content_kind": "report",
+        "content_id": "fictional-content",
+        "revision": 1,
+        "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "input_job_id": null
+      },
+      "validity_revision": 2,
+      "effective_valid": false,
+      "items": [
+        {
+          "id": "fictional-invalidation",
+          "reason": "Fictional conclusion invalidation",
+          "created_at": "2026-01-01T00:00:00.000000Z",
+          "body_json": "Fictional forbidden"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional unsafe revision",
+    "schema": "ActiveVersionInvalidationsPage",
+    "valid": false,
+    "value": {
+      "target": {
+        "kind": "content_version",
+        "content_kind": "report",
+        "content_id": "fictional-content",
+        "revision": 1,
+        "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "input_job_id": null
+      },
+      "validity_revision": 9007199254740992,
+      "effective_valid": false,
+      "items": [
+        {
+          "id": "fictional-invalidation",
+          "reason": "Fictional conclusion invalidation",
+          "created_at": "2026-01-01T00:00:00.000000Z"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional invalid creation time",
+    "schema": "ActiveVersionInvalidationsPage",
+    "valid": false,
+    "value": {
+      "target": {
+        "kind": "content_version",
+        "content_kind": "report",
+        "content_id": "fictional-content",
+        "revision": 1,
+        "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "input_job_id": null
+      },
+      "validity_revision": 2,
+      "effective_valid": false,
+      "items": [
+        {
+          "id": "fictional-invalidation",
+          "reason": "Fictional conclusion invalidation",
+          "created_at": "unknown"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional missing ID",
+    "schema": "ActiveVersionInvalidationsPage",
+    "valid": false,
+    "value": {
+      "target": {
+        "kind": "content_version",
+        "content_kind": "report",
+        "content_id": "fictional-content",
+        "revision": 1,
+        "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "input_job_id": null
+      },
+      "validity_revision": 2,
+      "effective_valid": false,
+      "items": [
+        {
+          "reason": "Fictional conclusion invalidation",
+          "created_at": "2026-01-01T00:00:00.000000Z"
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1
+    }
+  },
+  {
+    "name": "fictional wrong page",
+    "schema": "ActiveVersionInvalidationsPage",
+    "valid": false,
+    "value": {
+      "target": {
+        "kind": "content_version",
+        "content_kind": "report",
+        "content_id": "fictional-content",
+        "revision": 1,
+        "body_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "input_job_id": null
+      },
+      "validity_revision": 2,
+      "effective_valid": false,
+      "items": [
+        {
+          "id": "fictional-invalidation",
+          "reason": "Fictional conclusion invalidation",
+          "created_at": "2026-01-01T00:00:00.000000Z"
+        }
+      ],
+      "page": 0,
+      "page_size": 20,
+      "total": 1
+    }
+  }
+]

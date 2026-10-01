@@ -1,11 +1,11 @@
 # API contracts
 
-Contract package revision: 0.16. Observations accept wire revisions 0.11 and
+Contract package revision: 0.17. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
 surfaces. `schemas.json` is the shared JSON Schema 2020-12 definition set.
-`operation-map.json` lists all 73 operations: 60 business and 13 collector.
+`operation-map.json` lists all 74 operations: 61 business and 13 collector.
 `examples.json`, `wire-examples.json`, and `hn-time-wire-examples.json`
 contain fictional fixtures, including intentionally invalid wire cases.
 
@@ -36,3 +36,12 @@ versions and report types stay null; body payloads are excluded from the list.
 Capabilities wire schema remains unchanged; package revision alone does not
 advertise a runtime feature. Fictional metadata cases are in
 admin-content-wire-examples.json.
+
+version-disposition-wire-examples.json contains fictional positive and negative
+cases for owner-only active invalidations of an exact content body version.
+GET /admin/content/{kind}/{id}/version-dispositions requires revision and
+body_hash; omitted input_job_id explicitly means null. It returns complete
+version identity, independent validity revision and safe active invalidation
+IDs/reasons/timestamps with real pagination. Operation receipts are not
+invalidation IDs. Existing protocol definitions and wire capabilities stay
+unchanged; this package revision does not advertise deployed support.

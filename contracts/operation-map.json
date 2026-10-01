@@ -901,6 +901,35 @@
   },
   {
     "group": "business",
+    "method": "get",
+    "path": "/admin/content/{kind}/{id}/version-dispositions",
+    "response": "ActiveVersionInvalidationsPage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "body_hash": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "input_job_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+      }
+    },
+    "description": "Owner-only active conclusion-invalidations for one exact body version of the path content. revision and body_hash are required; omitted input_job_id means explicit null, never inferred from current body. Response repeats complete target and independent validity revision/effective flag from one repeatable-read snapshot. Fold only canonical disposition records matching full target, subtract explicit reversals of active invalidation IDs; count and stable created_at/id pagination after folding. Return actual invalidation IDs, safe reason and UTC creation time, no raw payload/history body. All active IDs contribute to validity even outside this page; reversing one need not restore validity. Unknown or duplicate query keys 400; invalid/missing required values 422; exact missing version 404; unreadable proof or unavailable provider 503. Operation receipts are not invalidation IDs. Existing actions, version summaries and definitions are unchanged.",
+    "operation_id": "business_get_admin_content_kind_id_version_dispositions"
+  },
+  {
+    "group": "business",
     "method": "post",
     "path": "/admin/evidence/{kind}/{id}/actions",
     "response": "ActionResult",
