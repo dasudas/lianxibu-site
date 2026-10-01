@@ -81,3 +81,5 @@
 .catalog-view-search{display:grid;gap:4px;min-width:220px;max-width:360px}.catalog-view-search input{width:100%}.catalog-workspace>main>.pagination{flex-shrink:0}
 
 .catalog-workspace>main{height:auto;overflow:visible}.catalog-workspace .catalog-grid{min-height:360px;max-height:60dvh;flex:none}@media(max-width:720px){.catalog-workspace .catalog-grid{min-height:320px}}
+
+.admin-content-list{max-height:60dvh;overflow-y:auto;scrollbar-width:thin;scrollbar-gutter:stable}.admin-content-list .admin-row h3{overflow-wrap:anywhere}
