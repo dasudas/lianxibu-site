@@ -89,7 +89,7 @@ public final class UnknownCallRecoveryService {
                                   ActionContext action) {
         if (!admin || attemptId == null || attemptId.isBlank()
                 || operatorId == null || operatorId.isBlank() || reason == null
-                || reason.isBlank() || reason.length() > 2048 || expectedRootRevision < 0
+                || !scalarText(reason, 2048) || expectedRootRevision < 0
                 || action == null) throw new Rejected();
         String hash = digest("close", attemptId, Long.toString(expectedRootRevision),
                 operatorId, reason);
@@ -106,8 +106,7 @@ public final class UnknownCallRecoveryService {
     public boolean appendLate(String attemptId, LateEvidence evidence,
                               ActionContext action) {
         if (attemptId == null || attemptId.isBlank() || evidence == null || action == null
-                || evidence.note() == null || evidence.note().isBlank()
-                || evidence.note().length() > 2048
+                || evidence.note() == null || !scalarText(evidence.note(), 2048)
                 || evidence.promptTokens() != null && evidence.promptTokens() < 0
                 || evidence.completionTokens() != null && evidence.completionTokens() < 0
                 || evidence.resultHash() != null
@@ -128,6 +127,16 @@ public final class UnknownCallRecoveryService {
         if (value == null || !id.equals(value.attemptId()) || value.callCount() < 1
                 || value.callCount() > 3) throw new Rejected();
         return value;
+    }
+    private static boolean scalarText(String value, int maximum) {
+        if (value == null || value.isBlank() || value.codePointCount(0, value.length()) > maximum) return false;
+        for (int index = 0; index < value.length(); index++) {
+            char unit = value.charAt(index);
+            if (Character.isHighSurrogate(unit)) {
+                if (++index >= value.length() || !Character.isLowSurrogate(value.charAt(index))) return false;
+            } else if (Character.isLowSurrogate(unit)) return false;
+        }
+        return true;
     }
     private static String digest(String... fields) {
         try {

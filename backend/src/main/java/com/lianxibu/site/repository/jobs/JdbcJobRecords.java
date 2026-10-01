@@ -189,7 +189,7 @@ public final class JdbcJobRecords {
         if (value == null || !id(value.id()) || value.actionKey() == null
                 || !value.actionKey().matches("[A-Za-z0-9._:-]{1,128}") || !id(value.targetType())
                 || !jsonObject(value.targetKeyJson()) || !id(value.operatorId())
-                || !text(value.reason(), 2048) || !jsonObject(value.payloadJson())) throw new Conflict();
+                || !scalarText(value.reason(), 2048) || !jsonObject(value.payloadJson())) throw new Conflict();
         byte[] actionHash = sha(value.actionKey());
         byte[] identity = identity("disposition", value.actionKey());
         Row previous = byIdentity(identity);
@@ -293,6 +293,16 @@ public final class JdbcJobRecords {
     private static boolean jsonObject(String json) {
         try { return json != null && CanonicalJson.parse(json).isObject(); }
         catch (RuntimeException invalid) { return false; }
+    }
+    private static boolean scalarText(String value, int maximum) {
+        if (value == null || value.isBlank() || value.codePointCount(0, value.length()) > maximum) return false;
+        for (int index = 0; index < value.length(); index++) {
+            char unit = value.charAt(index);
+            if (Character.isHighSurrogate(unit)) {
+                if (++index >= value.length() || !Character.isLowSurrogate(value.charAt(index))) return false;
+            } else if (Character.isLowSurrogate(unit)) return false;
+        }
+        return true;
     }
     private static boolean text(String value, int maxBytes) {
         return value != null && !value.isBlank() && value.getBytes(StandardCharsets.UTF_8).length <= maxBytes;

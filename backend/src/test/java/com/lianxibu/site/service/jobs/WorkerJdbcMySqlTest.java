@@ -94,6 +94,15 @@ class WorkerJdbcMySqlTest {
   int before=jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE target_type='worker_late'",Integer.class);assertThrows(RuntimeException.class,()->recovery.appendLate(attempt,new UnknownCallRecoveryService.LateEvidence("fictional-other-provider",null,null,null,"Fictional contradictory provider"),action("late-conflicting-provider")));assertEquals(before,jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE target_type='worker_late'",Integer.class));
   assertThrows(RuntimeException.class,()->recovery.appendLate(attempt,new UnknownCallRecoveryService.LateEvidence(null,13L,null,null,"Fictional contradictory usage"),action("late-conflicting-usage")));assertEquals(before,jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE target_type='worker_late'",Integer.class));
  }
+ @Test void recoveryReasonAndLateNoteUseUnicodeScalarBoundariesInRealMysql(){
+  var recovery=recovery(epoch->true);var first=worker("fictional-epoch-a").claim(action("claim-unicode"));String attempt=first.permit().attemptId(),root=first.permit().identity().rootId();recovery.release(attempt,UnknownCallRecoveryService.Cause.STOPPED_PROCESS,action("release-unicode"));
+  String chinese="虚".repeat(2048),supplementary="\uD83D\uDE00".repeat(2048);recovery.appendLate(attempt,new UnknownCallRecoveryService.LateEvidence(null,null,null,null,supplementary),action("late-unicode"));
+  assertEquals(supplementary,jdbc.queryForObject("SELECT reason FROM jobs WHERE target_type='worker_late'",String.class));
+  long revision=records.byId(root).revision();assertEquals(UnknownCallRecoveryService.State.CLOSED_UNRESOLVED,recovery.closeUnresolved(attempt,revision,"fictional-owner",chinese,true,action("close-unicode")).state());assertEquals(chinese,jdbc.queryForObject("SELECT reason FROM jobs WHERE target_type='worker_recovery' AND reason<>'STOPPED_PROCESS'",String.class));
+  int before=jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE record_kind='disposition'",Integer.class);
+  for(String invalid:List.of("虚".repeat(2049),"\uD83D","\uDE00")){assertThrows(UnknownCallRecoveryService.Rejected.class,()->recovery.appendLate(attempt,new UnknownCallRecoveryService.LateEvidence(null,null,null,null,invalid),action("invalid-unicode")));assertThrows(UnknownCallRecoveryService.Rejected.class,()->recovery.closeUnresolved(attempt,records.byId(root).revision(),"fictional-owner",invalid,true,action("invalid-close-unicode")));}
+  assertEquals(before,jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE record_kind='disposition'",Integer.class));assertEquals("blocked",records.byId(root).state());
+ }
  private static ActionContext action(String key){return new ActionContext(key,"receipt-"+key,null);}
  private static final class MutableClock extends Clock{volatile Instant now;public ZoneId getZone(){return ZoneId.of("UTC");}public Clock withZone(ZoneId zone){return this;}public Instant instant(){return now;}}
  private static final class FaultManager extends DataSourceTransactionManager{
