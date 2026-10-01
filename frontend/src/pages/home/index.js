@@ -14,7 +14,7 @@ export function homeMarkup(data) {
 
 export function mountHome(root, { scope, api }) {
   const status = createStatusView(root); let disposed = false;
-  function dispose() { if (disposed) return; disposed = true; status.dispose(); root.innerHTML = ''; }
+  function dispose() { if (disposed) return; disposed = true; scope.dispose(); status.dispose(); root.innerHTML = ''; }
   scope.own(dispose);
   function load() {
     if (!scope.active || disposed) return;

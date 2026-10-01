@@ -24,7 +24,7 @@ function setup() {
 test('homepage loading and successful HTTP projection render, while late unmounted data never returns', async () => {
   const { scope, root } = setup(); let resolve;
   const dispose = mountHome(root, { scope, api: { load: ({ signal }) => { assert.ok(signal instanceof AbortSignal); return new Promise(r => { resolve = r; }); } } });
-  assert.equal(root.attrs['aria-busy'], 'true'); dispose(); scope.dispose(); resolve(data); await new Promise(r => setImmediate(r)); assert.equal(root.innerHTML, '');
+  assert.equal(root.attrs['aria-busy'], 'true'); dispose(); assert.equal(scope.signal.aborted, true); resolve(data); await new Promise(r => setImmediate(r)); assert.equal(root.innerHTML, '');
   const ready = setup(); mountHome(ready.root, { scope: ready.scope, api: { load: async () => data } }); await new Promise(r => setImmediate(r)); assert.match(ready.root.innerHTML, /Fictional route/); ready.scope.dispose();
 });
 test('homepage network failure offers same-page retry and 401 produces login feedback', async () => {

@@ -8,17 +8,17 @@ export function mountLogin(root, { scope, api, identity, session, next, navigate
   if (identity.phase === 'loading' || identity.phase === 'error') {
     const status = createStatusView(root); scope.own(() => status.dispose());
     status.show(identity.phase === 'loading' ? 'loading' : 'error', { message: identity.phase === 'loading' ? '正在确认登录状态…' : '身份服务暂时不可用，请重试。', retry: identity.phase === 'error' ? () => session.refresh() : undefined });
-    return () => status.dispose();
+    return () => { scope.dispose(); status.dispose(); };
   }
   if (identity.user) {
     const status = createStatusView(root); scope.own(() => status.dispose());
     status.show('empty', { message: '你已登录，可返回工作空间。' });
     const button = root.ownerDocument.createElement('button'); button.type = 'button'; button.textContent = '返回工作空间'; scope.listen(button, 'click', () => navigate(destination)); root.append(button);
-    return () => status.dispose();
+    return () => { scope.dispose(); status.dispose(); };
   }
   root.innerHTML = loginMarkup;
   const form = root.querySelector('form'), username = form.querySelector('[name="username"]'), password = form.querySelector('[name="password"]'), error = form.querySelector('#login-error'), button = form.querySelector('[type="submit"]');
-  function dispose() { if (disposed) return; disposed = true; username.value = ''; password.value = ''; root.replaceChildren(); root.innerHTML = ''; }
+  function dispose() { if (disposed) return; disposed = true; scope.dispose(); username.value = ''; password.value = ''; root.replaceChildren(); root.innerHTML = ''; }
   scope.own(dispose);
   function waiting(value) { busy = value; button.disabled = value; button.textContent = value ? '正在登录…' : '登录工作空间'; form.setAttribute('aria-busy', String(value)); }
   scope.listen(form, 'submit', event => {

@@ -36,5 +36,5 @@ test('login rejects empty input, disables duplicate submit and keeps failed cred
 test('unmounted login never redirects or restores a password after a late result', async () => {
   let resolve; const f = fixture({ login: () => new Promise(r => { resolve = r; }) });
   f.username.value = 'Fictional'; f.password.value = 'Fictional pass'; f.form.events.dispatchEvent(new Event('submit', { cancelable: true }));
-  f.dispose(); f.scope.dispose(); resolve({ id: 'fictional-user', role: 'owner' }); await tick(); assert.deepEqual(f.routes, []); assert.equal(f.password.value, '');
+  f.dispose(); assert.equal(f.scope.signal.aborted, true); resolve({ id: 'fictional-user', role: 'owner' }); await tick(); assert.deepEqual(f.routes, []); assert.equal(f.password.value, '');
 });
