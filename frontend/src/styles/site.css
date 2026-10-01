@@ -121,3 +121,16 @@
 .content-result-comparison{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}.content-result-comparison label{display:grid;gap:8px;margin:14px 0}.content-result-comparison input,.content-result-comparison .button{min-height:44px}.content-result-comparison .row-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.result-comparison-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:20px}.result-comparison-grid article{min-width:0;padding:18px;border:1px solid var(--line);border-radius:var(--radius)}.comparison-text{font-size:16px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8}.comparison-hash,.content-result-comparison .notice{overflow-wrap:anywhere}.content-result-comparison :focus-visible{outline:2px solid var(--green);outline-offset:2px}@media(max-width:900px){.result-comparison-grid{grid-template-columns:1fr}}
 
 .content-result-actions{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}.content-result-actions label{display:grid;gap:8px;margin:14px 0}.content-result-actions .result-confirm{display:flex;align-items:center;gap:10px;min-height:44px}.content-result-actions .result-confirm input{width:20px;height:20px;flex-shrink:0}.content-result-actions .row-actions{display:flex;flex-wrap:wrap;gap:10px}.content-result-actions .button{min-height:44px}.content-result-actions :focus-visible{outline:2px solid var(--green);outline-offset:2px}
+
+/* Frozen input summaries reuse existing content panels and typography. */
+.content-input-summary { margin-block: 2rem; border-top: 1px solid var(--line); padding-top: 1.5rem; }
+.input-group-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .75rem; margin-block: 1rem; }
+.input-group-grid section, .input-member-list article { border: 1px solid var(--line); border-radius: 12px; padding: 1rem; min-width: 0; }
+.input-member-list { display: grid; gap: .75rem; }
+.input-member-list p, .input-member-list h3 { overflow-wrap: anywhere; }
+.input-member-summary { white-space: pre-wrap; font-size: 16px; line-height: 1.7; }
+.content-input-summary select { min-height: 44px; margin-left: .5rem; }
+@media (max-width: 900px) { .input-group-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+
+.content-input-summary p { font-size: 14px; line-height: 1.6; margin: .5rem 0; padding: 0; border: 0; }
+.content-input-summary .input-member-summary { font-size: 16px; }
