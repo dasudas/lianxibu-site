@@ -111,3 +111,7 @@
 .article-entity dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}.article-entity dt{color:var(--muted);font-size:12px}.article-entity dd{margin:6px 0 0;overflow-wrap:anywhere}.article-entity p,.article-entity-unknown{color:var(--muted);font-size:13px;line-height:1.7}
 
 .content-impact-list{overflow-wrap:anywhere;line-height:1.8}.content-impact .pagination{justify-content:flex-start;flex-wrap:wrap;gap:10px}.content-impact .button{min-height:44px}
+
+.content-supplement .row-actions{display:flex;flex-wrap:wrap;gap:10px}.content-supplement .button{min-height:44px}.content-supplement textarea:focus-visible{outline:2px solid var(--green);outline-offset:2px}.content-supplement .notice{overflow-wrap:anywhere}
+
+.content-supplement{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}.content-supplement label{display:grid;gap:8px;margin:14px 0}.content-supplement textarea{width:100%;line-height:1.7}.content-supplement .notice{margin-top:20px}
