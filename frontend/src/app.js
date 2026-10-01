@@ -86,7 +86,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-08') return mountCatalog(main, { scope, api: interpretations, url, navigate });
     if (route?.id === 'UI-09') return mountInterpretation(main, { scope, api: interpretations, url });
     if (route?.id === 'UI-10') return mountAdminCatalog(main, { scope, api: adminContent, impactApi: operationAffected, intentApi: generationIntents, comparisonApi: resultComparisons, resultActionsApi: resultActions, inputSummaryApi: inputSummaries, ownerAnswersApi: ownerAnswers, ownerPackagesApi: ownerPackages, learningImportApi: learningImport, url, identity, session, navigate, confirmDiscard });
-    if (route?.id === 'UI-11') return mountSources(main, {scope,api:sources,url,identity,session});
+    if (route?.id === 'UI-11') return mountSources(main, {scope,api:sources,url,identity,session,confirmDiscard});
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
