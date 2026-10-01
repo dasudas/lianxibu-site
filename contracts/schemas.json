@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:lianxibu:contracts:0.20",
+  "$id": "urn:lianxibu:contracts:0.21",
   "$defs": {
     "Id": {
       "type": "string",
@@ -10905,6 +10905,653 @@
                         "const": "model"
                       }
                     }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "ReportInputMember": {
+      "type": "object",
+      "properties": {
+        "member_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+        },
+        "group": {
+          "type": "string",
+          "enum": [
+            "source_summaries",
+            "high_value_items",
+            "historical_heat",
+            "new_catalog_analysis",
+            "upstream_reports"
+          ]
+        },
+        "resource_ref": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/ResourceRef"
+            },
+            {
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+                },
+                "package_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64,
+                      "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revision_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "material_hash": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "minLength": 64,
+              "maxLength": 64
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_run_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_item_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "business_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 16384
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "occurrence_count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rank": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "included": {
+          "type": "boolean"
+        },
+        "exclusion_reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "member_id",
+        "group",
+        "resource_ref",
+        "revision",
+        "revision_id",
+        "material_hash",
+        "source_id",
+        "source_run_id",
+        "source_item_id",
+        "business_date",
+        "title",
+        "summary",
+        "occurrence_count",
+        "rank",
+        "included",
+        "exclusion_reason"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "included": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "exclusion_reason": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "exclusion_reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "group": {
+                "const": "historical_heat"
+              },
+              "included": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "occurrence_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "rank": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "rank": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ReportInputGroupCount": {
+      "type": "object",
+      "properties": {
+        "group": {
+          "type": "string",
+          "enum": [
+            "source_summaries",
+            "high_value_items",
+            "historical_heat",
+            "new_catalog_analysis",
+            "upstream_reports"
+          ]
+        },
+        "included_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "excluded_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "group",
+        "included_count",
+        "excluded_count"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "group": {
+                "const": "historical_heat"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "included_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 5
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ReportInputSummaryPage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "report_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            },
+            "input_snapshot_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            },
+            "state": {
+              "const": "unavailable"
+            },
+            "reason": {
+              "type": "string",
+              "enum": [
+                "not_ready",
+                "unproven_snapshot",
+                "unproven_report_link",
+                "unproven_group_manifest"
+              ]
+            }
+          },
+          "required": [
+            "report_id",
+            "input_snapshot_id",
+            "state",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "report_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            },
+            "input_snapshot_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            },
+            "state": {
+              "const": "summary"
+            },
+            "input_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "minLength": 64,
+              "maxLength": 64
+            },
+            "generation": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "input_cutoff_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            },
+            "report_type": {
+              "type": "string",
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly"
+              ]
+            },
+            "period_start": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            },
+            "period_end": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+            },
+            "timezone": {
+              "const": "Asia/Shanghai"
+            },
+            "selection_version": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "coverage": {
+              "$ref": "#/$defs/Coverage"
+            },
+            "group_counts": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ReportInputGroupCount"
+              },
+              "minItems": 1,
+              "maxItems": 4
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ReportInputMember"
+              },
+              "minItems": 0,
+              "maxItems": 50
+            },
+            "next_cursor": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "report_id",
+            "input_snapshot_id",
+            "state",
+            "input_hash",
+            "generation",
+            "input_cutoff_at",
+            "report_type",
+            "period_start",
+            "period_end",
+            "timezone",
+            "selection_version",
+            "coverage",
+            "group_counts",
+            "total",
+            "items",
+            "next_cursor"
+          ],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "report_type": {
+                    "const": "daily"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "group_counts": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "prefixItems": [
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/$defs/ReportInputGroupCount"
+                          },
+                          {
+                            "properties": {
+                              "group": {
+                                "const": "source_summaries"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/$defs/ReportInputGroupCount"
+                          },
+                          {
+                            "properties": {
+                              "group": {
+                                "const": "high_value_items"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/$defs/ReportInputGroupCount"
+                          },
+                          {
+                            "properties": {
+                              "group": {
+                                "const": "historical_heat"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "allOf": [
+                          {
+                            "$ref": "#/$defs/ReportInputGroupCount"
+                          },
+                          {
+                            "properties": {
+                              "group": {
+                                "const": "new_catalog_analysis"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "items": false
+                  },
+                  "items": {
+                    "items": {
+                      "properties": {
+                        "group": {
+                          "type": "string",
+                          "enum": [
+                            "source_summaries",
+                            "high_value_items",
+                            "historical_heat",
+                            "new_catalog_analysis"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "group_counts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1,
+                    "items": {
+                      "allOf": [
+                        {
+                          "$ref": "#/$defs/ReportInputGroupCount"
+                        },
+                        {
+                          "properties": {
+                            "group": {
+                              "const": "upstream_reports"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "items": {
+                    "items": {
+                      "properties": {
+                        "group": {
+                          "const": "upstream_reports"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "total": {
+                    "const": 0
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/ReportInputMember"
+                    },
+                    "minItems": 0,
+                    "maxItems": 0
+                  },
+                  "next_cursor": {
+                    "type": "null"
                   }
                 }
               }

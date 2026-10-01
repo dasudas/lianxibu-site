@@ -1,11 +1,11 @@
 # API contracts
 
-Contract package revision: 0.20. Observations accept wire revisions 0.11 and
+Contract package revision: 0.21. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
 surfaces. `schemas.json` is the shared JSON Schema 2020-12 definition set.
-`operation-map.json` lists all 76 operations: 63 business and 13 collector.
+`operation-map.json` lists all 77 operations: 64 business and 13 collector.
 `examples.json`, `wire-examples.json`, and `hn-time-wire-examples.json`
 contain fictional fixtures, including intentionally invalid wire cases.
 
@@ -67,3 +67,14 @@ frozen input metadata. Unavailable proof is explicit, never an invented body.
 A read does not authorize applying a result; commands recheck both revisions,
 result identity, generation and evidence in their transaction. Storage and
 runtime providers must be connected separately; these contracts do not deploy them.
+
+Owner frozen report inputs are read through
+GET /admin/reports/{id}/input-summary with an explicit input_snapshot_id.
+The closed projection uses persisted input membership, cutoff-time heat
+counts, selected/excluded group totals and safe metadata. Daily inputs have
+four groups; weekly/monthly inputs list frozen upstream report versions.
+Unavailable proof stays unavailable; current source/entity rows cannot fill
+old snapshots. Opaque pagination is bound to report, snapshot, projection
+and limit. report-input-summary-wire-examples.json includes 29 fictional
+schema and semantic cases; schema validation alone cannot prove cross-page
+membership, arithmetic totals, period order or durable associations.

@@ -1346,5 +1346,36 @@
     "query": {},
     "description": "Owner-only, no-store read of one logical task and its validated retained report/interpretation result compared to the exact current content body in one consistent read snapshot. No query fields, pagination, mutation, worker claim or AI call. Unavailable explicitly identifies why no safe comparison can be proved; no candidate/current body or hash is invented. Comparison carries exact job revision, content kind/id, independent current management/body revisions, safe current/candidate ContentBody, retained ai-result-v1 result_hash, immutable input snapshot/generation/cutoff/coverage and eligibility reasons. Never infer body revision from management revision or input identity from current settings. Candidate comes only from a stored schema-validated report/analysis body whose result hash is recomputed and whose frozen task/input/citations/period/entity association is proved; no raw provider response, complete input prompt, source body, credentials, usage payload or notes. Current and candidate must have the same report type/fixed period/timezone or interpretation category/entity identity. Complete projection is bounded to 1 MiB UTF-8; never truncate. can_apply is true only for a retained content_revision_conflict result with unchanged current input generation/hash, valid dependencies and no applied/discarded marker; otherwise false with unique nonempty blocking_reasons. Reading eligibility is advisory and never bypasses POST actions checks. Existing apply_result still requires current job expected_revision, current_content_revision as expected_content_revision, confirmed result_hash, explicit reason and stable Idempotency-Key; server revalidates all conditions in its write transaction. discard_result remains a separate explicit command with current task CAS. Invalid/unknown/duplicate query 400, invalid ID 422, unknown or non-logical task 404, absent/untrustworthy/corrupt storage/runtime composition 503 Retry-After; verified legacy missing input/body-version metadata may use the corresponding unavailable reason; known noncontent or not-ready tasks return unavailable, not false success. Every read rechecks current owner. Existing Job/JobAction shapes unchanged; no persistent schema or collector wire changes.",
     "operation_id": "business_get_admin_jobs_id_result_comparison"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/reports/{id}/input-summary",
+    "response": "ReportInputSummaryPage",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {
+      "input_snapshot_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+      },
+      "cursor": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "default": 20
+      }
+    },
+    "description": "Owner-only, no-store read of the exact immutable input snapshot currently associated with this report. Required input_snapshot_id is explicit from current owner ContentDetail, never guessed from report ID/revision; each page proves report association, snapshot owner and input hash. No mutation, assembly, source refresh or AI call. Unknown report/snapshot 404; changed or wrong known association 409 snapshot_scope_conflict; absent runtime/unreadable/corrupt proof 503 Retry-After. A verified legacy missing snapshot/link/group proof or not-yet-prepared snapshot returns closed unavailable reason with no fabricated metadata, members or zero counts. An unavailable snapshot cannot accept a cursor (422). Summary repeats immutable snapshot/input_hash/generation/cutoff/fixed report period/timezone/coverage; provider verifies Beijing midnight daily, Monday-to-Monday weekly, or first-of-month-to-next-month monthly boundaries; a supplement cutoff may be later than that fixed period, nullable stored selection_version (never substituted by current settings), exact full included/excluded group counts and total. Daily has exactly ordered source_summaries/high_value_items/historical_heat/new_catalog_analysis groups; weekly/monthly have only upstream_reports for their frozen daily-report body versions. Full counts sum to total; items include both included members and excluded candidates with an explicit reason. A selected historical_heat item has its persisted cutoff-time occurrence_count and rank 1..5; included heat count is at most five and ranks unique contiguous in the complete set. Membership, count, rank and tie order are frozen facts, never reconstructed from current rows or current counts. Safe item fields are explicit nullable frozen metadata, ResourceRef, revision/ref/hash and already-stored title/short summary; no internal original body, prompt/request/provider payload, credentials, complete source JSON or user notes. A summary is not manufactured by truncating raw content. member_id identifies one durable complete snapshot-member identity, not a guessed resource identity; duplicate members rejected. Canonical full-set order is group ordinal then UTF-8 member_id. Cursor is opaque, bound to report/snapshot/input hash/projection fingerprint/position/limit; every page rechecks owner and current association. Invalid cursor 422; cross-report/snapshot/limit or changed projection cursor 409 cursor_scope_conflict. Unknown/duplicate query 400; missing/invalid identity or limit 422. Full page envelope <=1 MiB UTF-8; fail 503, never truncate. Excluded rows and historical heat alone do not prove current-day generation eligibility. No current publication/validity inference, no public history body, no SQL or collector protocol change.",
+    "operation_id": "business_get_admin_reports_id_input_summary"
   }
 ]

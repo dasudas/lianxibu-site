@@ -1,0 +1,2018 @@
+[
+  {
+    "name": "fictional daily four frozen groups",
+    "schema": "ReportInputSummaryPage",
+    "valid": true,
+    "schema_valid": true,
+    "semantic_valid": true,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional legacy unavailable",
+    "schema": "ReportInputSummaryPage",
+    "valid": true,
+    "schema_valid": true,
+    "semantic_valid": true,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "unavailable",
+      "reason": "unproven_snapshot"
+    }
+  },
+  {
+    "name": "fictional known missing selection version stays null",
+    "schema": "ReportInputSummaryPage",
+    "valid": true,
+    "schema_valid": true,
+    "semantic_valid": true,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": null,
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional excluded member is counted",
+    "schema": "ReportInputSummaryPage",
+    "valid": true,
+    "schema_valid": true,
+    "semantic_valid": true,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 0,
+          "excluded_count": 1
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": false,
+          "exclusion_reason": "Fictional excluded by frozen filter"
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional weekly frozen upstream only",
+    "schema": "ReportInputSummaryPage",
+    "valid": true,
+    "schema_valid": true,
+    "semantic_valid": true,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "weekly",
+      "period_start": "2025-12-28T16:00:00.000000Z",
+      "period_end": "2026-01-04T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "upstream_reports",
+          "included_count": 1,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "upstream_reports",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional monthly frozen upstream only",
+    "schema": "ReportInputSummaryPage",
+    "valid": true,
+    "schema_valid": true,
+    "semantic_valid": true,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "monthly",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-31T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "upstream_reports",
+          "included_count": 1,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "upstream_reports",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional weekly short period is semantic",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": true,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "weekly",
+      "period_start": "2025-12-28T16:00:00.000000Z",
+      "period_end": "2025-12-29T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "upstream_reports",
+          "included_count": 1,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "upstream_reports",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional persisted historical heat count and rank",
+    "schema": "ReportInputSummaryPage",
+    "valid": true,
+    "schema_valid": true,
+    "semantic_valid": true,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "historical_heat",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": 12,
+          "rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional trailing newline digest",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional unsafe resource id",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "bad\n",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional unsafe generation",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 9007199254740992,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional zero generation",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 0,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional leaked prompt",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null,
+      "prompt": "Fictional forbidden"
+    }
+  },
+  {
+    "name": "fictional leaked source body",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null,
+          "body": "Fictional forbidden"
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional missing group",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional wrong group order",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional unknown member role",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "Fictional unknown",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional bad fixed date",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2026-02-30T00:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional unsafe member id",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "bad\n",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional excluded without reason",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": false,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional selected with exclusion reason",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": "Fictional reason"
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional rank on nonheat input",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional empty total with member",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 0,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional heat count cannot be guessed",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "historical_heat",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional at most five selected historical heat",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 6,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "historical_heat",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": 12,
+          "rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional unavailable cannot carry invented counts",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "unavailable",
+      "reason": "unproven_snapshot",
+      "total": 0
+    }
+  },
+  {
+    "name": "fictional weekly cannot reinterpret a daily group",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": false,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "weekly",
+      "period_start": "2025-12-28T16:00:00.000000Z",
+      "period_end": "2026-01-04T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "upstream_reports",
+          "included_count": 1,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional arithmetic full totals are semantic",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": true,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2025-12-31T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 2,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  },
+  {
+    "name": "fictional empty period is semantic",
+    "schema": "ReportInputSummaryPage",
+    "valid": false,
+    "schema_valid": true,
+    "semantic_valid": false,
+    "value": {
+      "report_id": "fictional-report",
+      "input_snapshot_id": "fictional-input",
+      "state": "summary",
+      "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generation": 2,
+      "input_cutoff_at": "2026-01-02T01:00:00.000000Z",
+      "report_type": "daily",
+      "period_start": "2026-01-01T16:00:00.000000Z",
+      "period_end": "2026-01-01T16:00:00.000000Z",
+      "timezone": "Asia/Shanghai",
+      "selection_version": "fictional-selection-v2",
+      "coverage": {
+        "state": "partial",
+        "missing_inputs": [],
+        "missing_dates": [
+          "2026-01-01"
+        ],
+        "no_update_dates": []
+      },
+      "group_counts": [
+        {
+          "group": "source_summaries",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "high_value_items",
+          "included_count": 1,
+          "excluded_count": 0
+        },
+        {
+          "group": "historical_heat",
+          "included_count": 0,
+          "excluded_count": 0
+        },
+        {
+          "group": "new_catalog_analysis",
+          "included_count": 0,
+          "excluded_count": 0
+        }
+      ],
+      "total": 1,
+      "items": [
+        {
+          "member_id": "fictional-member",
+          "group": "high_value_items",
+          "resource_ref": {
+            "kind": "article_revision",
+            "id": "fictional-revision",
+            "package_id": null
+          },
+          "revision": 3,
+          "revision_id": "fictional-revision",
+          "material_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source_id": "fictional-source",
+          "source_run_id": "fictional-run",
+          "source_item_id": "fictional-external-item",
+          "business_date": "2026-01-01",
+          "title": "Fictional selected title",
+          "summary": "Fictional frozen short summary",
+          "occurrence_count": null,
+          "rank": null,
+          "included": true,
+          "exclusion_reason": null
+        }
+      ],
+      "next_cursor": null
+    }
+  }
+]
