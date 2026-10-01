@@ -125,3 +125,16 @@ test('learning paths require complete package identity', () => {
   assert.throws(() => recordPath('question', 'q1'), TypeError);
   assert.throws(() => recordWriteRequest('question', 'q1', 'p1', { package_id: 'p2' }), TypeError);
 });
+
+test('repeated unauthorized responses invalidate once until a new session transition, without hiding errors', async () => {
+  const client=createApiClient({fetchImpl:async url=>url.endsWith('/session')?response(200,{data:{csrf_token:'fictional-csrf'}}):response(401,{error:{code:'not_authenticated'}})});
+  let changes=0;client.subscribeSessionChange(()=>changes++);
+  await client.getSession();
+  await assert.rejects(client.request('GET','/interpretations'),error=>error.status===401);
+  const expired=client.generation;
+  await assert.rejects(client.request('GET','/interpretations'),error=>error.status===401);
+  assert.equal(client.generation,expired);assert.equal(changes,1);
+  await client.getSession();
+  await assert.rejects(client.request('GET','/private/articles'),error=>error.status===401);
+  assert.equal(client.generation,expired+1);assert.equal(changes,2);
+});

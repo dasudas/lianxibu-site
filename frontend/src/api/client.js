@@ -47,6 +47,7 @@ export function createApiClient({
   const inFlight = new Set();
   const sessionListeners = new Set();
   let endingSession = null;
+  let unauthorized = false;
 
   function subscribeSessionChange(listener) {
     if (typeof listener !== 'function') throw new TypeError('Session listener must be a function');
@@ -55,6 +56,8 @@ export function createApiClient({
   }
 
   function clearSession(reason = 'cleared') {
+    if (reason === 'unauthorized' && unauthorized) return;
+    unauthorized = reason === 'unauthorized';
     generation += 1;
     csrfToken = null;
     for (const controller of inFlight) controller.abort();
@@ -144,6 +147,7 @@ export function createApiClient({
     const response = await request('GET', '/session');
     if (capturedGeneration !== generation) throw new StaleSessionError();
     csrfToken = response.data.csrf_token || null;
+    unauthorized = false;
     return response.data;
   }
 
