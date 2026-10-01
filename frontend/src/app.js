@@ -1,3 +1,4 @@
+import {createOwnerAnswersApi} from './api/owner-answers.js';
 import {createReportInputSummaryApi} from './api/report-input-summary.js';
 import {createJobResultActionsApi} from './api/job-result-actions.js';
 import {createJobResultComparisonApi} from './api/job-result-comparison.js';
@@ -31,7 +32,7 @@ import { mountAdminCatalog } from './pages/admin/content-list.js';
 export function createApplication({ root, browser, client = createApiClient(), notice = null, confirmDiscard = () => false }) {
   const session = createSessionState(client), home = createHomeApi(client), identityApi = createIdentityApi(client);
   const reports = createReportsApi(client), learningReference = createLearningReferenceApi(client), interpretations = createInterpretationsApi(client);
-  const adminContent = createAdminContentApi(client);
+  const adminContent = createAdminContentApi(client), ownerAnswers = createOwnerAnswersApi(client);
   const generationIntents = createGenerationIntentsApi(client);
   const resultComparisons = createJobResultComparisonApi(client), resultActions = createJobResultActionsApi(client);
   const operationAffected = createOperationAffectedApi(client), inputSummaries = createReportInputSummaryApi(client);
@@ -80,7 +81,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-07') return mountArticleLearning(main, { scope, api: articleRecords, articleApi: articles, records, url, identity, session, navigate, confirmDiscard });
     if (route?.id === 'UI-08') return mountCatalog(main, { scope, api: interpretations, url, navigate });
     if (route?.id === 'UI-09') return mountInterpretation(main, { scope, api: interpretations, url });
-    if (route?.id === 'UI-10') return mountAdminCatalog(main, { scope, api: adminContent, impactApi: operationAffected, intentApi: generationIntents, comparisonApi: resultComparisons, resultActionsApi: resultActions, inputSummaryApi: inputSummaries, url, identity, session, navigate, confirmDiscard });
+    if (route?.id === 'UI-10') return mountAdminCatalog(main, { scope, api: adminContent, impactApi: operationAffected, intentApi: generationIntents, comparisonApi: resultComparisons, resultActionsApi: resultActions, inputSummaryApi: inputSummaries, ownerAnswersApi: ownerAnswers, url, identity, session, navigate, confirmDiscard });
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');

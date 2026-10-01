@@ -134,3 +134,15 @@
 
 .content-input-summary p { font-size: 14px; line-height: 1.6; margin: .5rem 0; padding: 0; border: 0; }
 .content-input-summary .input-member-summary { font-size: 16px; }
+
+.answer-manager{margin:18px 0;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.answer-manager>summary{cursor:pointer;font-weight:650;min-height:44px;display:flex;align-items:center}
+.answer-manager p{font-size:14px;line-height:1.6;margin:10px 0;padding:0;border:0}
+.answer-selector{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin:16px 0}
+.answer-manager label{display:grid;gap:7px;margin:12px 0;flex:1;min-width:200px}
+.answer-manager input,.answer-manager textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface);color:var(--ink);font:inherit}
+.answer-manager textarea,.answer-manager .answer-body{font-size:16px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.answer-manager .row-actions{flex-wrap:wrap;gap:10px;margin:12px 0}
+.answer-comparison{padding:16px;margin:16px 0;border:1px solid var(--line);border-radius:10px}
+
+.answer-manager .button{min-height:44px}
