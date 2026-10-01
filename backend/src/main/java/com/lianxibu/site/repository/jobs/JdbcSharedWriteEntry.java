@@ -50,7 +50,7 @@ public final class JdbcSharedWriteEntry {
     private void lockRow() {
         List<Integer> rows = jdbc.query("SELECT id FROM worker_lock FOR UPDATE",
                 (rs, ignored) -> rs.getInt(1));
-        if (rows.size() != 1 || rows.getFirst() != 1) {
+        if (rows.size() != 1) {
             throw new IllegalStateException("shared entry row is not unique");
         }
     }

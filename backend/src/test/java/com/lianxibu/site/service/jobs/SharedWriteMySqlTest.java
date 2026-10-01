@@ -88,6 +88,22 @@ class SharedWriteMySqlTest {
         assertEquals("committed",executor.execute(action,this::receipt,a->{assertEquals(action,a);int call=callbacks.incrementAndGet();String result=work(a);if(call==1)tx.beforeCommit.set(true);return result;}));
         assertEquals(2,callbacks.get());assertEquals(1,value());assertEquals("committed",receipt(action.actionKey()));
     }
+    @Test void uniqueExistingWorkerIdIsPreservedAndMissingOrMultipleRowsFailClosed(){
+        jdbc.update("UPDATE worker_lock SET id=7");
+        var executor=executor(new DataSourceTransactionManager(source));
+        var action=new ActionContext("fictional-non-default-row","fictional-resource","a".repeat(64));
+        assertEquals("committed",executor.execute(action,this::receipt,this::work));
+        assertEquals(7,jdbc.queryForObject("SELECT id FROM worker_lock",Integer.class));
+        assertEquals("occupied",jdbc.queryForObject("SELECT slot_state FROM worker_lock",String.class));
+        assertEquals(7L,jdbc.queryForObject("SELECT slot_revision FROM worker_lock",Long.class));
+        reset();jdbc.update("DELETE FROM worker_lock");
+        assertThrows(RuntimeException.class,()->executor.execute(action,this::receipt,this::work));
+        assertEquals(0,value());assertNull(receipt(action.actionKey()));
+        reset();jdbc.update("INSERT INTO worker_lock VALUES(7,'free',0)");
+        assertThrows(RuntimeException.class,()->executor.execute(action,this::receipt,this::work));
+        assertEquals(0,value());assertNull(receipt(action.actionKey()));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM worker_lock",Integer.class));
+    }
     private static final class FaultCommitManager extends DataSourceTransactionManager {
         final AtomicBoolean beforeCommit=new AtomicBoolean(),afterCommit=new AtomicBoolean();
         FaultCommitManager(DataSource source){super(source);}
