@@ -1,3 +1,4 @@
+import {actionResult} from './action-result.js';
 import {ApiError} from './client.js';
 import {createReportsApi,reportDetail} from './reports.js';
 import {createInterpretationsApi,interpretationDetail} from './interpretations.js';
@@ -24,6 +25,13 @@ function command(kind,value){
 }
 
 export function createAdminContentApi(client){return Object.freeze({
+ async action(identifierValue,{kind,fields,signal,idempotencyKey}={}){
+  if(!kinds.includes(kind)||typeof idempotencyKey!=='string'||!/^[!-~]{1,128}$/.test(idempotencyKey))throw new TypeError('Explicit content identity/key required');const target=identifier(identifierValue);
+  if(!fields||!['approve','reject','publish','withdraw'].includes(fields.action))throw new TypeError('Invalid publication action');closed(fields,['expected_revision','action','reason',...(fields.action==='withdraw'?['withdrawal_reason']:[])]);
+  const body={expected_revision:number(fields.expected_revision),action:fields.action,reason:text(fields.reason,2048)};if(!body.reason.trim())throw new TypeError('Action explanation required');if(fields.action==='withdraw')body.withdrawal_reason=one(fields.withdrawal_reason,['display_adjustment','conclusion_error']);
+  const {data}=await client.request('POST','/admin/content/'+kind+'/'+encodeURIComponent(target)+'/actions',{signal,idempotencyKey,body}),result=actionResult(data);
+  if(result.resource.kind!=='content'||result.resource.id!==target||result.resource.packageId!==null)invalid();return result;
+ },
  async save(identifierValue,{kind,fields,signal,idempotencyKey}={}){
   if(!kinds.includes(kind)||typeof idempotencyKey!=='string'||!/^[!-~]{1,128}$/.test(idempotencyKey))throw new TypeError('Explicit content identity/key required');const target=identifier(identifierValue),body=command(kind,fields);
   const {data}=await client.request('PUT','/admin/content/'+kind+'/'+encodeURIComponent(target),{signal,idempotencyKey,body});
