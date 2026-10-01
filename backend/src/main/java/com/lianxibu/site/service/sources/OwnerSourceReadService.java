@@ -1,0 +1,31 @@
+package com.lianxibu.site.service.sources;
+import com.lianxibu.site.domain.sources.OwnerSourceSnapshot;
+import com.lianxibu.site.domain.sources.OwnerSourceSnapshot.Store;
+import com.lianxibu.site.domain.protocol.CanonicalJson;
+import com.lianxibu.site.domain.protocol.WireValues;
+import com.lianxibu.site.service.identity.IdentityService.Actor;
+import java.net.URI;import java.time.Instant;import java.util.*;
+import tools.jackson.databind.JsonNode;import tools.jackson.databind.json.JsonMapper;
+/** Exact owner source projection. The store owns a single consistent snapshot. */
+public final class OwnerSourceReadService {
+ public static final class Denied extends RuntimeException{public Denied(){super("owner required");}}
+ public static final class Missing extends RuntimeException{public Missing(){super("source not found");}}
+ public static final class MappingRequired extends RuntimeException{public MappingRequired(){super("source mapping required");}}
+ public static final class Unavailable extends IllegalStateException{public Unavailable(){super("current source unavailable");}}
+ private static final Set<String> FIELDS=Set.of("id","name","category","revision","config_revision","activation_stage","draft_config","effective_config","config_valid_until"),CONFIG=Set.of("adapter","entry_urls","identity_rule","window_rule","parser_version","max_items","max_response_bytes","allowed_hosts","valid_until","auth_secret_ref"),CATEGORIES=Set.of("news_tech","agent","skill","workflow","model"),STAGES=Set.of("disabled","trial","production");
+ private static final JsonMapper JSON=JsonMapper.builder().build();private final Store store;
+ public OwnerSourceReadService(Store store){this.store=Objects.requireNonNull(store);}
+ public Map<String,Object> read(Actor actor,String sourceId){
+  if(actor==null||actor.userId()==null||actor.userId().isBlank()||!"owner".equals(actor.role()))throw new Denied();WireValues.id(sourceId,true);
+  OwnerSourceSnapshot row;try{row=store.snapshot(sourceId);}catch(RuntimeException ignored){throw new Unavailable();}if(row==null)throw new Missing();
+  if(row.revision()==null||row.configRevision()==null||row.category()==null||!CATEGORIES.contains(row.category())||!("news_tech".equals(row.category())?"article":"catalog").equals(row.sourceKind()))throw new MappingRequired();
+  try{var result=new LinkedHashMap<String,Object>();result.put("id",row.id());result.put("name",row.name());result.put("category",row.category());result.put("revision",row.revision());result.put("config_revision",row.configRevision());result.put("activation_stage",row.activationStage());result.put("draft_config",parseConfig(row.draftConfigJson()));result.put("effective_config",parseConfig(row.effectiveConfigJson()));result.put("config_valid_until",row.configValidUntil()==null?null:new java.time.format.DateTimeFormatterBuilder().appendInstant(6).toFormatter().format(row.configValidUntil()));validateProjection(result,sourceId);return Collections.unmodifiableMap(result);}catch(RuntimeException ignored){throw new Unavailable();}
+ }
+ private static Object parseConfig(String raw){if(raw==null)return null;JsonNode parsed=CanonicalJson.parse(raw);WireValues.object(parsed,CONFIG,CONFIG);var value=(tools.jackson.databind.node.ObjectNode)parsed;String storedTime=WireValues.text(value.get("valid_until"));if(!storedTime.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z"))throw new Unavailable();Instant expiry=Instant.parse(storedTime);if(expiry.getNano()%1000!=0)throw new Unavailable();value.put("valid_until",new java.time.format.DateTimeFormatterBuilder().appendInstant(6).toFormatter().format(expiry));validateConfig(value);return freeze(JSON.convertValue(value,Map.class));}
+ private static Object freeze(Object value){if(value instanceof Map<?,?> map){var result=new LinkedHashMap<String,Object>();map.forEach((k,v)->result.put((String)k,freeze(v)));return Collections.unmodifiableMap(result);}if(value instanceof List<?> list)return Collections.unmodifiableList(list.stream().map(OwnerSourceReadService::freeze).toList());return value;}
+ public static void validateProjection(Map<String,Object> value,String sourceId){try{byte[] bytes=JSON.writeValueAsBytes(value);if(bytes.length>1048576)throw new Unavailable();JsonNode x=CanonicalJson.parse(bytes);WireValues.object(x,FIELDS,FIELDS);if(!sourceId.equals(WireValues.id(x.get("id"),true)))throw new Unavailable();text(x.get("name"),1,200);if(!CATEGORIES.contains(WireValues.text(x.get("category")))||!STAGES.contains(WireValues.text(x.get("activation_stage"))))throw new Unavailable();WireValues.nonnegativeInteger(x.get("revision"));WireValues.nonnegativeInteger(x.get("config_revision"));for(String key:List.of("draft_config","effective_config"))if(!x.get(key).isNull())validateConfig(x.get(key));if(!x.get("config_valid_until").isNull())WireValues.utcMicroseconds(x.get("config_valid_until"));}catch(RuntimeException ignored){throw new Unavailable();}}
+ private static void validateConfig(JsonNode x){WireValues.object(x,CONFIG,CONFIG);text(x.get("adapter"),1,64);text(x.get("identity_rule"),1,128);text(x.get("window_rule"),1,128);text(x.get("parser_version"),1,64);bounded(x.get("max_items"),1,100000);bounded(x.get("max_response_bytes"),1,10485760);strings(x.get("entry_urls"),100,2000,true);strings(x.get("allowed_hosts"),100,253,false);WireValues.utcMicroseconds(x.get("valid_until"));if(!x.get("auth_secret_ref").isNull()){String ref=text(x.get("auth_secret_ref"),1,128);if(!ref.matches("secret:[A-Za-z0-9._/-]{1,120}"))throw new Unavailable();}}
+ private static void strings(JsonNode x,int maxItems,int maxText,boolean urls){if(!x.isArray()||x.size()<1||x.size()>maxItems)throw new Unavailable();for(JsonNode item:x){String value=text(item,1,maxText);if(urls){URI uri=URI.create(value);if(!value.startsWith("https://")||uri.getHost()==null||uri.getUserInfo()!=null||uri.getFragment()!=null)throw new Unavailable();}}}
+ private static void bounded(JsonNode x,long min,long max){long v=WireValues.nonnegativeInteger(x);if(v<min||v>max)throw new Unavailable();}
+ private static String text(JsonNode x,int min,int max){String v=WireValues.text(x);int size=v.codePointCount(0,v.length());if(size<min||size>max)throw new Unavailable();return v;}
+}
