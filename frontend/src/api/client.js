@@ -46,6 +46,7 @@ export function createApiClient({
   let generation = 0;
   const inFlight = new Set();
   const sessionListeners = new Set();
+  let endingSession = null;
 
   function subscribeSessionChange(listener) {
     if (typeof listener !== 'function') throw new TypeError('Session listener must be a function');
@@ -69,6 +70,9 @@ export function createApiClient({
     method = method.toUpperCase();
     validPath(path);
     const write = !['GET', 'HEAD'].includes(method);
+    if (endingSession && (write || path === '/session' || /^\/(private|admin)(\/|$)/.test(path))) {
+      throw new ApiError(409, 'session_transition', 'Session change is in progress');
+    }
     if (write && !csrfToken) throw new ApiError(0, 'csrf_required', 'Session CSRF token is required');
 
     const key = write && !(method === 'DELETE' && path === '/session')
@@ -142,6 +146,33 @@ export function createApiClient({
     return response.data;
   }
 
+  function endSession() {
+    if (endingSession) return endingSession;
+    const token = csrfToken;
+    let resolve, reject;
+    const pending = new Promise((yes, no) => { resolve = yes; reject = no; });
+    endingSession = pending;
+    clearSession('logout');
+    const capturedGeneration = generation;
+    // This control request is deliberately outside the cancelled business request set.
+    (async () => {
+      if (!token) throw new ApiError(0, 'csrf_required', 'Session CSRF token is required');
+      const response = await fetchImpl(PREFIX + '/session', {
+        method: 'DELETE', headers: { Accept: 'application/json', 'X-CSRF-Token': token },
+        credentials: 'same-origin', mode: 'same-origin', redirect: 'error', cache: 'no-store',
+        signal: AbortSignal.timeout(15_000)
+      });
+      const envelope = await response.json();
+      if (capturedGeneration !== generation) throw new StaleSessionError();
+      if (!response.ok) throw new ApiError(response.status, envelope?.error?.code, envelope?.error?.message, envelope?.meta?.request_id);
+      if (envelope?.data?.authenticated !== false || envelope.data.user_id !== null || envelope.data.role !== null) {
+        throw new ApiError(response.status, 'invalid_response', 'Anonymous session confirmation is required');
+      }
+      return Object.freeze({ authenticated: false });
+    })().then(value => { endingSession = null; resolve(value); }, error => { endingSession = null; reject(error); });
+    return pending;
+  }
+
   async function list(path, { page = 1, pageSize = 20, query = {} } = {}) {
     if (!Number.isInteger(page) || page < 1 || !Number.isInteger(pageSize)
         || pageSize < 1 || pageSize > 50) {
@@ -157,5 +188,5 @@ export function createApiClient({
     return data;
   }
 
-  return Object.freeze({ request, getSession, list, clearSession, subscribeSessionChange, get generation() { return generation; } });
+  return Object.freeze({ request, getSession, list, clearSession, endSession, subscribeSessionChange, get generation() { return generation; } });
 }
