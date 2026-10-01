@@ -1198,5 +1198,36 @@
     "query": {},
     "description": "",
     "operation_id": "collector_put_probes_probe_id_result"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/private/article-records",
+    "response": "ArticleRecordPage",
+    "request": null,
+    "access": "user",
+    "scope": null,
+    "paging": true,
+    "query": {
+      "q": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "not_started",
+          "planned",
+          "learning",
+          "completed"
+        ]
+      },
+      "favorite": {
+        "type": "boolean"
+      }
+    },
+    "description": "Authenticated current article records only. q is literal title substring, status and favorite filter the collection before pagination; stats count all current article records owned by the actor independently of these filters. Missing article metadata is null and retained without q. Read rows/count/stats in one repeatable-read snapshot. Existing PUT /private/records/article/{id} remains the sole writer.",
+    "operation_id": "business_get_private_article_records"
   }
 ]

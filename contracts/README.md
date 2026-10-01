@@ -5,7 +5,7 @@ Contract package revision: 0.15. Observations accept wire revisions 0.11 and
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
 surfaces. `schemas.json` is the shared JSON Schema 2020-12 definition set.
-`operation-map.json` lists all 71 operations: 58 business and 13 collector.
+`operation-map.json` lists all 72 operations: 59 business and 13 collector.
 `examples.json`, `wire-examples.json`, and `hn-time-wire-examples.json`
 contain fictional fixtures, including intentionally invalid wire cases.
 
@@ -24,3 +24,8 @@ configuration without complete parameters remains readable but is not ready
 to execute. Alert observed values may be null for unknown measurements; zero
 is a known value. operational-wire-examples.json contains 18 fictional
 positive and negative fixtures. Deploy consumers before enabling these rules.
+
+article-record-wire-examples.json provides fictional aggregate record cases.
+GET /private/article-records returns actor-owned current article records with
+literal title, status and favorite filters, nullable article metadata and
+independent full statistics. Existing record writes remain unchanged.

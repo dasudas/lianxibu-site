@@ -1,0 +1,318 @@
+[
+  {
+    "name": "fictional filtered page with independent full stats",
+    "schema": "ArticleRecordPage",
+    "valid": true,
+    "value": {
+      "items": [
+        {
+          "article": {
+            "id": "fictional-article",
+            "title": "Fictional title",
+            "source_name": "Fictional source"
+          },
+          "record": {
+            "package_id": null,
+            "object_kind": "article",
+            "object_id": "fictional-article",
+            "revision": 1,
+            "status": "planned",
+            "self_assessment": "unassessed",
+            "note": "Fictional private note",
+            "artifact_url": null,
+            "latest_answer_text": null,
+            "latest_submission_url": null,
+            "confirmed_body_revision": null,
+            "updated_at": "2026-01-01T00:00:00.000000Z",
+            "is_read": false,
+            "is_favorite": true,
+            "is_ignored": false
+          }
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1,
+      "stats": {
+        "total": 2,
+        "favorite": 1,
+        "planned": 1,
+        "learning": 0,
+        "completed": 1
+      }
+    }
+  },
+  {
+    "name": "fictional missing article retained",
+    "schema": "ArticleRecordPage",
+    "valid": true,
+    "value": {
+      "items": [
+        {
+          "article": null,
+          "record": {
+            "package_id": null,
+            "object_kind": "article",
+            "object_id": "fictional-article",
+            "revision": 1,
+            "status": "planned",
+            "self_assessment": "unassessed",
+            "note": "Fictional private note",
+            "artifact_url": null,
+            "latest_answer_text": null,
+            "latest_submission_url": null,
+            "confirmed_body_revision": null,
+            "updated_at": "2026-01-01T00:00:00.000000Z",
+            "is_read": false,
+            "is_favorite": true,
+            "is_ignored": false
+          }
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1,
+      "stats": {
+        "total": 2,
+        "favorite": 1,
+        "planned": 1,
+        "learning": 0,
+        "completed": 1
+      }
+    }
+  },
+  {
+    "name": "fictional empty filtered page retains full stats",
+    "schema": "ArticleRecordPage",
+    "valid": true,
+    "value": {
+      "items": [],
+      "page": 1,
+      "page_size": 20,
+      "total": 0,
+      "stats": {
+        "total": 2,
+        "favorite": 1,
+        "planned": 1,
+        "learning": 0,
+        "completed": 1
+      }
+    }
+  },
+  {
+    "name": "fictional wrong record kind",
+    "schema": "ArticleRecordPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "article": {
+            "id": "fictional-article",
+            "title": "Fictional title",
+            "source_name": "Fictional source"
+          },
+          "record": {
+            "package_id": null,
+            "object_kind": "question",
+            "object_id": "fictional-article",
+            "revision": 1,
+            "status": "planned",
+            "self_assessment": "unassessed",
+            "note": "Fictional private note",
+            "artifact_url": null,
+            "latest_answer_text": null,
+            "latest_submission_url": null,
+            "confirmed_body_revision": null,
+            "updated_at": "2026-01-01T00:00:00.000000Z",
+            "is_read": false,
+            "is_favorite": true,
+            "is_ignored": false
+          }
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1,
+      "stats": {
+        "total": 2,
+        "favorite": 1,
+        "planned": 1,
+        "learning": 0,
+        "completed": 1
+      }
+    }
+  },
+  {
+    "name": "fictional non-null article package",
+    "schema": "ArticleRecordPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "article": {
+            "id": "fictional-article",
+            "title": "Fictional title",
+            "source_name": "Fictional source"
+          },
+          "record": {
+            "package_id": "fictional-package",
+            "object_kind": "article",
+            "object_id": "fictional-article",
+            "revision": 1,
+            "status": "planned",
+            "self_assessment": "unassessed",
+            "note": "Fictional private note",
+            "artifact_url": null,
+            "latest_answer_text": null,
+            "latest_submission_url": null,
+            "confirmed_body_revision": null,
+            "updated_at": "2026-01-01T00:00:00.000000Z",
+            "is_read": false,
+            "is_favorite": true,
+            "is_ignored": false
+          }
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1,
+      "stats": {
+        "total": 2,
+        "favorite": 1,
+        "planned": 1,
+        "learning": 0,
+        "completed": 1
+      }
+    }
+  },
+  {
+    "name": "fictional private metadata extra",
+    "schema": "ArticleRecordPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "article": {
+            "id": "fictional-article",
+            "title": "Fictional title",
+            "source_name": "Fictional source",
+            "body_text": "Fictional forbidden extra"
+          },
+          "record": {
+            "package_id": null,
+            "object_kind": "article",
+            "object_id": "fictional-article",
+            "revision": 1,
+            "status": "planned",
+            "self_assessment": "unassessed",
+            "note": "Fictional private note",
+            "artifact_url": null,
+            "latest_answer_text": null,
+            "latest_submission_url": null,
+            "confirmed_body_revision": null,
+            "updated_at": "2026-01-01T00:00:00.000000Z",
+            "is_read": false,
+            "is_favorite": true,
+            "is_ignored": false
+          }
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1,
+      "stats": {
+        "total": 2,
+        "favorite": 1,
+        "planned": 1,
+        "learning": 0,
+        "completed": 1
+      }
+    }
+  },
+  {
+    "name": "fictional negative statistics",
+    "schema": "ArticleRecordPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "article": {
+            "id": "fictional-article",
+            "title": "Fictional title",
+            "source_name": "Fictional source"
+          },
+          "record": {
+            "package_id": null,
+            "object_kind": "article",
+            "object_id": "fictional-article",
+            "revision": 1,
+            "status": "planned",
+            "self_assessment": "unassessed",
+            "note": "Fictional private note",
+            "artifact_url": null,
+            "latest_answer_text": null,
+            "latest_submission_url": null,
+            "confirmed_body_revision": null,
+            "updated_at": "2026-01-01T00:00:00.000000Z",
+            "is_read": false,
+            "is_favorite": true,
+            "is_ignored": false
+          }
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 1,
+      "stats": {
+        "total": 2,
+        "favorite": -1,
+        "planned": 1,
+        "learning": 0,
+        "completed": 1
+      }
+    }
+  },
+  {
+    "name": "fictional unsafe integer",
+    "schema": "ArticleRecordPage",
+    "valid": false,
+    "value": {
+      "items": [
+        {
+          "article": {
+            "id": "fictional-article",
+            "title": "Fictional title",
+            "source_name": "Fictional source"
+          },
+          "record": {
+            "package_id": null,
+            "object_kind": "article",
+            "object_id": "fictional-article",
+            "revision": 1,
+            "status": "planned",
+            "self_assessment": "unassessed",
+            "note": "Fictional private note",
+            "artifact_url": null,
+            "latest_answer_text": null,
+            "latest_submission_url": null,
+            "confirmed_body_revision": null,
+            "updated_at": "2026-01-01T00:00:00.000000Z",
+            "is_read": false,
+            "is_favorite": true,
+            "is_ignored": false
+          }
+        }
+      ],
+      "page": 1,
+      "page_size": 20,
+      "total": 9007199254740992,
+      "stats": {
+        "total": 2,
+        "favorite": 1,
+        "planned": 1,
+        "learning": 0,
+        "completed": 1
+      }
+    }
+  }
+]
