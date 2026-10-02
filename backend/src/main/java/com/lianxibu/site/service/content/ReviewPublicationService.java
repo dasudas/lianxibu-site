@@ -8,7 +8,6 @@ import com.lianxibu.site.service.jobs.SharedWriteExecutor.ActionContext;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
@@ -160,7 +159,8 @@ public final class ReviewPublicationService implements ContentReadService.Refere
         for (JsonNode target : targets) frozenKeys.add(targetKey(target));
         if (frozenKeys.size() != targets.size()) throw new Conflict("duplicate_reference");
         List<Dependency> sorted = new ArrayList<>(dependencies);
-        sorted.sort(Comparator.comparing(item -> targetKey(item.targetKey())));
+        sorted.sort((a,b) -> Arrays.compareUnsigned(CanonicalJson.bytes(a.targetKey()),
+                CanonicalJson.bytes(b.targetKey())));
         ArrayNode vector = JSON.createArrayNode();
         Set<String> seen = new HashSet<>();
         for (Dependency dependency : sorted) {

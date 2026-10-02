@@ -31,7 +31,7 @@ public final class ContentReviewEvidenceService {
     public Receipt committed(String key,String commandHash){
         hash(commandHash);var payload=store.receipt(key,actor,commandHash);if(payload==null)return null;
         WireValues.object(payload,Set.of("schema_version","command_hash","kind","id","revision","state","stamp_hash","input_hash","content_version"),Set.of("schema_version","command_hash","kind","id","revision","state","stamp_hash","input_hash","content_version"));
-        var version=ContentVersionKey.fromJson(payload.get("content_version"));var proof=versions.find(version).orElseThrow(ContentReviewEvidenceService::invalid);if(!proof.inputHash().equals(payload.path("input_hash").asText()))throw invalid();
+        var version=ContentVersionKey.fromJson(payload.get("content_version"));var proof=versions.find(version).orElseThrow(ContentReviewEvidenceService::invalid);if(!proof.inputHash().equals(payload.path("input_hash").asText())||!version.contentKind().equals(payload.path("kind").asText())||!version.contentId().equals(payload.path("id").asText()))throw invalid();
         long revision=WireValues.nonnegativeInteger(payload.get("revision"));if(revision<1)throw invalid();String state=WireValues.text(payload.get("state"));if(!Set.of("draft","approved","published").contains(state))throw invalid();String stamp=payload.path("stamp_hash").isNull()?null:WireValues.sha256(payload.get("stamp_hash"));return new Receipt(WireValues.id(payload.get("kind"),false),WireValues.id(payload.get("id"),false),revision,state,stamp);
     }
     public void append(String key,String commandHash,String reason,Receipt receipt,ContentVersionKey version){

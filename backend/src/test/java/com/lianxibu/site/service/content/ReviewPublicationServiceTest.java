@@ -142,6 +142,10 @@ class ReviewPublicationServiceTest {
         byte[] input=new byte[32];var target=JsonMapper.shared().createObjectNode();target.put("kind","article_revision");target.put("id","fictional-leaf");var frozen=new Frozen("fictional-owner",input,List.of(target),true);var dependency=new Dependency(target,0,true);input[0]=1;target.put("id","fictional-mutated");frozen.inputHash()[0]=2;((ObjectNode)frozen.completeTargets().getFirst()).put("id","fictional-mutated-twice");((ObjectNode)dependency.targetKey()).put("id","fictional-mutated-three");assertEquals(0,frozen.inputHash()[0]);assertEquals("fictional-leaf",frozen.completeTargets().getFirst().path("id").asText());assertEquals("fictional-leaf",dependency.targetKey().path("id").asText());
     }
 
+    @Test void reviewStampOrdersUnicodeTargetsByCanonicalUtf8Bytes(){
+        var bmp=JsonMapper.shared().createObjectNode();bmp.put("kind","article_revision");bmp.put("id","\ue000");var supplementary=JsonMapper.shared().createObjectNode();supplementary.put("kind","article_revision");supplementary.put("id","😀");store.targets=List.of(supplementary,bmp);var stamp=ReviewPublicationService.stamp(store.snapshot(store.row()));var vector=CanonicalJson.parse(stamp.json());assertEquals("\ue000",vector.get(0).path("target_key").path("id").asText());assertEquals("😀",vector.get(1).path("target_key").path("id").asText());
+    }
+
     private static ActionContext action(String key) { return new ActionContext(key, "r-1", null); }
     private static byte[] bodyHash(String body) {
         return HexFormat.of().parseHex(CanonicalJson.hash(Domain.CONTENT, CanonicalJson.parse(body)));
