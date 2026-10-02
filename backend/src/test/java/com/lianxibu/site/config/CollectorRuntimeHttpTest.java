@@ -53,6 +53,12 @@ class CollectorRuntimeHttpTest {
             throw new IllegalStateException("B26 MySQL verification requires an isolated loopback fixture");
         }
         schema();
+        // Production daily scheduling is intentionally closed before 00:10.
+        // Freeze a valid fixture instant so this HTTP test can run across midnight.
+        Instant fixtureNow = Instant.now();
+        if (java.time.LocalTime.ofInstant(fixtureNow, java.time.ZoneId.of("Asia/Shanghai"))
+                .isBefore(java.time.LocalTime.of(0, 10))) fixtureNow = fixtureNow.plusSeconds(600);
+        v3Clock.freeze(fixtureNow);
         String config = "{\"adapter\":\"rss\",\"entry_urls\":[\"https://example.invalid/feed\"],"
                 + "\"identity_rule\":\"guid\",\"window_rule\":\"daily\",\"parser_version\":\"fixture-1\","
                 + "\"max_items\":10,\"max_response_bytes\":1024,\"allowed_hosts\":[\"example.invalid\"],"
