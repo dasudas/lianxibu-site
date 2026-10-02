@@ -19,7 +19,7 @@ public final class ContentReadService {
     public record Page(List<Row> items, long page, int pageSize, long total) { }
     /** Immutable service projection for cross-module orchestration. */
     public record CurrentVersion(String kind,String id,long revision,long bodyRevision,
-                                 String inputJobId,byte[] bodyHash) {
+                                 String inputJobId,byte[] bodyHash,String bodyJson,String state) {
         public CurrentVersion { bodyHash=bodyHash==null?null:bodyHash.clone(); }
         @Override public byte[] bodyHash(){return bodyHash==null?null:bodyHash.clone();}
     }
@@ -49,7 +49,7 @@ public final class ContentReadService {
 
     public Optional<CurrentVersion> administrativeVersion(String kind,String id) {
         return adminCurrent(kind,id).map(row -> new CurrentVersion(row.kind(),row.id(),
-                row.revision(),row.effectiveBodyRevision(),row.inputJobId(),row.bodyHashV1()));
+                row.revision(),row.effectiveBodyRevision(),row.inputJobId(),row.bodyHashV1(),row.bodyJson(),row.state()));
     }
 
     public Optional<Row> adminRevision(String kind, String id, long revision) {
