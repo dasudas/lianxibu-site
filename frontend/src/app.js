@@ -4,6 +4,7 @@ import {mountPreferences} from './pages/admin/preferences.js';
 import {createLearningApi} from './api/learning.js';
 import {mountRoadmaps} from './pages/learning/roadmaps.js';
 import {mountNode} from './pages/learning/node.js';
+import {mountLearningCatalog} from './pages/learning/catalog.js';
 import {createSourceRunsApi} from './api/source-runs.js';
 import {createSourcesApi} from './api/sources.js';
 import {mountSources} from './pages/admin/sources.js';
@@ -99,6 +100,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-13') return mountPreferences(main,{scope,api:preferences,identity,session,confirmDiscard});
     if (route?.id === 'UI-14') return mountRoadmaps(main,{scope,api:learning,homeApi:home,url,navigate});
     if (route?.id === 'UI-16') return mountNode(main,{scope,api:learning,records,url,identity,session,navigate,confirmDiscard});
+    if (route?.id === 'UI-17') return mountLearningCatalog(main,{scope,api:learning,homeApi:home,records,url,identity,session,navigate,confirmDiscard,collection:'questions'});
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
