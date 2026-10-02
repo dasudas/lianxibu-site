@@ -16,8 +16,8 @@ import org.springframework.transaction.support.*;
 @EnabledIfEnvironmentVariable(named="B44_MYSQL",matches="true")
 class ResultRecoveryCompetitionMySqlTest {
  @Test void hundredDualBarrierSeedsRollbackAndAckRecoveryNeverResendProvider() throws Exception {
-  for(int seed=0;seed<100;seed++){
-   var f=new ResultJdbcMySqlTest();f.fixture();var tx=new RetryFault(f.source);f.tx=tx;
+  for(int seed=0;seed<100;seed++){try(var f=new PooledResultJdbcMySqlFixture()){
+   f.fixture();var tx=new RetryFault(f.source);f.tx=tx;
    f.writes=new SharedWriteExecutor(new JdbcSharedWriteEntry(f.source),tx,()->25,n->{});f.restart();
    tx.rollback.set(true);tx.ackLost=seed%2!=0;
    String preferred=seed%2==0?"fictional-forward":"fictional-reverse";
@@ -38,7 +38,7 @@ class ResultRecoveryCompetitionMySqlTest {
    assertEquals(ResultApplicationService.validate(input,raw).resultHash(),new JdbcResultState(f.source).root(ResultJdbcStoreTest.ROOT).resultHash());
    assertEquals(1,new JdbcJobRecords(f.source).byId(ResultJdbcStoreTest.ROOT).callCount());assertEquals("free",new JdbcWorkerState(f.source).slot().state());
    f.restart();assertEquals(Status.APPLIED,f.service.applyAutomatic(input,raw,action).status());
-   assertEquals(2,f.handlerCalls);assertEquals(1,f.sends);
+   assertEquals(2,f.handlerCalls);assertEquals(1,f.sends);}
   }
  }
  private static final class RetryFault extends ResultJdbcStoreTest.FaultManager {

@@ -13,8 +13,8 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 @EnabledIfEnvironmentVariable(named="B44_MYSQL",matches="true")
 class ReviewValidityCompetitionMySqlTest {
  @Test void hundredDualBarrierOrdersPreserveNewReviewAndRejectOldQualification() throws Exception {
-  for(int seed=0;seed<100;seed++){
-   var f=new VersionValidityJdbcMySqlTest();f.setup();f.publish();var row=f.base.contents.reviewSnapshot("report","fictional-report").orElseThrow();
+  for(int seed=0;seed<100;seed++){try(var f=new PooledValidityMySqlFixture()){
+   f.setup();f.publish();var row=f.base.contents.reviewSnapshot("report","fictional-report").orElseThrow();
    var old=new Dependent(f.base.content(),row.revision(),row.inputJobId(),HexFormat.of().formatHex(row.reviewStampHash()));
    var publicReads=new ContentReadService(new JdbcContentReads(f.fixture.source),f.fixture.tx,new ReviewPublicationService(f.fixture.writes,new ReviewPublicationJdbcStore(null,f.base.writer,f.base.contents,f.audit,f.base.versions,f.base.ledger)));
    assertTrue(publicReads.published("report","fictional-report").isPresent());
@@ -45,7 +45,7 @@ class ReviewValidityCompetitionMySqlTest {
    assertEquals(java.util.Set.of(two.dispositionId()),f.base.ledger.validity(f.base.article()).activeDispositionIds());
    f.service.change(f.base.command(f.base.article(),5,Action.REVERSE_INVALIDATION,two.dispositionId()),f.fixture.action("fictional-final-reverse"));hidden(publicReads);
    f.review("report","fictional-report","approve","fictional-final-approve");f.review("report","fictional-report","publish","fictional-final-publish");
-   f.drain("fictional-final-work-");assertTrue(publicReads.published("report","fictional-report").isPresent());assertEquals(1,f.fixture.sends);
+   f.drain("fictional-final-work-");assertTrue(publicReads.published("report","fictional-report").isPresent());assertEquals(1,f.fixture.sends);}
   }
  }
  private static void hidden(ContentReadService reads){assertTrue(reads.published("report","fictional-report").isEmpty());assertEquals(0,reads.publishedPage("report",1,20).total());assertEquals(0,reads.publishedPage(null,1,50).total());}
