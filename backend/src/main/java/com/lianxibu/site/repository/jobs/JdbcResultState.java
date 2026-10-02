@@ -1,7 +1,6 @@
 package com.lianxibu.site.repository.jobs;
 
 import com.lianxibu.site.domain.protocol.CanonicalJson;
-import com.lianxibu.site.service.jobs.WorkerAuthorizationService.Identity;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.sql.Timestamp;
@@ -14,6 +13,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 /** Jobs result state only. All writes join the caller's shared writer transaction. */
 public final class JdbcResultState {
+    public record Identity(String rootId,String attemptId,String dispatchToken,long slotRevision,
+                           long fencing,Instant leaseUntil,String frozenRequestJson,String inputHash) { }
     public record Root(String id,String hash,long revision,long generation,String state,
                        String application,String resultHash,String resultJson,Instant appliedAt) { }
     private final JdbcTemplate jdbc;

@@ -17,6 +17,12 @@ public final class ContentReadService {
         boolean valid(Row row);
     }
     public record Page(List<Row> items, long page, int pageSize, long total) { }
+    /** Immutable service projection for cross-module orchestration. */
+    public record CurrentVersion(String kind,String id,long revision,long bodyRevision,
+                                 String inputJobId,byte[] bodyHash) {
+        public CurrentVersion { bodyHash=bodyHash==null?null:bodyHash.clone(); }
+        @Override public byte[] bodyHash(){return bodyHash==null?null:bodyHash.clone();}
+    }
     private static final Set<String> KINDS = Set.of("report", "agent", "skill", "workflow", "model");
     private final JdbcContentReads store;
     private final TransactionTemplate reads;
@@ -39,6 +45,11 @@ public final class ContentReadService {
     public Optional<Row> adminCurrent(String kind, String id) {
         key(kind, id);
         return reads.execute(status -> Optional.ofNullable(store.current(kind, id)));
+    }
+
+    public Optional<CurrentVersion> administrativeVersion(String kind,String id) {
+        return adminCurrent(kind,id).map(row -> new CurrentVersion(row.kind(),row.id(),
+                row.revision(),row.effectiveBodyRevision(),row.inputJobId(),row.bodyHashV1()));
     }
 
     public Optional<Row> adminRevision(String kind, String id, long revision) {
