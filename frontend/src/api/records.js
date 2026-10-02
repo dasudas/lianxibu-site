@@ -2,8 +2,8 @@ import { ApiError } from './client.js';
 import { recordWriteRequest } from './paths.js';
 const kinds = ['article','node','question','project'], statuses = ['not_started','planned','learning','completed'], assessments = ['unassessed','not_mastered','partial','mastered'];
 const invalid = () => { throw new ApiError(200,'invalid_response','Private record is unavailable'); };
-function text(value,max,empty=false){if(typeof value!=='string'||(!empty&&!value)||[...value].length>max)invalid();return value;}
-function id(value){text(value,64);if(/[\u0000-\u001f\u007f]/.test(value))invalid();return value;}
+function text(value,max,empty=false){if(typeof value!=='string'||(!empty&&!value)||[...value].length>max||[...value].some(c=>c.length===1&&/[\ud800-\udfff]/.test(c)))invalid();return value;}
+function id(value){text(value,64);if(/[\u0000-\u001f\u007f-\u009f]/.test(value))invalid();return value;}
 function number(value){if(!Number.isSafeInteger(value)||value<0)invalid();return value;}
 function flag(value){if(typeof value!=='boolean')invalid();return value;}
 function optional(value,parse){return value===null?null:parse(value);}
@@ -27,6 +27,17 @@ function command(identity,fields){
   return result;
 }
 export function createRecordsApi(client){return Object.freeze({
+  async read(identity,{signal}={}){
+    const target=key(identity),seen=new Set();let total=null;
+    for(let page=1;page<=100;page++){
+      const data=await this.list({kind:target.kind,packageId:target.packageId,page,page_size:50,signal});
+      if(total===null)total=data.total;else if(total!==data.total)invalid();
+      if(data.items.length!==Math.min(50,Math.max(0,total-(page-1)*50)))invalid();
+      for(const r of data.items){if(seen.has(r.id))invalid();seen.add(r.id);if(r.id===target.id)return r;}
+      if(seen.size===total)return null;
+    }
+    throw new ApiError(200,'record_lookup_limit','Exact private record cannot be determined within the read limit');
+  },
   async list({kind='article',packageId=null,page=1,page_size=20,signal}={}){
     one(kind,kinds);if(kind==='article'?packageId!==null:!packageId)invalid();if(packageId!==null)id(packageId);
     if(!Number.isSafeInteger(page)||page<1||!Number.isSafeInteger(page_size)||page_size<1||page_size>50)invalid();
@@ -37,6 +48,11 @@ export function createRecordsApi(client){return Object.freeze({
   },
   async save(identity,fields,{signal,idempotencyKey}={}){
     const target=key(identity),request=recordWriteRequest(target.kind,target.id,target.packageId,command(target,fields));
-    const {data}=await client.request('PUT',request.path,{signal,idempotencyKey,body:request.body});return same(recordProjection(data),target);
+    const {data}=await client.request('PUT',request.path,{signal,idempotencyKey,body:request.body});const result=same(recordProjection(data),target);
+    if(target.kind!=='article'){
+      if(![fields.expected_revision,fields.expected_revision+1].includes(result.revision))invalid();
+      for(const [wire,field]of [['status','status'],['self_assessment','selfAssessment'],['note','note'],['artifact_url','artifactUrl'],...target.kind==='question'?[['latest_answer_text','latestAnswerText']]:target.kind==='project'?[['latest_submission_url','latestSubmissionUrl']]:[]])if(result[field]!==fields[wire])invalid();
+    }
+    return result;
   }
 });}

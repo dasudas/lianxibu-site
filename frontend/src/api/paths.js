@@ -1,5 +1,5 @@
 function segment(value) {
-  if (typeof value !== 'string' || value.length === 0 || value.length > 64) {
+  if (typeof value !== 'string' || !value || [...value].length > 64 || /[\u0000-\u001f\u007f-\u009f]/.test(value) || [...value].some(c => c.length === 1 && /[\ud800-\udfff]/.test(c))) {
     throw new TypeError('A complete opaque ID is required');
   }
   return encodeURIComponent(value);
@@ -23,6 +23,7 @@ export function recordPath(kind, objectId, packageId = null) {
   } else if (!learningKinds[kind] || !packageId) {
     throw new TypeError('Learning record requires its package ID');
   }
+  if (kind !== 'article') segment(packageId);
   return `/private/records/${kind}/${segment(objectId)}`;
 }
 
