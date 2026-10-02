@@ -101,6 +101,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-14') return mountRoadmaps(main,{scope,api:learning,homeApi:home,url,navigate});
     if (route?.id === 'UI-16') return mountNode(main,{scope,api:learning,records,url,identity,session,navigate,confirmDiscard});
     if (route?.id === 'UI-17') return mountLearningCatalog(main,{scope,api:learning,homeApi:home,records,url,identity,session,navigate,confirmDiscard,collection:'questions'});
+    if (route?.id === 'UI-18') return mountLearningCatalog(main,{scope,api:learning,homeApi:home,records,url,identity,session,navigate,confirmDiscard,collection:'projects'});
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
