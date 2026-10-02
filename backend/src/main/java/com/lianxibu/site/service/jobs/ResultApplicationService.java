@@ -41,6 +41,8 @@ public final class ResultApplicationService {
                           String retainedResultHash, String activeAttemptId,
                           boolean ownershipValid, String applicationState) { }
     public interface Store {
+        /** Persistent providers reject inputs which differ from the original frozen context. */
+        default void verifyInput(Input input) { }
         Result committed(String actionKey, String actionHash);
         Current current(String rootId);
         void retain(String rootId, String attemptId, Validated result);
@@ -82,7 +84,7 @@ public final class ResultApplicationService {
         if (action == null) throw new Rejected();
         String actionHash = digest("automatic", input.rootId(), input.attemptId(),
                 result.resultHash());
-        return writes.execute(action, key -> store.committed(key, actionHash), context -> {
+        return writes.execute(action, key -> { store.verifyInput(input); return store.committed(key, actionHash); }, context -> {
             Current current = required(input);
             if (!input.attemptId().equals(current.activeAttemptId())
                     || !current.ownershipValid()) throw new Rejected();
@@ -120,7 +122,7 @@ public final class ResultApplicationService {
         String actionHash = digest("manual", input.rootId(), confirmedResultHash,
                 Long.toString(expectedRootRevision), String.valueOf(expectedContentRevision),
                 reason);
-        return writes.execute(action, key -> store.committed(key, actionHash), context -> {
+        return writes.execute(action, key -> { store.verifyInput(input); return store.committed(key, actionHash); }, context -> {
             Validated result = store.retained(input.rootId());
             if (result == null || !confirmedResultHash.equals(result.resultHash()))
                 throw new Rejected();
@@ -400,6 +402,7 @@ public final class ResultApplicationService {
             throw new Rejected();
     }
     private Current required(Input input) {
+        store.verifyInput(input);
         Current current = store.current(input.rootId());
         if (current == null) throw new Rejected();
         return current;
