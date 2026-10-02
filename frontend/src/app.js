@@ -5,6 +5,7 @@ import {createLearningApi} from './api/learning.js';
 import {mountRoadmaps} from './pages/learning/roadmaps.js';
 import {mountNode} from './pages/learning/node.js';
 import {mountLearningCatalog} from './pages/learning/catalog.js';
+import {mountLearningRecords} from './pages/learning/records.js';
 import {createSourceRunsApi} from './api/source-runs.js';
 import {createSourcesApi} from './api/sources.js';
 import {mountSources} from './pages/admin/sources.js';
@@ -102,6 +103,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-16') return mountNode(main,{scope,api:learning,records,url,identity,session,navigate,confirmDiscard});
     if (route?.id === 'UI-17') return mountLearningCatalog(main,{scope,api:learning,homeApi:home,records,url,identity,session,navigate,confirmDiscard,collection:'questions'});
     if (route?.id === 'UI-18') return mountLearningCatalog(main,{scope,api:learning,homeApi:home,records,url,identity,session,navigate,confirmDiscard,collection:'projects'});
+    if (route?.id === 'UI-19') return mountLearningRecords(main,{scope,recordsApi:records,learningApi:learning,homeApi:home,url,identity,session,navigate});
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
