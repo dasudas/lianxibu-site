@@ -5,6 +5,7 @@ import com.lianxibu.site.domain.protocol.WireValues;
 import com.lianxibu.site.service.identity.IdentityService;
 import com.lianxibu.site.service.identity.IdentityService.Actor;
 import com.lianxibu.site.service.records.RecordsService;
+import com.lianxibu.site.service.records.PrivateRecordWriteService;
 import java.net.URI;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -134,6 +135,19 @@ public final class RecordsController {
         }
         return response.body(new RecordsDtos.ErrorEnvelope(new RecordsDtos.ErrorDetail(code, code),
                 new RecordsDtos.Meta(requestId())));
+    }
+
+    @ExceptionHandler(PrivateRecordWriteService.Rejected.class)
+    public ResponseEntity<RecordsDtos.ErrorEnvelope> businessRefusal(PrivateRecordWriteService.Rejected error) {
+        String code = error.getMessage();
+        int status = switch (code == null ? "" : code) {
+            case "object_missing" -> 404;
+            case "revision_conflict", "identity_conflict" -> 409;
+            case "note_too_long", "answer_too_long" -> 422;
+            default -> 503;
+        };
+        if (status == 503) code = "temporarily_unavailable";
+        return failure(new BoundaryFailure(status, code, code));
     }
 
     private Actor user(String cookie) {

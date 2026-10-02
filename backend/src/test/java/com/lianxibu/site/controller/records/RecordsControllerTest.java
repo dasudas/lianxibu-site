@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.lianxibu.site.service.identity.IdentityService;
 import com.lianxibu.site.service.identity.IdentityService.Actor;
 import com.lianxibu.site.service.records.RecordsService;
+import com.lianxibu.site.service.records.PrivateRecordWriteService;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,25 @@ class RecordsControllerTest {
         when(recordProvider.getIfAvailable()).thenReturn(service);
         when(identity.authenticate("fixture-session")).thenReturn(USER);
         mvc = MockMvcBuilders.standaloneSetup(new RecordsController(identityProvider, recordProvider)).build();
+    }
+
+    @Test
+    void writeBusinessRefusalsHaveSafeStableHttpMeaning() throws Exception {
+        String body = "{\"expected_revision\":0,\"status\":\"planned\",\"self_assessment\":\"unassessed\","
+                + "\"note\":\"\",\"artifact_url\":null,\"package_id\":\"fixture-package\",\"object_kind\":\"node\"}";
+        for (var sample : new Object[][] {{"object_missing",404,"object_missing"},
+                {"revision_conflict",409,"revision_conflict"}, {"identity_conflict",409,"identity_conflict"},
+                {"note_too_long",422,"note_too_long"}, {"answer_too_long",422,"answer_too_long"},
+                {"fictional-private-storage-detail",503,"temporarily_unavailable"},
+                {null,503,"temporarily_unavailable"}}) {
+            when(service.write(eq(USER), any(), any(), any(), any(), any(), any()))
+                    .thenThrow(new PrivateRecordWriteService.Rejected((String) sample[0]));
+            var result = mvc.perform(write(put("/private/records/node/fixture-node"), body))
+                    .andExpect(status().is((Integer) sample[1]))
+                    .andExpect(header().string("Cache-Control", "no-store"))
+                    .andExpect(jsonPath("$.error.code").value(sample[2]));
+            if ((Integer) sample[1] == 503) result.andExpect(header().string("Retry-After", "1"));
+        }
     }
 
     @Test
