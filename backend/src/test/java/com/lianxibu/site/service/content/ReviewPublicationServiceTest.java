@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.lianxibu.site.domain.protocol.CanonicalJson;
 import com.lianxibu.site.domain.protocol.CanonicalJson.Domain;
 import com.lianxibu.site.repository.content.JdbcContentReads;
-import com.lianxibu.site.repository.content.JdbcContentReads.Row;
+
 import com.lianxibu.site.repository.jobs.JdbcSharedWriteEntry;
 import com.lianxibu.site.service.content.ReviewPublicationService.Current;
 import com.lianxibu.site.service.content.ReviewPublicationService.Dependency;
@@ -28,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 class ReviewPublicationServiceTest {
     private static final JsonNode EVIDENCE = CanonicalJson.parse("{\"kind\":\"article_revision\",\"id\":\"e-1\"}");
@@ -125,12 +127,32 @@ class ReviewPublicationServiceTest {
         assertTrue(reads.published("report", "r-1").isEmpty());
     }
 
+    @Test void replayVerifiesBoundOperationIdentityAndRevisionBeforeReturningCommittedReceipt(){
+        store.boundOperation="approve";store.boundRevision=1;
+        var receipt=service.approve("report","r-1",1,action("bound-action"));
+        assertEquals(receipt,service.approve("report","r-1",1,action("bound-action")));
+        assertThrows(ReviewPublicationService.Conflict.class,()->service.publish("report","r-1",1,action("bound-action")));
+        assertThrows(ReviewPublicationService.Conflict.class,()->service.approve("report","r-1",2,action("bound-action")));
+        assertThrows(ReviewPublicationService.Conflict.class,()->service.approve("agent","r-1",1,action("bound-action")));
+        assertThrows(ReviewPublicationService.Conflict.class,()->service.edit("report","r-1",1,"{\"title\":\"Fictional edit\"}",action("bound-action")));
+        assertEquals(2,store.row().revision());
+    }
+    @Test void reviewServiceValuesDefensivelyCopyBodyHashesInputAndReferenceTargets(){
+        var original=store.row().row();var state=ReviewContentState.fromRow(original);byte first=state.bodyHashV1()[0];original.bodyHashV1()[0]^=1;state.bodyHashV1()[0]^=1;assertEquals(first,state.bodyHashV1()[0]);
+        byte[] input=new byte[32];var target=JsonMapper.shared().createObjectNode();target.put("kind","article_revision");target.put("id","fictional-leaf");var frozen=new Frozen("fictional-owner",input,List.of(target),true);var dependency=new Dependency(target,0,true);input[0]=1;target.put("id","fictional-mutated");frozen.inputHash()[0]=2;((ObjectNode)frozen.completeTargets().getFirst()).put("id","fictional-mutated-twice");((ObjectNode)dependency.targetKey()).put("id","fictional-mutated-three");assertEquals(0,frozen.inputHash()[0]);assertEquals("fictional-leaf",frozen.completeTargets().getFirst().path("id").asText());assertEquals("fictional-leaf",dependency.targetKey().path("id").asText());
+    }
+
     private static ActionContext action(String key) { return new ActionContext(key, "r-1", null); }
     private static byte[] bodyHash(String body) {
         return HexFormat.of().parseHex(CanonicalJson.hash(Domain.CONTENT, CanonicalJson.parse(body)));
     }
 
     private final class Fixture implements ReviewPublicationService.Store {
+        String boundOperation;
+        long boundRevision;
+        @Override public void verifyCommand(String operation,String kind,String id,long expected,String bodyHash){
+            if(boundOperation!=null&&(!boundOperation.equals(operation)||!"report".equals(kind)||!"r-1".equals(id)||boundRevision!=expected||bodyHash!=null))throw new ReviewPublicationService.Conflict("command_identity_conflict");
+        }
         private final JdbcContentReads reads;
         List<JsonNode> targets = List.of(EVIDENCE, INTERMEDIATE);
         long evidenceRevision;
@@ -139,11 +161,11 @@ class ReviewPublicationServiceTest {
         boolean complete = true;
         byte[] inputHash = Arrays.copyOf(INPUT_HASH, 32);
         Fixture(JdbcDataSource source) { reads = new JdbcContentReads(source); }
-        Row row() { return reads.current("report", "r-1"); }
+        ReviewContentState row() { return ReviewContentState.fromRow(reads.current("report", "r-1")); }
         @Override public Current lock(String kind, String id) {
-            return snapshot(reads.current(kind, id));
+            return snapshot(ReviewContentState.fromRow(reads.current(kind, id)));
         }
-        @Override public Current snapshot(Row row) {
+        @Override public Current snapshot(ReviewContentState row) {
             if (row == null) return null;
             List<Dependency> dependencies = targets.stream().map(target ->
                     new Dependency(target, target.equals(EVIDENCE) ? evidenceRevision : intermediateRevision,
@@ -157,7 +179,7 @@ class ReviewPublicationServiceTest {
                     rs.getString(2), rs.getLong(3), rs.getString(4), rs.getString(5)), key)
                     .stream().findFirst().orElse(null);
         }
-        @Override public void approve(Row old, Stamp stamp, String key) {
+        @Override public void approve(ReviewContentState old, Stamp stamp, String key) {
             int changed = jdbc.update("UPDATE contents SET state='approved',revision=revision+1,"
                             + "review_hash_v1=body_hash_v1,review_dependency_stamp=?,review_stamp_hash=?,"
                             + "review_stamp_id=?,reviewed_input_hash=? WHERE kind=? AND id=? AND revision=?",
@@ -166,14 +188,14 @@ class ReviewPublicationServiceTest {
             assertEquals(1, changed);
             receipt(key, old, "approved", stamp.hash());
         }
-        @Override public void publish(Row old, String key) {
+        @Override public void publish(ReviewContentState old, String key) {
             assertEquals(1, jdbc.update("UPDATE contents SET state='published',revision=revision+1,"
                     + "published_at=? WHERE kind=? AND id=? AND revision=?",
                     Timestamp.from(Instant.parse("2026-09-30T00:00:00Z")),
                     old.kind(), old.id(), old.revision()));
             receipt(key, old, "published", HexFormat.of().formatHex(old.reviewStampHash()));
         }
-        @Override public void edit(Row old, String bodyJson, byte[] hash, String key) {
+        @Override public void edit(ReviewContentState old, String bodyJson, byte[] hash, String key) {
             assertEquals(1, jdbc.update("UPDATE contents SET body_json=?,body_hash_v1=?,"
                     + "body_revision=body_revision+1,revision=revision+1,state='draft',"
                     + "published_at=NULL,review_hash_v1=NULL,review_dependency_stamp=NULL,"
@@ -182,7 +204,7 @@ class ReviewPublicationServiceTest {
                     old.kind(), old.id(), old.revision()));
             receipt(key, old, "draft", null);
         }
-        private void receipt(String key, Row old, String state, String hash) {
+        private void receipt(String key, ReviewContentState old, String state, String hash) {
             jdbc.update("INSERT INTO receipts VALUES(?,?,?,?,?,?)", key, old.kind(),
                     old.id(), old.revision() + 1, state, hash);
         }

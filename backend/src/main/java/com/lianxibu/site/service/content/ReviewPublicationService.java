@@ -20,22 +20,32 @@ import tools.jackson.databind.node.ObjectNode;
 
 /** Review binds the exact body, frozen input owner and complete validity vector. */
 public final class ReviewPublicationService implements ContentReadService.ReferenceProof {
-    public record Dependency(JsonNode targetKey, long validityRevision, boolean effectiveValid) { }
+    public record Dependency(JsonNode targetKey, long validityRevision, boolean effectiveValid) {
+        public Dependency { targetKey=copy(targetKey); }
+        @Override public JsonNode targetKey(){return copy(targetKey);}
+    }
     public record Frozen(String inputJobId, byte[] inputHash, List<JsonNode> completeTargets,
-                         boolean referencesComplete) { }
-    public record Current(Row row, Frozen frozen, List<Dependency> dependencies,
-                          boolean ownVersionValid) { }
+                         boolean referencesComplete) {
+        public Frozen { inputHash=inputHash==null?null:inputHash.clone();completeTargets=completeTargets==null?null:completeTargets.stream().map(ReviewPublicationService::copy).toList(); }
+        @Override public byte[] inputHash(){return inputHash==null?null:inputHash.clone();}
+        @Override public List<JsonNode> completeTargets(){return completeTargets==null?null:completeTargets.stream().map(ReviewPublicationService::copy).toList();}
+    }
+    public record Current(ReviewContentState row, Frozen frozen, List<Dependency> dependencies,
+                          boolean ownVersionValid) {
+        public Current { dependencies=dependencies==null?null:List.copyOf(dependencies); }
+    }
     public record Receipt(String kind, String id, long revision, String state,
                           String stampHash) { }
     public interface Store {
+        default void verifyCommand(String operation,String kind,String id,long expectedRevision,String bodyHash) { }
         Receipt committed(String actionKey);
         /** Caller holds the shared write entry lock; lock all stable target identities in fixed order. */
         Current lock(String kind, String id);
         /** Read frozen targets and validity in the same consistent snapshot as the content row. */
-        Current snapshot(Row row);
-        void approve(Row expected, Stamp stamp, String actionKey);
-        void publish(Row expected, String actionKey);
-        void edit(Row expected, String bodyJson, byte[] bodyHash, String actionKey);
+        Current snapshot(ReviewContentState row);
+        void approve(ReviewContentState expected, Stamp stamp, String actionKey);
+        void publish(ReviewContentState expected, String actionKey);
+        void edit(ReviewContentState expected, String bodyJson, byte[] bodyHash, String actionKey);
     }
     public record Stamp(String json, String hash) { }
     public static final class Conflict extends RuntimeException {
@@ -43,6 +53,7 @@ public final class ReviewPublicationService implements ContentReadService.Refere
     }
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
+    private static JsonNode copy(JsonNode node){return node==null?null:CanonicalJson.parse(CanonicalJson.bytes(node));}
     private final SharedWriteExecutor writes;
     private final Store store;
 
@@ -53,7 +64,7 @@ public final class ReviewPublicationService implements ContentReadService.Refere
     }
 
     public Receipt approve(String kind, String id, long expectedRevision, ActionContext action) {
-        return writes.execute(action, store::committed, ignored -> {
+        return writes.execute(action, key -> committed(key,"approve",kind,id,expectedRevision,null), ignored -> {
             Current current = requireCurrent(kind, id, expectedRevision);
             Stamp stamp = stamp(current);
             store.approve(current.row(), stamp, action.actionKey());
@@ -62,9 +73,9 @@ public final class ReviewPublicationService implements ContentReadService.Refere
     }
 
     public Receipt publish(String kind, String id, long expectedRevision, ActionContext action) {
-        return writes.execute(action, store::committed, ignored -> {
+        return writes.execute(action, key -> committed(key,"publish",kind,id,expectedRevision,null), ignored -> {
             Current current = requireCurrent(kind, id, expectedRevision);
-            Row row = current.row();
+            ReviewContentState row = current.row();
             if (!"approved".equals(row.state()) || !matches(row, current)) {
                 throw new Conflict("review_required");
             }
@@ -79,21 +90,25 @@ public final class ReviewPublicationService implements ContentReadService.Refere
         JsonNode body = CanonicalJson.parse(bodyJson);
         if (!body.isObject()) throw new IllegalArgumentException("content body must be an object");
         byte[] hash = HexFormat.of().parseHex(CanonicalJson.hash(Domain.CONTENT, body));
-        return writes.execute(action, store::committed, ignored -> {
+        return writes.execute(action, key -> committed(key,"edit",kind,id,expectedRevision,HexFormat.of().formatHex(hash)), ignored -> {
             Current current = requireCurrent(kind, id, expectedRevision);
             store.edit(current.row(), bodyJson, hash, action.actionKey());
             return new Receipt(kind, id, expectedRevision + 1, "draft", null);
         });
     }
 
+    private Receipt committed(String key,String operation,String kind,String id,long expected,String bodyHash){store.verifyCommand(operation,kind,id,expected,bodyHash);return store.committed(key);}
+
     @Override public boolean valid(Row row) {
         try {
             return row != null && "published".equals(row.state())
-                    && matches(row, store.snapshot(row));
+                    && validSnapshot(ReviewContentState.fromRow(row));
         } catch (IllegalArgumentException | IllegalStateException | Conflict invalid) {
             return false;
         }
     }
+
+    private boolean validSnapshot(ReviewContentState row){return matches(row,store.snapshot(row));}
 
     private Current requireCurrent(String kind, String id, long expectedRevision) {
         if (kind == null || id == null || id.isBlank() || expectedRevision < 1) {
@@ -105,7 +120,7 @@ public final class ReviewPublicationService implements ContentReadService.Refere
         return current;
     }
 
-    private static boolean matches(Row row, Current current) {
+    private static boolean matches(ReviewContentState row, Current current) {
         if (current == null || current.row() == null || current.row() != row
                 || row.bodyRevision() == null || row.bodyHashV1() == null
                 || row.reviewHashV1() == null || row.reviewStampHash() == null
@@ -126,7 +141,7 @@ public final class ReviewPublicationService implements ContentReadService.Refere
     public static Stamp stamp(Current current) {
         if (current == null || current.row() == null || current.frozen() == null
                 || !current.ownVersionValid()) throw new Conflict("invalid_evidence");
-        Row row = current.row();
+        ReviewContentState row = current.row();
         Frozen frozen = current.frozen();
         if (row.bodyJson() == null || row.bodyHashV1() == null || row.inputJobId() == null
                 || frozen.inputJobId() == null || frozen.inputHash() == null

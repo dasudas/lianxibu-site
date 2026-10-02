@@ -52,6 +52,10 @@ public final class ContentReadService {
                 row.revision(),row.effectiveBodyRevision(),row.inputJobId(),row.bodyHashV1(),row.bodyJson(),row.state()));
     }
 
+    public Optional<ReviewContentState> reviewSnapshot(String kind,String id) {
+        return adminCurrent(kind,id).map(ReviewContentState::fromRow);
+    }
+
     public Optional<Row> adminRevision(String kind, String id, long revision) {
         if (revision < 1) throw new IllegalArgumentException("invalid revision");
         // contents is a current-row table; equal current revision is the only provable body.

@@ -13,6 +13,10 @@ public final class ContentReviewWriteService {
     private final Clock clock;
     public ContentReviewWriteService(JdbcReviewPublication store,GeneratedContentService generated,Clock clock){this.store=Objects.requireNonNull(store);this.generated=Objects.requireNonNull(generated);this.clock=Objects.requireNonNull(clock);}
     public Row lock(String kind,String id){WireValues.id(id,false);if(!Set.of("report","agent","skill","workflow","model").contains(kind))throw new IllegalArgumentException("invalid content kind");return store.lock(kind,id);}
+    public ReviewContentState reviewSnapshot(String kind,String id){return ReviewContentState.fromRow(lock(kind,id));}
+    public void approve(ReviewContentState expected,ReviewPublicationService.Stamp stamp,String stampId,byte[] inputHash){approve(expected.row(),stamp,stampId,inputHash);}
+    public void publish(ReviewContentState expected){publish(expected.row());}
+    public void edit(ReviewContentState expected,String bodyJson,byte[] suppliedBodyHash){edit(expected.row(),bodyJson,suppliedBodyHash);}
     public void approve(Row expected,ReviewPublicationService.Stamp stamp,String stampId,byte[] inputHash){
         Objects.requireNonNull(stamp);WireValues.id(stampId,false);if(stamp.hash()==null||!stamp.hash().matches("[0-9a-f]{64}"))throw new IllegalArgumentException("invalid stamp hash");var vector=CanonicalJson.parse(stamp.json());if(!vector.isArray()||vector.size()>10000)throw new IllegalArgumentException("invalid review vector");
         store.approve(expected,new String(CanonicalJson.bytes(vector),java.nio.charset.StandardCharsets.UTF_8),HexFormat.of().parseHex(stamp.hash()),stampId,inputHash,now());
