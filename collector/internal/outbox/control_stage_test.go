@@ -38,7 +38,12 @@ func ackCurrentClaim(t *testing.T, store *Store) {
 		t.Fatal("missing claim ack", err)
 	}
 	runID := "run-1"
-	result := client.ControlResult{BusinessHash: a.BusinessHash, RunID: &runID, ReceiptRef: "ack-receipt", CurrentLeaseValid: true}
+	var lease int64
+	if err := store.db.QueryRow("SELECT lease_until FROM source_state WHERE state_key=? AND record_kind='run'", runID).Scan(&lease); err != nil {
+		t.Fatal(err)
+	}
+	until := time.UnixMicro(lease).UTC().Format("2006-01-02T15:04:05.000000Z")
+	result := client.ControlResult{BusinessHash: a.BusinessHash, RunID: &runID, ReceiptRef: "ack-receipt", CurrentLeaseValid: true, LeaseUntil: &until}
 	if applied, err := store.ApplyControlReceipt(context.Background(), *a, result); err != nil || !applied {
 		t.Fatal("claim ACK not committed", err)
 	}

@@ -186,9 +186,10 @@ func (s *Store) RetryControlAttempt(ctx context.Context, a client.ControlAttempt
 func (s *Store) ApplyControlReceipt(ctx context.Context, a client.ControlAttempt, r client.ControlResult) (bool, error) {
 	applied := false
 	err := s.write(ctx, func(conn *sql.Conn) error {
-		var state, businessState, hash string
-		err := conn.QueryRowContext(ctx, `SELECT a.state,b.state,b.payload_hash FROM outbox a JOIN outbox b ON b.id=a.business_ref
-WHERE a.id=? AND a.business_ref=? AND a.idempotency_key=?`, a.ID, a.BusinessID, a.IdempotencyKey).Scan(&state, &businessState, &hash)
+		var state, businessState, hash, kind, runID string
+		var wire []byte
+		err := conn.QueryRowContext(ctx, `SELECT a.state,b.state,b.payload_hash,b.record_kind,a.run_id,a.payload FROM outbox a JOIN outbox b ON b.id=a.business_ref
+WHERE a.id=? AND a.business_ref=? AND a.idempotency_key=?`, a.ID, a.BusinessID, a.IdempotencyKey).Scan(&state, &businessState, &hash, &kind, &runID, &wire)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
 		}
@@ -207,6 +208,15 @@ WHERE a.id=? AND a.business_ref=? AND a.idempotency_key=?`, a.ID, a.BusinessID, 
 		}
 		if newer > 0 {
 			return nil
+		}
+		if kind == "lease_action" {
+			matched, leaseErr := s.applyLeaseReceipt(ctx, conn, runID, wire, r)
+			if leaseErr != nil {
+				return leaseErr
+			}
+			if !matched {
+				return nil
+			}
 		}
 		blob, err := json.Marshal(r)
 		if err != nil {

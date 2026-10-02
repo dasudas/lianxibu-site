@@ -120,7 +120,7 @@ func TestControlReceiptBindsAttemptAndLateOldClaimCannotAcknowledgeNewBusiness(t
 	if err != nil || current == nil || current.ID == old.ID || current.BusinessID == old.BusinessID {
 		t.Fatal("new ACK reused old identity", err)
 	}
-	newResult := client.ControlResult{BusinessHash: current.BusinessHash, RunID: &runID, ReceiptRef: "new-receipt", CurrentLeaseValid: true}
+	newResult := client.ControlResult{BusinessHash: current.BusinessHash, RunID: &runID, ReceiptRef: "new-receipt", CurrentLeaseValid: true, LeaseUntil: &until}
 	applied, err = store.ApplyControlReceipt(context.Background(), *current, newResult)
 	if err != nil || !applied {
 		t.Fatal("current attempt not confirmed", err)
