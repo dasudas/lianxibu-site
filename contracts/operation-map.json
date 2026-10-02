@@ -1416,5 +1416,18 @@
     "query": {},
     "description": "Owner-only current read for one explicit source ID, from one repeatable-read snapshot. Returns the existing closed Source shape: name/category/revisions/stage and nullable structured draft/effective configuration. Known zero is retained. Missing sources return 404; unmapped or unprojectable legacy identity/category/configuration returns 503 source_mapping_required or temporarily_unavailable, never guessed defaults. No source body, legacy/raw config_json, probe_json, token values, job/run payload or admission proof. auth_secret_ref is only a reference. Activation stage and effective configuration do not prove probe success or seven consecutive trial days. Current permission precedes lookup; no-store; query parameters are unsupported (unknown/duplicate query 400), invalid identity 422. A current read after an uncertain write cannot prove the original command: retry only the original key/body; expired receipt requires operator reconciliation. This additive read leaves source writes/actions and collector wire versions unchanged.",
     "operation_id": "business_get_admin_sources_id"
+  },
+  {
+    "group": "business",
+    "method": "get",
+    "path": "/admin/jobs/{id}/schedule",
+    "response": "JobSchedule",
+    "request": null,
+    "access": "owner",
+    "scope": null,
+    "paging": false,
+    "query": {},
+    "description": "Owner-only safe job scheduling summary. Exact job_id and management revision in one read-only repeatable-read snapshot; no-store. planned_period requires verified immutable frozen report profile (matching job task, business date, input hash and owner), never infer from eligibility/current settings. first_queued_at requires verified permanent original queue admission proof, never substitute job creation/update; unknown proof returns null, corrupt existing proof fails 503. first_queued_at <= observed_at; display elapsed wall time since FIRST enqueue only while waiting, not cumulative time exclusively queued. Missing job 404; malformed identity/query 400/422; session/role 401/403; corrupt/unreadable 503 with Retry-After. No raw prompt/input/result, tokens, private notes or credentials. Legacy Job and all existing operations unchanged; new consumer calls this optional endpoint separately and preserves original selected job if unavailable. This only fulfills existing UI12 scheduling visibility; no new scheduler or schema migration.",
+    "operation_id": "business_get_admin_jobs_id_schedule"
   }
 ]

@@ -1,0 +1,303 @@
+{
+  "description": "Unmistakably fictional schema and semantic vectors; no production scheduling evidence.",
+  "cases": [
+    {
+      "name": "daily_exact_period",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "unknown_legacy_proof",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "task_type": null,
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": null,
+        "first_queued_at": null,
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "weekly_exact_period",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "task_type": "weekly_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-27T16:00:00.000000Z",
+          "period_end": "2026-10-04T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "monthly_exact_period",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "task_type": "monthly_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-08-31T16:00:00.000000Z",
+          "period_end": "2026-09-30T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "known_zero_revision",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "future_queue_time",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-03T21:30:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "reversed_period",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-09-29T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "wrong_local_boundary",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T17:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "wrong_weekday",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "task_type": "weekly_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "nonreport_no_period",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "task_type": "ad_hoc",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": null,
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "nonreport_fake_period",
+      "schema": "JobSchedule",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "task_type": "ad_hoc",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "wrong_timezone",
+      "schema": "JobSchedule",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "UTC"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "unsafe_revision",
+      "schema": "JobSchedule",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 9007199254740992,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "numeric_identity",
+      "schema": "JobSchedule",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": 42,
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z"
+      }
+    },
+    {
+      "name": "missing_observed_at",
+      "schema": "JobSchedule",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z"
+      }
+    },
+    {
+      "name": "raw_input_extra",
+      "schema": "JobSchedule",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00.000000Z",
+        "input_json": "fictional forbidden"
+      }
+    },
+    {
+      "name": "fractional_precision",
+      "schema": "JobSchedule",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "task_type": "daily_report",
+      "data": {
+        "job_id": "fictional-job",
+        "job_revision": 0,
+        "planned_period": {
+          "period_start": "2026-09-30T16:00:00.000000Z",
+          "period_end": "2026-10-01T16:00:00.000000Z",
+          "timezone": "Asia/Shanghai"
+        },
+        "first_queued_at": "2026-10-02T21:00:00.000000Z",
+        "observed_at": "2026-10-02T21:30:00Z"
+      }
+    }
+  ]
+}

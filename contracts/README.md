@@ -1,11 +1,11 @@
 # API contracts
 
-Contract package revision: 0.26. Observations accept wire revisions 0.11 and
+Contract package revision: 0.27. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
 surfaces. `schemas.json` is the shared JSON Schema 2020-12 definition set.
-`operation-map.json` lists all 80 operations: 67 business and 13 collector.
+`operation-map.json` lists all 81 operations: 68 business and 13 collector.
 `examples.json`, `wire-examples.json`, and `hn-time-wire-examples.json`
 contain fictional fixtures, including intentionally invalid wire cases.
 
@@ -102,3 +102,7 @@ snapshot. owner-answer-wire-examples.json contains fictional boundary vectors.
 ## Owner source action receipts
 
 The existing `POST /admin/sources/{id}/actions` now returns `SourceActionResult`, keeping the existing eight-field envelope and adding an 80-character source root reference. All prior `ResourceRef` values remain schema-readable; `ActionResult`, `ResourceRef`, source requests and the other 79 operations are unchanged. Command validation remains mandatory: probe receipts identify a scheduled `source_run` and frozen generation, not successful admission; other receipts identify the exact source. Disabling an already disabled source is a version-preserving no-op. Current reads do not prove uncertain commands. Provider facades must freeze original receipts before release. [28 fictional schema and semantic vectors](owner-source-action-wire-examples.json). No new endpoint or collector wire revision.
+
+## Job scheduling summary
+
+`GET /admin/jobs/{id}/schedule` is an owner-only, no-store read of the exact job revision, authoritative frozen report interval, original queue admission time and snapshot observation time. Unknown proof remains null; job creation/update and next eligible time never substitute queue admission. Elapsed time means wall time since first enqueue, including retries. Existing Job and all prior operations are unchanged. [Fictional schema and semantic vectors](job-schedule-wire-examples.json). No scheduler, database migration or collector wire change.
