@@ -1,0 +1,65 @@
+package com.lianxibu.site.service.jobs;
+import static org.junit.jupiter.api.Assertions.*;
+import com.lianxibu.site.domain.protocol.CanonicalJson;
+import com.lianxibu.site.repository.jobs.*;
+import com.lianxibu.site.service.jobs.GenerationFlowService.*;
+import com.lianxibu.site.service.jobs.SharedWriteExecutor.ActionContext;
+import java.time.*;import java.util.*;
+import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.*;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+
+class GenerationJdbcStoreTest {
+ javax.sql.DataSource source;JdbcTemplate jdbc;SharedWriteExecutor writes;GenerationJdbcStore store;
+ final Clock clock=Clock.fixed(Instant.parse("2026-01-01T21:00:00.123456789Z"),ZoneOffset.UTC);
+ static final String HASH="a".repeat(64), OWNER="fictional-root", ACTION="fictional-prepare";
+ boolean empty=false,badRequest=false;int built;
+ @BeforeEach void fixture(){var ds=new JdbcDataSource();ds.setURL("jdbc:h2:mem:frozen-"+System.nanoTime()+";DB_CLOSE_DELAY=-1;MODE=MySQL");source=ds;jdbc=new JdbcTemplate(source);schema();writes=new SharedWriteExecutor(new JdbcSharedWriteEntry(source),new DataSourceTransactionManager(source),()->25,n->{});store=new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,command(false));}
+ void schema(){jdbc.execute("CREATE TABLE worker_lock(id INT PRIMARY KEY)");jdbc.update("INSERT INTO worker_lock VALUES(1)");
+        jdbc.execute("CREATE TABLE jobs(id VARCHAR(64) PRIMARY KEY,business_key VARCHAR(191) NOT NULL UNIQUE,"
+                + "task_kind VARCHAR(32) NOT NULL,target_id VARCHAR(64) NOT NULL,state VARCHAR(32) NOT NULL,"
+                + "priority_no INT NOT NULL,eligible_at TIMESTAMP NOT NULL,revision BIGINT NOT NULL,"
+                + "created_at TIMESTAMP NOT NULL,updated_at TIMESTAMP NOT NULL,record_kind VARCHAR(24) NOT NULL,"
+                + "record_identity_hash BINARY(32) NOT NULL UNIQUE,call_count INT NOT NULL,"
+                + "max_attempts INT,logical_key CLOB,logical_key_hash BINARY(32),generation BIGINT,"
+                + "stage_part BIGINT,intent_id VARCHAR(64),task_type VARCHAR(32),business_date DATE,"
+                + "input_state VARCHAR(16),root_job_id VARCHAR(64),attempt_no INT,request_json CLOB,input_snapshot_json CLOB,business_input_hash BINARY(32),coverage_state VARCHAR(16),missing_inputs_json CLOB,input_cutoff_at TIMESTAMP,dependency_id VARCHAR(64),"
+                + "snapshot_owner_id VARCHAR(64),input_hash BINARY(32),owner_job_id VARCHAR(64),"
+                + "purpose VARCHAR(16),stamp_id VARCHAR(64),part_no BIGINT,payload_json CLOB,"
+                + "payload_hash BINARY(32),action_key_hash BINARY(32) UNIQUE,target_type VARCHAR(32),"
+                + "target_key_json CLOB,target_key_hash BINARY(32),operator_id VARCHAR(64),"
+                + "reason VARCHAR(2048),acted_at TIMESTAMP,action_payload CLOB,"
+                + "action_payload_hash BINARY(32),applied_at TIMESTAMP,provider_request_id VARCHAR(256),"
+                + "usage_json CLOB,cost_decimal DECIMAL(20,8),"
+                + "UNIQUE(root_job_id,attempt_no),UNIQUE(owner_job_id,purpose,stamp_id,part_no),"
+                + "CHECK ((record_kind='logical_task' AND max_attempts=3 AND call_count<=3"
+                + " AND priority_no BETWEEN 1 AND 14) OR (record_kind<>'logical_task'"
+                + " AND max_attempts IS NULL AND call_count=0 AND priority_no=0)),"
+                + "CHECK (record_kind<>'ai_attempt' OR (root_job_id IS NOT NULL AND attempt_no BETWEEN 1 AND 3"
+                + " AND request_json IS NOT NULL AND snapshot_owner_id IS NOT NULL AND input_hash IS NOT NULL)),"
+                + "CHECK (record_kind<>'snapshot_part' OR (owner_job_id IS NOT NULL"
+                + " AND purpose IS NOT NULL AND stamp_id IS NOT NULL AND part_no IS NOT NULL"
+                + " AND payload_json IS NOT NULL AND payload_hash IS NOT NULL)),"
+                + "CHECK (record_kind<>'disposition' OR (action_key_hash IS NOT NULL"
+                + " AND target_type IS NOT NULL AND target_key_json IS NOT NULL"
+                + " AND target_key_hash IS NOT NULL AND operator_id IS NOT NULL"
+                + " AND reason IS NOT NULL AND acted_at IS NOT NULL AND action_payload IS NOT NULL"
+                + " AND action_payload_hash IS NOT NULL)))");
+ }
+ Prepare command(boolean changed){var evidence=new Evidence("fictional-material","analysis",LocalDate.of(2026,1,1),Instant.parse("2026-01-01T20:00:00Z"),HASH,"{\"text\":\""+"😀".repeat(40000)+"\"}",true,false,"accepted",List.of());return new Prepare("fictional-report",1,Stage.DAILY_REPORT,LocalDate.of(2026,1,1),null,List.of(),empty?List.of():List.of(evidence),List.of(),true,changed?"b".repeat(64):HASH);}
+ GenerationFlowService flow(GenerationJdbcStore s){return new GenerationFlowService(writes,s,(stage,snapshot,hash)->{built++;if(badRequest)throw new IllegalStateException("fictional request failure");return "{\"provider\":\"fictional\",\"model\":\"fictional\",\"input_hash\":\""+hash+"\",\"messages\":[{\"role\":\"user\",\"content\":\"fictional\"}],\"response_format\":{},\"parameters\":{},\"schema_version\":\"1\",\"prompt_version\":\"1\"}";},clock,()->true);}
+ ActionContext action(){return new ActionContext(ACTION,OWNER,HASH);}
+ int count(String condition){return jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE "+condition,Integer.class);}
+ @Test void fullMultiByteChunksPreparedRequestAndDurableReplaySurviveRestart(){var c=command(false);var f=flow(store).prepare(c,action());assertEquals(0,f.cutoff().getNano()%1000);assertEquals("queued",f.state());assertEquals(2,count("record_kind='snapshot_part' AND purpose='input'"));assertEquals(1,count("record_kind='ai_attempt' AND state='prepared'"));assertEquals(0,new JdbcJobRecords(source).byId(OWNER).callCount());var restarted=new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,c);var replay=flow(restarted).prepare(c,action());assertEquals(f,replay);assertEquals(1,built);assertEquals(f.snapshotJson(),new JdbcFrozenInputs(source).read(OWNER,f.inputHash()));jdbc.update("UPDATE jobs SET state='running',revision=4 WHERE id=?",OWNER);assertEquals(f,restarted.committed(ACTION));assertThrows(IllegalStateException.class,()->new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,command(true)).committed(ACTION));}
+ @Test void missingChunkOrAlteredRequestProofNeverReconstructsFromCurrentSettings(){var f=flow(store).prepare(command(false),action());jdbc.update("DELETE FROM jobs WHERE record_kind='snapshot_part' AND purpose='input' AND part_no=1");assertThrows(IllegalStateException.class,()->store.committed(ACTION));assertEquals(1,built);}
+ @Test void sameOwnerCannotReplaceImmutableInputAndFailedReceiptRollsBackEverything(){jdbc.execute("ALTER TABLE jobs ADD CONSTRAINT fictional_receipt_failure CHECK(record_kind<>'disposition')");assertThrows(RuntimeException.class,()->flow(store).prepare(command(false),action()));assertEquals(0,count("1=1"));dropReceiptConstraint();var f=flow(store).prepare(command(false),action());assertThrows(RuntimeException.class,()->writes.execute(new ActionContext("fictional-other",OWNER,HASH),k->null,a->{new JdbcFrozenInputs(source).save(OWNER,"{}",CanonicalJson.hash(CanonicalJson.Domain.INPUT,CanonicalJson.parse("{}")),clock.instant());return true;}));assertEquals(f,store.committed(ACTION));}
+ @Test void emptyPersistsNoAttemptAndRestartsWithoutManufacturingSnapshot(){empty=true;var c=command(false);store=new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,c);var f=flow(store).prepare(c,action());assertEquals("no_input",f.state());assertNull(f.requestJson());assertEquals(0,count("record_kind='ai_attempt'"));assertEquals(f,new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,c).committed(ACTION));}
+ void dropReceiptConstraint(){jdbc.execute("ALTER TABLE jobs DROP CONSTRAINT fictional_receipt_failure");}
+ @Test void alteredPreparedRequestCannotReplayEvenWhenInputHashUnchanged(){flow(store).prepare(command(false),action());var request=jdbc.queryForObject("SELECT request_json FROM jobs WHERE record_kind='ai_attempt'",String.class).replace("fictional","different");jdbc.update("UPDATE jobs SET request_json=? WHERE record_kind='ai_attempt'",request);assertThrows(IllegalStateException.class,()->store.committed(ACTION));}
+ @Test void waitingReceiptRemainsWaitingAfterLaterActionFreezesSameRoot(){var original=command(false);var c=new Prepare(original.logicalKey(),original.generation(),original.stage(),original.businessDate(),original.sourceId(),original.dependencies(),original.evidence(),original.expectedDependencies(),false,original.settingsHash());var early=Clock.fixed(Instant.parse("2026-01-01T20:59:00Z"),ZoneOffset.UTC);var waitingStore=new GenerationJdbcStore(source,early,"fictional-owner",OWNER,c);var earlyFlow=new GenerationFlowService(writes,waitingStore,(stage,input,hash)->{throw new AssertionError();},early,()->true);var waiting=earlyFlow.prepare(c,action());assertEquals("waiting_input",waiting.state());assertNull(waiting.snapshotJson());var later=new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,c);var ready=flow(later).prepare(c,new ActionContext("fictional-later-freeze",OWNER,HASH));assertEquals("queued",ready.state());assertEquals(waiting,new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,c).committed(ACTION));}
+ @Test void lostCommitAcknowledgementFindsDurableReceiptWithoutPreparingAgain(){var fault=new org.springframework.jdbc.datasource.DataSourceTransactionManager(source){boolean lost;@Override protected void doCommit(org.springframework.transaction.support.DefaultTransactionStatus status){super.doCommit(status);if(!lost&&!org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly()){lost=true;throw new org.springframework.transaction.TransactionSystemException("fictional ACK lost");}}};writes=new SharedWriteExecutor(new JdbcSharedWriteEntry(source),fault,()->25,n->{});var f=flow(store).prepare(command(false),action());assertEquals("queued",f.state());assertEquals(1,built);assertEquals(1,count("record_kind='ai_attempt'"));assertEquals(f,store.committed(ACTION));}
+ @Test void typedReportProfileIncludingProvenNoUpdatesSurvivesDurableReplay(){var c=command(false);var provider=new ReportInputSnapshotService((command,cutoff)->new ReportInputSnapshotService.SourceProof(cutoff,c.businessDate(),c.businessDate().plusDays(1),true,List.of(),List.of(),List.of(c.businessDate()),List.of()));var flow=new GenerationFlowService(writes,store,(stage,input,hash)->{throw new AssertionError("no input must not call provider");},clock,()->true,provider);var f=flow.prepare(c,action());assertEquals("coverage_only",f.state());assertNull(f.requestJson());var replay=new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,c).committed(ACTION);assertEquals(f,replay);assertNotNull(com.lianxibu.site.service.content.ReportInputProfile.validated(CanonicalJson.parse(replay.snapshotJson())));}
+ @Test void exactRootDependencyIndexIsDurableAndUnknownDependencyRollsBack(){writes.execute(new ActionContext("fictional-upstream-seed","fictional-upstream",HASH),k->null,a->{var records=new JdbcJobRecords(source);records.ensureIntent(new JdbcJobRecords.Intent("fictional-upstream-intent","fictional-upstream-key",1,"news_dedup",LocalDate.of(2026,1,1)),clock.instant());records.createRoot(new JdbcJobRecords.Root("fictional-upstream","fictional-upstream-intent","fictional-upstream-key",1,0,"news_dedup",1),clock.instant());return true;});var original=command(false);var dependencies=List.of(new Dependency("fictional-upstream",Stage.NEWS_DEDUP,"succeeded",Instant.parse("2026-01-01T20:00:00Z")));var c=new Prepare(original.logicalKey(),1,original.stage(),original.businessDate(),null,dependencies,original.evidence(),List.of("fictional-upstream"),true,HASH);store=new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,c);var f=flow(store).prepare(c,action());assertEquals(1,count("record_kind='snapshot_part' AND purpose='dependency' AND dependency_id='fictional-upstream'"));assertEquals(f,new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,c).committed(ACTION));var bad=new Prepare("fictional-bad-root",1,original.stage(),original.businessDate(),null,List.of(new Dependency("fictional-missing-root",Stage.NEWS_DEDUP,"succeeded",clock.instant())),original.evidence(),List.of(),true,HASH);var badStore=new GenerationJdbcStore(source,clock,"fictional-owner","fictional-bad-root",bad);int before=count("1=1");assertThrows(IllegalStateException.class,()->flow(badStore).prepare(bad,new ActionContext("fictional-bad-freeze","fictional-bad-root",HASH)));assertEquals(before,count("1=1"));}
+ @Test void storeRefusesWritesOutsideTransactionAndRequestFailurePersistsNothing(){assertThrows(IllegalStateException.class,()->new JdbcFrozenInputs(source).save(OWNER,"{}",HASH,clock.instant()));badRequest=true;assertThrows(RuntimeException.class,()->flow(store).prepare(command(false),action()));assertEquals(0,count("1=1"));}
+}

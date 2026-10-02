@@ -108,7 +108,7 @@ public final class GenerationFlowService {
 
     public Frozen prepare(Prepare command, ActionContext action) {
         validate(command);
-        Instant now = clock.instant();
+        Instant now = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         Instant cutoff = cutoff(command, now);
         return writes.execute(action, store::committed, context -> {
             if (!preparationAllowed.getAsBoolean()) throw new CapacityGuarded();
@@ -127,6 +127,7 @@ public final class GenerationFlowService {
                 if (input.hasContent()) {
                     request = requests.build(command.stage(), input.snapshotJson(), input.inputHash());
                     requireCompleteRequest(request, input.inputHash());
+                    request = new String(CanonicalJson.bytes(CanonicalJson.parse(request)),StandardCharsets.UTF_8);
                 }
                 Frozen frozen = new Frozen(context.preallocatedResourceId(), command.logicalKey(),
                         command.generation(), command.stage(), cutoff, input.coverageState(),
@@ -159,6 +160,7 @@ public final class GenerationFlowService {
             }
             String request = requests.build(command.stage(), snapshot, inputHash);
             requireCompleteRequest(request, inputHash);
+            request = new String(CanonicalJson.bytes(CanonicalJson.parse(request)),StandardCharsets.UTF_8);
             Frozen frozen = new Frozen(context.preallocatedResourceId(), command.logicalKey(),
                     command.generation(), command.stage(), cutoff, coverage, missing,
                     snapshot, inputHash, request, command.stage().priority(), nextEligible(now),
