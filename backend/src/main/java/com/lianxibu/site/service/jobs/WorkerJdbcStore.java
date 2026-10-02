@@ -48,8 +48,16 @@ public final class WorkerJdbcStore implements Store {
     private JsonNode receipt(String key,String type){String json=state.receipt(hash(key),type);return json==null?null:CanonicalJson.parse(json);}
     private void append(String key,String type,ObjectNode target,ObjectNode payload,String reason,Instant now){records.appendDisposition(new JdbcJobRecords.Disposition("worker-"+hash(key).substring(0,56),key,type,json(target),epoch,reason,json(payload)),now);}
     private static ObjectNode target(Identity id){var node=JsonMapper.shared().createObjectNode();node.put("root_id",id.rootId());node.put("attempt_id",id.attemptId());node.put("dispatch_token",numeric(id));node.put("slot_revision",id.slotRevision());return node;}
-    private static ObjectNode encode(Identity id){var node=target(id);node.put("fencing",id.fencing());node.put("lease_until",id.leaseUntil().toString());node.put("request_json",id.frozenRequestJson());node.put("input_hash",id.inputHash());return node;}
-    private static Identity identity(JsonNode node){return new Identity(node.path("root_id").asText(),node.path("attempt_id").asText(),Long.toString(node.path("dispatch_token").asLong()),node.path("slot_revision").asLong(),node.path("fencing").asLong(),Instant.parse(node.path("lease_until").asText()),node.path("request_json").asText(),node.path("input_hash").asText());}
+    private static ObjectNode encode(Identity id){var node=target(id);node.put("fencing",id.fencing());node.put("lease_until",id.leaseUntil().toString());node.put("request_hash",CanonicalJson.hash(CanonicalJson.Domain.ACTION,CanonicalJson.parse(id.frozenRequestJson())));node.put("input_hash",id.inputHash());return node;}
+    private Identity identity(JsonNode node){
+        var attempt=records.byId(node.path("attempt_id").asText());
+        if(attempt==null||!"ai_attempt".equals(attempt.kind())||!node.path("root_id").asText().equals(attempt.rootId())||attempt.requestJson()==null)throw conflict();
+        var request=CanonicalJson.parse(attempt.requestJson());
+        if(!node.path("input_hash").asText().equals(request.path("input_hash").asText()))throw conflict();
+        if(node.has("request_hash")){if(!node.path("request_hash").asText().equals(CanonicalJson.hash(CanonicalJson.Domain.ACTION,request)))throw conflict();}
+        else if(!node.has("request_json")||!same(node.path("request_json").asText(),attempt.requestJson()))throw conflict();
+        return new Identity(node.path("root_id").asText(),node.path("attempt_id").asText(),Long.toString(node.path("dispatch_token").asLong()),node.path("slot_revision").asLong(),node.path("fencing").asLong(),Instant.parse(node.path("lease_until").asText()),attempt.requestJson(),node.path("input_hash").asText());
+    }
     private static long numeric(Identity id){if(id==null||id.dispatchToken()==null||!id.dispatchToken().matches("[1-9][0-9]{0,15}"))throw conflict();long number=Long.parseLong(id.dispatchToken());if(number!=id.fencing()||number>CanonicalJson.MAX_SAFE_INTEGER)throw conflict();return number;}
     private static boolean same(String a,String b){return a!=null&&b!=null&&Arrays.equals(CanonicalJson.bytes(CanonicalJson.parse(a)),CanonicalJson.bytes(CanonicalJson.parse(b)));}
     private static String json(JsonNode node){return new String(CanonicalJson.bytes(node),StandardCharsets.UTF_8);}
