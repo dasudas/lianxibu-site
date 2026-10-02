@@ -159,7 +159,7 @@ public final class VersionValidityService {
         }
     }
 
-    private static String canonicalTarget(JsonNode target) {
+    static String canonicalTarget(JsonNode target) {
         if (target == null || !target.isObject() || target.get("kind") == null
                 || !target.get("kind").isTextual()) throw new IllegalArgumentException("invalid target key");
         String kind = target.get("kind").asText();
@@ -180,11 +180,11 @@ public final class VersionValidityService {
     }
 
     private static boolean textId(JsonNode value) {
-        return value != null && value.isTextual() && !value.asText().isBlank()
-                && value.asText().length() <= 64;
+        try { return value != null && !com.lianxibu.site.domain.protocol.WireValues.id(value, false).isBlank(); }
+        catch (IllegalArgumentException error) { return false; }
     }
 
-    private static String commandHash(Command command, String targetKey) {
+    static String commandHash(Command command, String targetKey) {
         ObjectNode value = JSON.createObjectNode();
         value.set("target", CanonicalJson.parse(targetKey));
         value.put("expected_validity_revision", command.expectedValidityRevision());
