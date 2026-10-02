@@ -1,0 +1,8 @@
+export const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+export function learningId(v){if(typeof v!=='string'||!v||[...v].length>64||/[\u0000-\u001f\u007f-\u009f]/.test(v)||[...v].some(c=>c.length===1&&/[\ud800-\udfff]/.test(c)))throw new TypeError('Invalid learning identity');return v;}
+export function single(url,k){const a=url.searchParams.getAll(k);if(a.length>1)throw new TypeError('Duplicate learning query');return a[0]??null;}
+export function positive(v){if(v===null)return 1;if(!/^[1-9][0-9]*$/.test(v)||v.endsWith('\n')||!Number.isSafeInteger(Number(v)))throw new TypeError('Invalid page');return Number(v);}
+export const listMarkup=values=>values.length?`<ul>${values.map(x=>`<li>${escape(x)}</li>`).join('')}</ul>`:'<p>尚未提供。</p>';
+export function learningHref(path,values){const params=new URLSearchParams();for(const [k,v]of Object.entries(values))if(v!==null&&v!==undefined&&v!=='')params.set(k,String(v));return path+(params.size?'?'+params:'');}
+export function packageChoices(page,href){return `<nav aria-label="明确选择学习包">${page.items.map(p=>`<a class="button" data-route href="${escape(href(p.id))}">${escape(p.title)}</a>`).join('')||'<p>当前页无可见学习包。</p>'}</nav>`;}
+export function pager(data,href,label='内容分页'){return `<nav class="pagination" aria-label="${label}"><span>共 ${data.total} 项 · 第 ${data.page} 页</span>${data.page>1?`<a class="button" data-route href="${escape(href(data.page-1))}">上一页</a>`:''}${data.page*data.pageSize<data.total?`<a class="button" data-route href="${escape(href(data.page+1))}">下一页</a>`:''}</nav>`;}
