@@ -1,0 +1,21 @@
+/* Learning overview uses the existing reading layout and shared site colors. */
+.learning-workspace{--study-muted:var(--muted);--study-line:var(--line)}
+.learning-workspace .study-heading{display:flex;justify-content:space-between;gap:24px;align-items:center;margin-bottom:26px}
+.learning-workspace .study-heading h1{font-size:32px;letter-spacing:-.7px}
+.learning-workspace .study-heading p{margin:8px 0 0;color:var(--muted)}
+.learning-workspace .study-kicker{font-size:16px;font-weight:600;margin:0 0 12px;color:var(--green)}
+.learning-workspace .study-version{font-size:16px;line-height:1.8;color:var(--muted);overflow-wrap:anywhere}
+.learning-workspace .route-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:24px;margin:24px 0}
+.learning-workspace .study-route{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:26px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.learning-workspace .route-number{color:var(--green);font-size:16px;font-weight:600}
+.learning-workspace .study-route h2{font-size:22px;margin:0}.learning-workspace .study-route h2 a:hover{text-decoration:underline}
+.learning-workspace .study-route .full{margin-top:auto}.learning-workspace .study-route p{overflow-wrap:anywhere}
+.learning-workspace .study-counts{display:flex;flex-wrap:wrap;gap:16px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:16px;color:var(--muted)}
+.learning-workspace .study-counts b{font-size:22px;font-weight:600;color:var(--ink);margin-right:4px}
+.learning-workspace .study-empty{padding:32px 24px;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin:20px 0}
+.learning-workspace .learning-packages,.learning-workspace .pagination{display:flex;flex-wrap:wrap;gap:12px}
+.learning-workspace .button{font-size:16px;min-height:44px;white-space:normal;overflow-wrap:anywhere}
+.learning-workspace .learning-route-filter{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:24px 0}.learning-workspace .learning-route-filter label{display:grid;gap:8px}.learning-workspace .learning-route-filter [role=alert]{flex-basis:100%;color:var(--warning)}
+.learning-workspace .study-guide{padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-top:32px}
+.learning-workspace .study-guide ol{display:grid;gap:18px;padding-left:24px}.learning-workspace .study-guide li span{display:block;margin-top:8px;color:var(--muted)}
+@media(max-width:700px){.learning-workspace .study-heading{align-items:start;flex-wrap:wrap;gap:14px}.learning-workspace .study-heading h1{font-size:27px}}

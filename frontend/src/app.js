@@ -1,6 +1,8 @@
 import {createSourceActionsApi} from './api/source-actions.js';
 import {createPreferencesApi} from './api/preferences.js';
 import {mountPreferences} from './pages/admin/preferences.js';
+import {createLearningApi} from './api/learning.js';
+import {mountRoadmaps} from './pages/learning/roadmaps.js';
 import {createSourceRunsApi} from './api/source-runs.js';
 import {createSourcesApi} from './api/sources.js';
 import {mountSources} from './pages/admin/sources.js';
@@ -43,6 +45,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
   const adminContent = createAdminContentApi(client), ownerAnswers = createOwnerAnswersApi(client), ownerPackages = createOwnerPackagesApi(client), learningImport = createLearningImportApi(client);
   const generationIntents = createGenerationIntentsApi(client), sources = createSourcesApi(client), sourceActions = createSourceActionsApi(client), sourceRuns = createSourceRunsApi(client);
   const preferences = createPreferencesApi(client);
+  const learning = createLearningApi(client);
   const resultComparisons = createJobResultComparisonApi(client), resultActions = createJobResultActionsApi(client);
   const operationAffected = createOperationAffectedApi(client), inputSummaries = createReportInputSummaryApi(client);
   const articles = createArticlesApi(client), records = createRecordsApi(client), articleRecords = createArticleRecordsApi(client);
@@ -72,7 +75,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
       notify('退出尚未确认。私人内容已清空，请重试。', () => logout(true));
     } finally { logoutPending = false; }
   }
-  function navigate(path) { if (router.navigate(path)) root.querySelector('#main')?.focus({ preventScroll: true }); }
+  function navigate(path,options) { if (router.navigate(path,options)) root.querySelector('#main')?.focus({ preventScroll: true }); }
   const router = createPageRouter({ browser, session, mount({ route, url, scope, session: identity }) {
     const main = mountShell(root, { pathname: url.pathname, user: identity.user, scope, navigate, logout: () => logout() });
     if (route?.id === 'UI-01') return mountHome(main, { scope, api: home });
@@ -93,6 +96,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-10') return mountAdminCatalog(main, { scope, api: adminContent, impactApi: operationAffected, intentApi: generationIntents, comparisonApi: resultComparisons, resultActionsApi: resultActions, inputSummaryApi: inputSummaries, ownerAnswersApi: ownerAnswers, ownerPackagesApi: ownerPackages, learningImportApi: learningImport, url, identity, session, navigate, confirmDiscard });
     if (route?.id === 'UI-11') return mountSources(main, {scope,api:sources,actionsApi:sourceActions,runApi:sourceRuns,url,identity,session,navigate,confirmDiscard});
     if (route?.id === 'UI-13') return mountPreferences(main,{scope,api:preferences,identity,session,confirmDiscard});
+    if (route?.id === 'UI-14') return mountRoadmaps(main,{scope,api:learning,homeApi:home,url,navigate});
     const status = createStatusView(main); scope.own(() => status.dispose());
     if (!route) { status.show('empty', { message: '找不到此页面，请检查访问地址。' }); return; }
     const privatePage = url.pathname.startsWith('/app/') || url.pathname.startsWith('/admin/');
