@@ -25,6 +25,14 @@ public final class JdbcReviewPublication {
         requireTx();requireCurrent(expected);if(!"approved".equals(expected.state())||expected.reviewStampHash()==null||expected.reviewStampId()==null)throw conflict();
         one(jdbc.update("UPDATE contents SET state='published',revision=revision+1,published_at=?,updated_at=? WHERE kind=? AND id=? AND revision=? AND state='approved' AND body_revision=? AND body_hash_v1=? AND input_job_id=? AND review_stamp_hash=? AND review_stamp_id=?",Timestamp.from(now),Timestamp.from(now),expected.kind(),expected.id(),expected.revision(),expected.bodyRevision(),expected.bodyHashV1(),expected.inputJobId(),expected.reviewStampHash(),expected.reviewStampId()));
     }
+    /** Qualification update is conditional on the original management/body/input/stamp identity. */
+    public boolean close(JdbcContentReads.Row expected,String state,String summary,Instant now){
+        requireTx();requireCurrent(expected);if(!state.equals("withdrawn")||!CanonicalJson.parse(summary).isObject())throw conflict();
+        String stamp=expected.reviewStampHash()==null?"review_stamp_hash IS NULL":"review_stamp_hash=?";
+        var args=new ArrayList<Object>(List.of(state,summary,Timestamp.from(now),expected.kind(),expected.id(),expected.revision(),expected.bodyRevision(),expected.bodyHashV1(),expected.inputJobId()));
+        if(expected.reviewStampHash()!=null)args.add(expected.reviewStampHash());
+        return jdbc.update("UPDATE contents SET state=?,revision=revision+1,review_hash_v1=NULL,review_dependency_stamp=NULL,review_stamp_hash=NULL,review_stamp_id=NULL,reviewed_input_hash=NULL,blocking_summary_json=?,published_at=NULL,updated_at=? WHERE kind=? AND id=? AND revision=? AND body_revision=? AND body_hash_v1=? AND input_job_id=? AND "+stamp,args.toArray())==1;
+    }
     private static void requireCurrent(JdbcContentReads.Row row){if(row==null||row.revision()<1||row.revision()>=CanonicalJson.MAX_SAFE_INTEGER||row.bodyRevision()==null||row.bodyRevision()<1||row.bodyHashV1()==null||row.bodyHashV1().length!=32||row.inputJobId()==null)throw conflict();}
     private static void one(int count){if(count!=1)throw conflict();}
     private static void requireTx(){if(!TransactionSynchronizationManager.isActualTransactionActive()||TransactionSynchronizationManager.isCurrentTransactionReadOnly())throw new IllegalStateException("review requires shared writer transaction");}

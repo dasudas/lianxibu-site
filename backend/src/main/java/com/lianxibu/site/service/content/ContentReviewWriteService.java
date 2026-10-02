@@ -16,6 +16,15 @@ public final class ContentReviewWriteService {
     public ReviewContentState reviewSnapshot(String kind,String id){return ReviewContentState.fromRow(lock(kind,id));}
     public void approve(ReviewContentState expected,ReviewPublicationService.Stamp stamp,String stampId,byte[] inputHash){approve(expected.row(),stamp,stampId,inputHash);}
     public void publish(ReviewContentState expected){publish(expected.row());}
+    public boolean closeIfCurrent(ContentVersionKey target,Long managementRevision,String reviewStamp,String dispositionId,boolean displayOnly){
+        Objects.requireNonNull(target);if(target.inputJobId()==null)throw new IllegalArgumentException("input owner required");
+        if(dispositionId!=null)WireValues.id(dispositionId,false);
+        var row=lock(target.contentKind(),target.contentId());if(row==null||row.bodyRevision()==null||row.bodyHashV1()==null||row.bodyRevision()!=target.revision()||!HexFormat.of().formatHex(row.bodyHashV1()).equals(target.bodyHash())||!Objects.equals(row.inputJobId(),target.inputJobId()))return false;
+        if(managementRevision!=null&&(row.revision()!=managementRevision||row.reviewStampHash()==null||!HexFormat.of().formatHex(row.reviewStampHash()).equals(reviewStamp)))return false;
+        if(row.state().equals("withdrawn")&&row.reviewStampHash()==null)return false;
+        var summary=tools.jackson.databind.json.JsonMapper.shared().createObjectNode();summary.put("reason",displayOnly?"display_adjustment":"invalid_dependency");summary.put("disposition_id",dispositionId);
+        return store.close(row,"withdrawn",new String(CanonicalJson.bytes(summary),java.nio.charset.StandardCharsets.UTF_8),now());
+    }
     public void edit(ReviewContentState expected,String bodyJson,byte[] suppliedBodyHash){edit(expected.row(),bodyJson,suppliedBodyHash);}
     public void approve(Row expected,ReviewPublicationService.Stamp stamp,String stampId,byte[] inputHash){
         Objects.requireNonNull(stamp);WireValues.id(stampId,false);if(stamp.hash()==null||!stamp.hash().matches("[0-9a-f]{64}"))throw new IllegalArgumentException("invalid stamp hash");var vector=CanonicalJson.parse(stamp.json());if(!vector.isArray()||vector.size()>10000)throw new IllegalArgumentException("invalid review vector");
