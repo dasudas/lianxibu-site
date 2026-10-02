@@ -43,7 +43,14 @@ public final class GenerationFlowService {
     public record Prepare(String logicalKey, long generation, Stage stage, LocalDate businessDate,
                           String sourceId, List<Dependency> dependencies, List<Evidence> evidence,
                           List<String> expectedDependencies, boolean explicitSupplement,
-                          String settingsHash) { }
+                          String settingsHash, FrozenApplicationContext applicationContext) {
+        public Prepare(String logicalKey,long generation,Stage stage,LocalDate businessDate,String sourceId,
+                       List<Dependency> dependencies,List<Evidence> evidence,List<String> expectedDependencies,
+                       boolean explicitSupplement,String settingsHash) {
+            this(logicalKey,generation,stage,businessDate,sourceId,dependencies,evidence,expectedDependencies,
+                 explicitSupplement,settingsHash,null);
+        }
+    }
     public record Frozen(String ownerId, String logicalKey, long generation, Stage stage,
                          Instant cutoff, String coverageState, List<String> missing,
                          String snapshotJson, String inputHash, String requestJson,
@@ -122,7 +129,7 @@ public final class GenerationFlowService {
             if (command.stage().report() && reportInputs != null) {
                 // Source lookup, selection, full request and persistence share this exact
                 // transaction. No command-evidence fallback can bypass missing proof.
-                var input = reportInputs.freeze(command, cutoff);
+                var input = withApplicationContext(reportInputs.freeze(command, cutoff), command);
                 String request = null;
                 if (input.hasContent()) {
                     request = requests.build(command.stage(), input.snapshotJson(), input.inputHash());
@@ -295,7 +302,14 @@ public final class GenerationFlowService {
             ArrayNode refs = member.putArray("references");
             for (String ref : item.references()) refs.add(ref);
         }
+        if(command.applicationContext()!=null)value.set(FrozenApplicationContext.FIELD,command.applicationContext().toJson());
         return new String(CanonicalJson.bytes(value), StandardCharsets.UTF_8);
+    }
+    private static ReportInputSnapshotService.FrozenInput withApplicationContext(ReportInputSnapshotService.FrozenInput input,Prepare command) {
+        if(command.applicationContext()==null)return input;
+        var value=(ObjectNode)CanonicalJson.parse(input.snapshotJson());value.set(FrozenApplicationContext.FIELD,command.applicationContext().toJson());
+        return new ReportInputSnapshotService.FrozenInput(new String(CanonicalJson.bytes(value),StandardCharsets.UTF_8),
+            CanonicalJson.hash(Domain.INPUT,value),input.coverageState(),input.missing(),input.hasContent(),input.state());
     }
     private static Instant nextEligible(Instant now) {
         LocalDateTime local = LocalDateTime.ofInstant(now, SHANGHAI);
@@ -357,5 +371,11 @@ public final class GenerationFlowService {
                     || item.bodyHash() == null || !item.bodyHash().matches("[0-9a-f]{64}"))
                 || value.evidence().stream().map(Evidence::id).distinct().count()
                     != value.evidence().size()) throw new InputRejected();
+        var context=value.applicationContext();
+        if(context!=null&&(context.stage()!=value.stage()||context.generation()!=value.generation()))throw new InputRejected();
+        if(context!=null&&value.stage().report()) {
+            LocalDate end=Instant.parse(context.periodEnd()).atZone(SHANGHAI).toLocalDate();
+            if(!end.equals(value.businessDate().plusDays(1)))throw new InputRejected();
+        }
     }
 }

@@ -62,6 +62,8 @@ public final class FrozenApplicationContext {
     public String contentKind(){return contentKind;}
     public String contentId(){return contentId;}
     public Long baseContentRevision(){return contentRevision;}
+    public String periodStart(){return periodStart;}
+    public String periodEnd(){return periodEnd;}
     public boolean referencesComplete(){return complete;}
     public List<JsonNode> referenceTargets(){return targets.stream().map(CanonicalJson::parse).toList();}
     public Input input(String rootId,String attemptId,String inputHash,long expectedRootRevision){WireValues.id(rootId,false);WireValues.id(attemptId,false);if(inputHash==null||!inputHash.matches("[0-9a-f]{64}"))throw invalid();if(expectedRootRevision<0||expectedRootRevision>CanonicalJson.MAX_SAFE_INTEGER)throw invalid();return new Input(rootId,attemptId,stage,generation,inputHash,expectedRootRevision,contentRevision,items,candidates,high,citations,versions,entity,periodStart,periodEnd);}
