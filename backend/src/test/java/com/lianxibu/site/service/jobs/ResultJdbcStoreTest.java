@@ -41,10 +41,13 @@ public class ResultJdbcStoreTest {
  void restart(){
   var reads=new ContentReadService(new JdbcContentReads(source),tx,ContentReadService.denyUnverifiedReferences());
   store=new ResultJdbcStore(source,identity,reads,target->"article_revision".equals(target.path("kind").asText())&&jdbc.query("SELECT id,effective_valid FROM article_revisions WHERE id=?",(rs,n)->new Object[]{rs.getString(1),rs.getBoolean(2)},target.path("id").asText()).stream().anyMatch(r->target.path("id").asText().equals(r[0])&&(boolean)r[1]),clock,"fictional-owner");
+  service=applicationService(store);
+ }
+ ResultApplicationService applicationService(Store applicationStore){
   var content=new GeneratedContentService(new JdbcGeneratedContents(source),clock);
   Handler handler=(input,result,current,manual)->{handlerCalls++;var ctx=store.context();var body=CanonicalJson.parse(result.payloadJson()).get("body");var applied=content.write(new GeneratedContentService.Write(ctx.contentKind(),ctx.contentId(),manual?current.contentRevision():input.expectedContentRevision(),input.rootId(),JdbcFrozenInputs.canonical(body)));if(applied==null)return null;
     new JdbcJobRecords(source).ensureIntent(new JdbcJobRecords.Intent("fictional-downstream","fictional-downstream-key",1,"daily_report",LocalDate.of(2026,1,1)),clock.instant());if(failDownstream)throw new IllegalStateException("fictional downstream failure");return new Applied(applied.id(),applied.revision());};
-  Handler unused=(a,b,c,d)->{throw new AssertionError("unassembled branch");};service=new ResultApplicationService(writes,store,Map.of("report",handler,"analysis",unused,"dedup",unused,"value",unused,"ad_hoc",unused));
+  Handler unused=(a,b,c,d)->{throw new AssertionError("unassembled branch");};return new ResultApplicationService(writes,applicationStore,Map.of("report",handler,"analysis",unused,"dedup",unused,"value",unused,"ad_hoc",unused));
  }
  String raw(){var core=tools.jackson.databind.json.JsonMapper.shared().createObjectNode();core.put("schema_version","1");core.put("input_hash",identity.inputHash());core.set("payload",CanonicalJson.parse("{\"kind\":\"report\",\"body\":"+BODY+"}"));try{var hash=MessageDigest.getInstance("SHA-256");hash.update("ai-result-v1\n".getBytes(StandardCharsets.UTF_8));hash.update(CanonicalJson.bytes(core));core.put("result_hash",HexFormat.of().formatHex(hash.digest()));return JdbcFrozenInputs.canonical(core);}catch(Exception impossible){throw new IllegalStateException(impossible);}}
  Result apply(){return service.applyAutomatic(store.input(),raw(),action("fictional-apply"));}
