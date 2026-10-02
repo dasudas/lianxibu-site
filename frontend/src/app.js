@@ -3,6 +3,7 @@ import {createPreferencesApi} from './api/preferences.js';
 import {mountPreferences} from './pages/admin/preferences.js';
 import {createLearningApi} from './api/learning.js';
 import {mountRoadmaps} from './pages/learning/roadmaps.js';
+import {mountRoute} from './pages/learning/route.js';
 import {mountNode} from './pages/learning/node.js';
 import {mountLearningCatalog} from './pages/learning/catalog.js';
 import {mountLearningRecords} from './pages/learning/records.js';
@@ -105,6 +106,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-12') return mountJobs(main,{scope,api:jobs,actionsApi:jobActions,comparisonApi:resultComparisons,impactApi:operationAffected,url,identity,session,navigate,confirmDiscard});
     if (route?.id === 'UI-13') return mountPreferences(main,{scope,api:preferences,identity,session,confirmDiscard});
     if (route?.id === 'UI-14') return mountRoadmaps(main,{scope,api:learning,homeApi:home,url,navigate});
+    if (route?.id === 'UI-15') return mountRoute(main,{scope,api:learning,records,url,identity,navigate});
     if (route?.id === 'UI-16') return mountNode(main,{scope,api:learning,records,url,identity,session,navigate,confirmDiscard});
     if (route?.id === 'UI-17') return mountLearningCatalog(main,{scope,api:learning,homeApi:home,records,url,identity,session,navigate,confirmDiscard,collection:'questions'});
     if (route?.id === 'UI-18') return mountLearningCatalog(main,{scope,api:learning,homeApi:home,records,url,identity,session,navigate,confirmDiscard,collection:'projects'});
