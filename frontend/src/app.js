@@ -6,6 +6,9 @@ import {mountRoadmaps} from './pages/learning/roadmaps.js';
 import {mountNode} from './pages/learning/node.js';
 import {mountLearningCatalog} from './pages/learning/catalog.js';
 import {mountLearningRecords} from './pages/learning/records.js';
+import {createJobsApi} from './api/jobs.js';
+import {createJobActionsApi} from './api/job-actions.js';
+import {mountJobs} from './pages/admin/jobs.js';
 import {createSourceRunsApi} from './api/source-runs.js';
 import {createSourcesApi} from './api/sources.js';
 import {mountSources} from './pages/admin/sources.js';
@@ -48,6 +51,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
   const adminContent = createAdminContentApi(client), ownerAnswers = createOwnerAnswersApi(client), ownerPackages = createOwnerPackagesApi(client), learningImport = createLearningImportApi(client);
   const generationIntents = createGenerationIntentsApi(client), sources = createSourcesApi(client), sourceActions = createSourceActionsApi(client), sourceRuns = createSourceRunsApi(client);
   const preferences = createPreferencesApi(client);
+  const jobs = createJobsApi(client), jobActions = createJobActionsApi(client);
   const learning = createLearningApi(client);
   const resultComparisons = createJobResultComparisonApi(client), resultActions = createJobResultActionsApi(client);
   const operationAffected = createOperationAffectedApi(client), inputSummaries = createReportInputSummaryApi(client);
@@ -98,6 +102,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-09') return mountInterpretation(main, { scope, api: interpretations, url });
     if (route?.id === 'UI-10') return mountAdminCatalog(main, { scope, api: adminContent, impactApi: operationAffected, intentApi: generationIntents, comparisonApi: resultComparisons, resultActionsApi: resultActions, inputSummaryApi: inputSummaries, ownerAnswersApi: ownerAnswers, ownerPackagesApi: ownerPackages, learningImportApi: learningImport, url, identity, session, navigate, confirmDiscard });
     if (route?.id === 'UI-11') return mountSources(main, {scope,api:sources,actionsApi:sourceActions,runApi:sourceRuns,url,identity,session,navigate,confirmDiscard});
+    if (route?.id === 'UI-12') return mountJobs(main,{scope,api:jobs,actionsApi:jobActions,comparisonApi:resultComparisons,impactApi:operationAffected,url,identity,session,navigate,confirmDiscard});
     if (route?.id === 'UI-13') return mountPreferences(main,{scope,api:preferences,identity,session,confirmDiscard});
     if (route?.id === 'UI-14') return mountRoadmaps(main,{scope,api:learning,homeApi:home,url,navigate});
     if (route?.id === 'UI-16') return mountNode(main,{scope,api:learning,records,url,identity,session,navigate,confirmDiscard});
