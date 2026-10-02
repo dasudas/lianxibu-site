@@ -36,12 +36,15 @@ import tools.jackson.databind.JsonNode;
         "SITE_RUN_LEASE_KEY_ID=fixture",
         "site.collector.enabled=true"
 })
-@org.springframework.context.annotation.Import(OperationalTestFixture.class)
+@org.springframework.context.annotation.Import({OperationalTestFixture.class,V3LeaseHttpFixture.class})
 class CollectorRuntimeHttpTest {
     private static final String TOKEN = "A".repeat(43);
     @Autowired JdbcTemplate jdbc;
     @Autowired SourceRunLeaseService leases;
     @LocalServerPort int port;
+
+    @Autowired V3LeaseHttpFixture.FixtureClock v3Clock;
+    private Path v3Queue;
 
     @Test void realHttpBeanChainPersistsLeaseAndRevocationFencesReplay() throws Exception {
         String isolatedMySql = System.getenv("B26_TEST_DB_URL");
@@ -289,6 +292,36 @@ class CollectorRuntimeHttpTest {
                     CanonicalJson.parse(probeReplay.body()).get("data").get("receipt_ref").asText());
             assertNotNull(jdbc.queryForObject("SELECT probe_trial_result_json FROM source_runs WHERE id=?",
                     String.class, "fixture-http-probe"));
+            if (System.getenv("V04_GO_EXEC") != null) {
+                for (String id : List.of("v04-renew", "v04-release")) {
+                    String date=id.equals("v04-renew")?"2026-09-28":"2026-09-29";
+                    java.time.LocalDate day=java.time.LocalDate.parse(date);
+                    jdbc.update("INSERT INTO source_runs(id,source_id,run_kind,business_date,generation,"
+                            +"window_start,window_end,config_version,config_snapshot_json,activation_stage,revision,"
+                            +"delivery_state,fetch_mode,collection_reason,fetch_state,analysis_state,accepted_count,excluded_count,pending_count,coverage_json,job_refs_json)"
+                            +" VALUES(?,?,'daily',?,1,?,?,1,?,'production',0,'pending','daily_delta','daily','queued','waiting_input',0,0,0,'{}','[]')",
+                            id,"fixture:go",java.sql.Date.valueOf(day),Timestamp.from(day.atStartOfDay(java.time.ZoneId.of("Asia/Shanghai")).toInstant()),
+                            Timestamp.from(day.plusDays(1).atStartOfDay(java.time.ZoneId.of("Asia/Shanghai")).toInstant()),config);
+                }
+                v3Queue=Files.createTempDirectory(Path.of("target"),"fictional-v04-").toAbsolutePath().resolve("queue.db");
+                Instant base=Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+                v3Clock.freeze(base);goSQLiteInterop("fresh");
+                assertEquals(1L,jdbc.queryForObject("SELECT count(*) FROM source_run_items WHERE run_id='v04-renew'",Long.class));
+                assertEquals(1L,jdbc.queryForObject("SELECT count(*) FROM request_receipts WHERE observation_id='v04-observation'",Long.class));
+                v3Clock.freeze(base.plusSeconds(20));goSQLiteInterop("lost-b");
+                assertEquals(2L,jdbc.queryForObject("SELECT count(*) FROM request_receipts WHERE run_id='v04-renew' AND control_operation='renew'",Long.class));
+                Timestamp bUntil=jdbc.queryForObject("SELECT lease_until FROM source_runs WHERE id='v04-renew'",Timestamp.class);
+                assertEquals(base.plusSeconds(170),bUntil.toInstant());
+                v3Clock.freeze(base.plusSeconds(240));goSQLiteInterop("takeover");
+                for(String id:List.of("v04-renew","v04-release")) {
+                    assertEquals(base.plusSeconds(390),jdbc.queryForObject("SELECT lease_until FROM source_runs WHERE id=?",Timestamp.class,id).toInstant());
+                    assertEquals("receiving",jdbc.queryForObject("SELECT delivery_state FROM source_runs WHERE id=?",String.class,id));
+                }
+                assertEquals(2L,jdbc.queryForObject("SELECT count(*) FROM request_receipts WHERE run_id='v04-renew' AND control_operation='renew'",Long.class));
+                assertEquals(0L,jdbc.queryForObject("SELECT count(*) FROM request_receipts WHERE run_id='v04-release' AND control_operation='release'",Long.class));
+                assertEquals(1L,jdbc.queryForObject("SELECT count(*) FROM source_run_items WHERE run_id='v04-renew'",Long.class));
+                assertEquals(1L,jdbc.queryForObject("SELECT count(*) FROM request_receipts WHERE observation_id='v04-observation'",Long.class));
+            }
             jdbc.update("UPDATE collector_nodes SET token_hash=? WHERE id=?",
                     NodeTokens.digest("B".repeat(43)), "fixture-node");
             goInterop("revoked");
@@ -360,6 +393,24 @@ class CollectorRuntimeHttpTest {
             statement = statement.replace("CLOB", "LONGTEXT");
         }
         jdbc.execute(statement);
+    }
+
+    private void goSQLiteInterop(String mode) throws Exception {
+        String go=System.getenv("V04_GO_EXEC");
+        ProcessBuilder command=new ProcessBuilder(go,"test","./internal/outbox","-run","^TestV3SQLiteJavaHTTP$","-count=1");
+        command.directory(Path.of("../collector").toAbsolutePath().normalize().toFile());
+        command.redirectErrorStream(true);
+        Path log=Path.of("target/v04-go-"+mode+".log").toAbsolutePath();command.redirectOutput(log.toFile());
+        command.environment().put("V04_BASE_URL","https://127.0.0.1:"+port);
+        command.environment().put("V04_NODE_TOKEN",TOKEN);
+        command.environment().put("V04_QUEUE_PATH",v3Queue.toString());
+        command.environment().put("V04_MODE",mode);
+        command.environment().put("V04_NOW",v3Clock.instant().toString());
+        command.environment().put("GOROOT",Path.of(go).getParent().getParent().toString());
+        command.environment().put("GOTOOLCHAIN","local");command.environment().put("GOPROXY","off");
+        Process process=command.start();
+        if(!process.waitFor(60,TimeUnit.SECONDS)){process.destroyForcibly();process.waitFor(10,TimeUnit.SECONDS);fail("fictional v3 HTTP child timed out");}
+        assertEquals(0,process.exitValue(),Files.readString(log,StandardCharsets.UTF_8));
     }
 
     private void goInterop(String mode) throws Exception {
