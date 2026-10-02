@@ -30,6 +30,17 @@ class PrivateRecordWriteServiceTest {
     private RecordReadService reads;
     private Fixture store;
 
+    @Test void unicodeScalarIdentitiesReachProviderRatherThanFailingUtf16Validation() {
+        String full = "😀".repeat(64);
+        assertNull(service.progress(new Actor(full,"user"),full,full).rate());
+        var missing = assertThrows(PrivateRecordWriteService.Rejected.class,
+            () -> service.write(ALICE,"node",full,
+                write(0,"planned",full,"note",null,null,null,null,null),"unicode-key","csrf","origin"));
+        assertEquals("object_missing",missing.getMessage());
+        for (String bad : new String[]{"😀".repeat(65),"a\u0000", "\ud800"})
+            assertThrows(IllegalArgumentException.class, () -> service.progress(ALICE,"p-a",bad));
+    }
+
     @BeforeEach void setup() {
         var source = new JdbcDataSource();
         source.setURL("jdbc:h2:mem:records-" + System.nanoTime() + ";DB_CLOSE_DELAY=-1");

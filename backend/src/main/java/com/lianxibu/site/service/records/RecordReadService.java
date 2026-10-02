@@ -86,9 +86,10 @@ public final class RecordReadService implements RecordsService {
         return packageId;
     }
     private static void id(String value) {
-        if (value == null || value.isBlank() || value.length() > 64) {
+        if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("record key required");
         }
+        com.lianxibu.site.domain.protocol.WireValues.id(value,false);
     }
 
     @Override public Record write(Actor actor, String kind, String id, RecordWrite command,

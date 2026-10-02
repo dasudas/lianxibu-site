@@ -18,6 +18,13 @@ class RecordReadServiceTest {
     private final Actor alice = new Actor("alice", "user");
     private final Actor bob = new Actor("bob", "user");
 
+    @Test void unicodeScalarIdentityEntersReadStoreAndMalformedIdentitiesAreRejected() {
+        String full = "😀".repeat(64);
+        assertTrue(reads.current(new Actor(full,"user"),"node",full,full).isEmpty());
+        for (String bad : new String[]{"😀".repeat(65),"a\u0000", "\ud800"})
+            assertThrows(IllegalArgumentException.class, () -> reads.current(alice,"node","p",bad));
+    }
+
     @BeforeEach void setup() {
         var source = new JdbcDataSource();
         source.setURL("jdbc:h2:mem:records-" + System.nanoTime() + ";DB_CLOSE_DELAY=-1");

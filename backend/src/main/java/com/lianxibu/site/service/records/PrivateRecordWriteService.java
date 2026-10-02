@@ -170,7 +170,9 @@ public final class PrivateRecordWriteService implements RecordsService {
         return actor.userId();
     }
     private static boolean id(String value) {
-        return value != null && !value.isBlank() && value.length() <= 64;
+        if (value == null || value.isBlank()) return false;
+        try { com.lianxibu.site.domain.protocol.WireValues.id(value,false); return true; }
+        catch (IllegalArgumentException invalid) { return false; }
     }
     private static String normalize(String value) {
         if (value == null) throw new IllegalArgumentException("required text");
