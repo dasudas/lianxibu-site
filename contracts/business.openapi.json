@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lianxibu business API",
-    "version": "0.27",
+    "version": "0.28",
     "description": "Design contract. Observation revisions 0.11/0.12; config/control 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -8127,7 +8127,7 @@
       "post": {
         "operationId": "business_post_admin_source_runs_id_items_item_id_actions",
         "summary": "POST /admin/source-runs/{id}/items/{item_id}/actions",
-        "description": "Semantics and transaction invariants: api-contract.md. Schema validation precedes service semantic checks.",
+        "description": "Owner-only permanent member action receipt. command_ref must exactly match submitted source/run/item/revision/action and complete wire command hash. In-place root is source_run_item with original item ID, revision expected+1 and generation null. Frozen item decision creates only a new correction run: root source_run with a different run ID, positive generation and original source binding; result_revision is new run management revision. Both roots have package_id null. Original frozen run/member remains unchanged. Receipt proves command acceptance only, never collection or analysis completion. No source credentials, original source payload or business body. Identity authorization and original membership are checked before any replay. CAS/command conflict 409; missing 404; business validation 422; corrupt or unknown receipt 503 with Retry-After and no-store. resolve_projection includes independent article expected revision and explicit evidence references, never bypassed by confirm_new. Same key/body replays exact permanent receipt; frozen receipt never reconstructed from mutable current run. This replaces only the previously unconsumed generic response of this owner operation; all other operations and original ActionResult remain unchanged.",
         "security": [
           {
             "sessionCookie": [],
@@ -8178,7 +8178,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/ActionResult"
+                      "$ref": "#/components/schemas/SourceItemActionResult"
                     },
                     "meta": {
                       "$ref": "#/components/schemas/Meta"
@@ -25714,6 +25714,149 @@
         ],
         "additionalProperties": false,
         "description": "Owner-safe read snapshot of exact job. planned_period is known only from validated permanent frozen report input; unavailable, legacy or non-report means null. first_queued_at is the original immutable queue admission receipt time, never jobs.created_at, updated_at or eligibility; unknown means null. first_queued_at cannot exceed observed_at. This is elapsed wall time since first enqueue, including later waits/retries, not time spent exclusively in queue. No execution, activation or AI calls."
+      },
+      "SourceItemCommandRef": {
+        "type": "object",
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "action": {
+            "enum": [
+              "confirm_new",
+              "link_existing",
+              "exclude",
+              "resolve_projection",
+              "revalidate",
+              "seal"
+            ]
+          },
+          "command_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "source_id",
+          "run_id",
+          "item_id",
+          "expected_revision",
+          "action",
+          "command_hash"
+        ],
+        "additionalProperties": false,
+        "description": "Exact source/run/item and original item revision, action and action-v1 CanonicalJson hash of complete request body including reason, association or projection CAS/evidence. Derived by server from frozen original command and authoritative run membership; never inferred from directory position."
+      },
+      "SourceItemActionResult": {
+        "type": "object",
+        "properties": {
+          "operation_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "result_resource_ref": {
+            "$ref": "#/components/schemas/ResourceRef"
+          },
+          "result_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cutoff": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$(?![\\s\\S])"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Coverage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "affected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceRef"
+            },
+            "minItems": 0,
+            "maxItems": 50
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "command_ref": {
+            "$ref": "#/components/schemas/SourceItemCommandRef"
+          }
+        },
+        "required": [
+          "operation_ref",
+          "result_resource_ref",
+          "result_revision",
+          "generation",
+          "cutoff",
+          "coverage",
+          "affected",
+          "next_cursor",
+          "command_ref"
+        ],
+        "additionalProperties": false,
+        "description": "Owner-only permanent member action receipt. command_ref must exactly match submitted source/run/item/revision/action and complete wire command hash. In-place root is source_run_item with original item ID, revision expected+1 and generation null. Frozen item decision creates only a new correction run: root source_run with a different run ID, positive generation and original source binding; result_revision is new run management revision. Both roots have package_id null. Original frozen run/member remains unchanged. Receipt proves command acceptance only, never collection or analysis completion. No source credentials, original source payload or business body."
       }
     },
     "securitySchemes": {

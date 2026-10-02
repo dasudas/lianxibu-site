@@ -1,0 +1,796 @@
+{
+  "description": "Entirely fictional source member command receipt vectors; no real source or correction is executed.",
+  "cases": [
+    {
+      "name": "in_place_receipt",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "frozen_new_correction",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run",
+          "id": "fictional-correction",
+          "package_id": null
+        },
+        "result_revision": 0,
+        "generation": 2,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "wrong_source",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-other",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "wrong_run",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-other",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "wrong_item",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-other",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "wrong_action",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "confirm_new",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "wrong_command",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      }
+    },
+    {
+      "name": "wrong_original_revision",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 8,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "wrong_result_item",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-other",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "wrong_result_revision",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 7,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "in_place_fake_generation",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": 2,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "wrong_package",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": "fictional-package"
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "missing_command_ref",
+      "schema": "SourceItemActionResult",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "raw_result_extra",
+      "schema": "SourceItemActionResult",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        },
+        "raw_result": "fictional forbidden"
+      }
+    },
+    {
+      "name": "bad_hash_tail",
+      "schema": "SourceItemActionResult",
+      "schema_valid": false,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063\n"
+        }
+      }
+    },
+    {
+      "name": "correction_same_original_run",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run",
+          "id": "fictional-run",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": 2,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "correction_generation_zero",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": false,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "exclude",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run",
+          "id": "fictional-correction",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": 0,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "exclude",
+          "command_hash": "c4e5babcb5b372f4123cf7a9666f318b9ac8165a03e774c0859488f08b18a063"
+        }
+      }
+    },
+    {
+      "name": "confirm_new_exact_request",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "confirm_new",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "confirm_new",
+          "command_hash": "6312dd0c62219ed5c8473d45426a31ac16e04ecbd9c2494ffc9ea4ba42645ed4"
+        }
+      }
+    },
+    {
+      "name": "link_existing_exact_request",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "link_existing",
+        "reason": "Fictional explicit exclusion",
+        "entity_id": "fictional-entity"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "link_existing",
+          "command_hash": "805c92a062491cf445361aa5f8109569ed0260aa0f54cedf398a31f8a7290ac7"
+        }
+      }
+    },
+    {
+      "name": "resolve_projection_exact_request",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "resolve_projection",
+        "reason": "Fictional explicit exclusion",
+        "decision": "keep_historical",
+        "expected_article_revision": 4,
+        "evidence_refs": [
+          "fictional-evidence"
+        ]
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "resolve_projection",
+          "command_hash": "cf447d1b9e5d0a2a4fcbfc72980eb90dbaf57701a588b5f464f99530a4c5a3ff"
+        }
+      }
+    },
+    {
+      "name": "revalidate_exact_request",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "revalidate",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "revalidate",
+          "command_hash": "ffbfdf678b830e0ab7a9994d18c3eda50f967313b0c1c19732437cfd8d4923ae"
+        }
+      }
+    },
+    {
+      "name": "seal_exact_request",
+      "schema": "SourceItemActionResult",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "source_id": "fictional-source",
+      "run_id": "fictional-run",
+      "item_id": "fictional-item",
+      "request": {
+        "expected_revision": 7,
+        "action": "seal",
+        "reason": "Fictional explicit exclusion"
+      },
+      "data": {
+        "operation_ref": "fictional-operation",
+        "result_resource_ref": {
+          "kind": "source_run_item",
+          "id": "fictional-item",
+          "package_id": null
+        },
+        "result_revision": 8,
+        "generation": null,
+        "cutoff": null,
+        "coverage": null,
+        "affected": [],
+        "next_cursor": null,
+        "command_ref": {
+          "source_id": "fictional-source",
+          "run_id": "fictional-run",
+          "item_id": "fictional-item",
+          "expected_revision": 7,
+          "action": "seal",
+          "command_hash": "3564b3d0aecde4be5ff45c7e605a35552f3b5141e3f74a055e8f8e0dde2b2a3a"
+        }
+      }
+    }
+  ]
+}

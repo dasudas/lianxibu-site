@@ -754,13 +754,13 @@
     "group": "business",
     "method": "post",
     "path": "/admin/source-runs/{id}/items/{item_id}/actions",
-    "response": "ActionResult",
+    "response": "SourceItemActionResult",
     "request": "ItemAction",
     "access": "owner",
     "scope": null,
     "paging": false,
     "query": {},
-    "description": "",
+    "description": "Owner-only permanent member action receipt. command_ref must exactly match submitted source/run/item/revision/action and complete wire command hash. In-place root is source_run_item with original item ID, revision expected+1 and generation null. Frozen item decision creates only a new correction run: root source_run with a different run ID, positive generation and original source binding; result_revision is new run management revision. Both roots have package_id null. Original frozen run/member remains unchanged. Receipt proves command acceptance only, never collection or analysis completion. No source credentials, original source payload or business body. Identity authorization and original membership are checked before any replay. CAS/command conflict 409; missing 404; business validation 422; corrupt or unknown receipt 503 with Retry-After and no-store. resolve_projection includes independent article expected revision and explicit evidence references, never bypassed by confirm_new. Same key/body replays exact permanent receipt; frozen receipt never reconstructed from mutable current run. This replaces only the previously unconsumed generic response of this owner operation; all other operations and original ActionResult remain unchanged.",
     "operation_id": "business_post_admin_source_runs_id_items_item_id_actions"
   },
   {

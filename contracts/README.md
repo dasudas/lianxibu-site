@@ -1,6 +1,6 @@
 # API contracts
 
-Contract package revision: 0.27. Observations accept wire revisions 0.11 and
+Contract package revision: 0.28. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
@@ -106,3 +106,7 @@ The existing `POST /admin/sources/{id}/actions` now returns `SourceActionResult`
 ## Job scheduling summary
 
 `GET /admin/jobs/{id}/schedule` is an owner-only, no-store read of the exact job revision, authoritative frozen report interval, original queue admission time and snapshot observation time. Unknown proof remains null; job creation/update and next eligible time never substitute queue admission. Elapsed time means wall time since first enqueue, including retries. Existing Job and all prior operations are unchanged. [Fictional schema and semantic vectors](job-schedule-wire-examples.json). No scheduler, database migration or collector wire change.
+
+## Source member command receipts
+
+The owner source member action now returns `SourceItemActionResult`, with an exact source/run/item/original revision/action and complete `action-v1` command hash. An in-place member update and a new correction run have different root types; a correction preserves the frozen original. The previously unconsumed generic response for this operation is replaced; all other operations and ActionResult remain unchanged. [Fictional receipt vectors](source-item-action-wire-examples.json). No trial execution, schema migration or collector wire change.
