@@ -83,20 +83,22 @@ public final class JobReadService {
         if (row.usageJson() == null && row.costDecimal() == null) return null;
         Long input = null, output = null;
         if (row.usageJson() != null) {
-            JsonNode value = CanonicalJson.parse(row.usageJson());
-            if (value.isObject()) {
-                input = nonnegative(value.get("input_tokens"));
-                output = nonnegative(value.get("output_tokens"));
-            }
+            JsonNode value;
+            try {value=CanonicalJson.parse(row.usageJson());}
+            catch(IllegalArgumentException error){throw new IllegalStateException("usage summary unavailable",error);}
+            if (!value.isObject()) throw new IllegalStateException("usage summary unavailable");
+            input = token(value,"input_tokens","prompt_tokens");
+            output = token(value,"output_tokens","completion_tokens");
         }
         return new Usage(input, output, row.costDecimal());
     }
 
     private static Long nonnegative(JsonNode value) {
-        if (value == null || !value.isIntegralNumber()) return null;
-        long number = value.asLong();
-        return number >= 0 ? number : null;
+        if (value == null || value.isNull()) return null;
+        try{return com.lianxibu.site.domain.protocol.WireValues.nonnegativeInteger(value);}
+        catch(IllegalArgumentException error){throw new IllegalStateException("usage summary unavailable",error);}
     }
+    private static Long token(JsonNode value,String wire,String provider){Long a=nonnegative(value.get(wire)),b=nonnegative(value.get(provider));if(a!=null&&b!=null&&!a.equals(b))throw new IllegalStateException("conflicting usage summary");return a!=null?a:b;}
 
     public static Kind classify(String value) {
         if (value == null) return Kind.UNKNOWN;

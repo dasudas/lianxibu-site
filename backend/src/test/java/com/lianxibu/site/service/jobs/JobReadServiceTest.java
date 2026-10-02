@@ -77,6 +77,12 @@ class JobReadServiceTest {
         assertFalse(slot.toString().contains("SECRET_HOLDER_SENTINEL"));
     }
 
+    @Test void providerUsageKeepsReportedZeroAndUnknownWhileRejectingConflictsAndOverflow(){
+        job("late","ai_attempt","succeeded","{\"prompt_tokens\":17,\"completion_tokens\":0,\"state\":\"reported_late\"}",0,1);var value=reads.job("late").orElseThrow().usage();assertEquals(17L,value.inputTokens());assertEquals(0L,value.outputTokens());
+        jdbc.update("UPDATE jobs SET usage_json=? WHERE id='late'","{\"prompt_tokens\":null,\"completion_tokens\":null,\"state\":\"unknown\"}");assertNull(reads.job("late").orElseThrow().usage().inputTokens());assertNull(reads.job("late").orElseThrow().usage().outputTokens());
+        for(String bad:new String[]{"{\"input_tokens\":1,\"prompt_tokens\":2}","{\"prompt_tokens\":9007199254740992}","{\"completion_tokens\":1.5}","{\"input_tokens\":-1}","[]"}){jdbc.update("UPDATE jobs SET usage_json=? WHERE id='late'",bad);assertThrows(IllegalStateException.class,()->reads.job("late"));}
+    }
+
     private void job(String id, String kind, String state, String usage, int priority, Integer attempt) {
         jdbc.update("INSERT INTO jobs(id,record_kind,task_type,state,revision,priority_no,"
                         + "eligible_at,input_state,coverage_state,error_code,call_count,max_attempts,"
