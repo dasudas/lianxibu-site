@@ -18,14 +18,27 @@ import tools.jackson.databind.node.ObjectNode;
 public final class VersionValidityService {
     public enum Action { INVALIDATE, REVERSE_INVALIDATION }
     public record Command(JsonNode target, long expectedValidityRevision, Action action,
-                          String reason, String reversesDispositionId) { }
-    public record Validity(long revision, boolean effectiveValid, Set<String> activeDispositionIds) { }
+                          String reason, String reversesDispositionId) {
+        public Command { target=target==null?null:target.deepCopy(); }
+        @Override public JsonNode target(){return target==null?null:target.deepCopy();}
+    }
+    public record Validity(long revision, boolean effectiveValid, Set<String> activeDispositionIds) {
+        public Validity { activeDispositionIds=activeDispositionIds==null?null:Set.copyOf(activeDispositionIds); }
+    }
     public record Result(String dispositionId, String targetKey, long validityRevision,
                          boolean effectiveValid, boolean replayed) { }
     public record Dependent(JsonNode versionKey, long contentRevision, String inputJobId,
-                            String reviewStampHash) { }
-    public record Page(List<Dependent> items, String nextCursor) { }
-    public record Work(String dispositionId, JsonNode target, String cursor) { }
+                            String reviewStampHash) {
+        public Dependent { versionKey=versionKey==null?null:versionKey.deepCopy(); }
+        @Override public JsonNode versionKey(){return versionKey==null?null:versionKey.deepCopy();}
+    }
+    public record Page(List<Dependent> items, String nextCursor) {
+        public Page { items=items==null?null:List.copyOf(items); }
+    }
+    public record Work(String dispositionId, JsonNode target, String cursor) {
+        public Work { target=target==null?null:target.deepCopy(); }
+        @Override public JsonNode target(){return target==null?null:target.deepCopy();}
+    }
 
     public interface Store {
         Result committed(String actionKey, String commandHash);
@@ -46,6 +59,10 @@ public final class VersionValidityService {
         boolean blockIfCurrent(Dependent dependent, String dispositionId);
         void advance(Work work, String nextCursor);
         void complete(Work work);
+        default Boolean committedDisplay(String key,JsonNode target){return null;}
+        default void recordDisplay(String key,JsonNode target){ }
+        default Boolean committedPropagation(String key){return null;}
+        default void recordPropagation(String key,boolean worked){ }
     }
     public static final class Rejected extends RuntimeException {
         public Rejected(String code) { super(code); }
@@ -65,10 +82,10 @@ public final class VersionValidityService {
         validate(command, action);
         String targetKey = canonicalTarget(command.target());
         String hash = commandHash(command, targetKey);
-        Result prior = store.committed(action.actionKey(), hash);
-        if (prior != null) return new Result(prior.dispositionId(), targetKey,
-                prior.validityRevision(), prior.effectiveValid(), true);
-        return writes.execute(action, key -> store.committed(key, hash), ignored -> {
+        return writes.execute(action, key -> {
+            Result prior=store.committed(key,hash);
+            return prior==null?null:new Result(prior.dispositionId(),targetKey,prior.validityRevision(),prior.effectiveValid(),true);
+        }, ignored -> {
             store.lockStableIdentity(command.target());
             if (!store.exactVersionExists(command.target())) throw new Rejected("unknown_version");
             Validity current = store.validity(command.target());
@@ -95,12 +112,14 @@ public final class VersionValidityService {
 
     /** Display withdrawal changes only the current public qualification, not version validity. */
     public void displayAdjustment(JsonNode currentVersion, ActionContext action) {
+        if(!"content_version".equals(currentVersion==null?null:currentVersion.path("kind").asText()))throw new IllegalArgumentException("content version required");
         canonicalTarget(currentVersion);
         if (action == null) throw new IllegalArgumentException("withdraw action required");
-        writes.execute(action, key -> null, ignored -> {
+        writes.execute(action, key -> store.committedDisplay(key,currentVersion), ignored -> {
             store.lockStableIdentity(currentVersion);
             if (!store.exactVersionExists(currentVersion)) throw new Rejected("unknown_version");
             store.withdrawDisplay(currentVersion);
+            store.recordDisplay(action.actionKey(),currentVersion);
             return true;
         });
     }
@@ -108,9 +127,9 @@ public final class VersionValidityService {
     /** One bounded durable step; caller repeats while work exists. */
     public boolean propagateNext(ActionContext action) {
         if (action == null) throw new IllegalArgumentException("propagation action required");
-        return writes.execute(action, key -> null, ignored -> {
+        return writes.execute(action, store::committedPropagation, ignored -> {
             Work work = store.nextWork();
-            if (work == null) return false;
+            if (work == null) {store.recordPropagation(action.actionKey(),false);return false;}
             canonicalTarget(work.target());
             Page page = store.directDependents(work.target(), work.cursor(), 100);
             if (page == null || page.items() == null || page.items().size() > 100) {
@@ -134,10 +153,11 @@ public final class VersionValidityService {
             }
             if (page.nextCursor() == null) store.complete(work);
             else {
-                if (page.items().isEmpty() || page.nextCursor().equals(work.cursor()))
+                if (page.nextCursor().equals(work.cursor()))
                     throw new Rejected("stalled_reference_page");
                 store.advance(work, page.nextCursor());
             }
+            store.recordPropagation(action.actionKey(),true);
             return true;
         });
     }
@@ -147,7 +167,7 @@ public final class VersionValidityService {
                 || command.expectedValidityRevision() < 0
                 || command.expectedValidityRevision() >= CanonicalJson.MAX_SAFE_INTEGER
                 || command.reason() == null || command.reason().isBlank()
-                || command.reason().length() > 2048) throw new IllegalArgumentException("invalid validity command");
+                || command.reason().codePointCount(0,command.reason().length()) > 2048) throw new IllegalArgumentException("invalid validity command");
         canonicalTarget(command.target());
         if (command.action() == Action.REVERSE_INVALIDATION
                 && (command.reversesDispositionId() == null

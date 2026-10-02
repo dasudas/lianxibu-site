@@ -108,6 +108,7 @@ public final class ReviewPublicationService implements ContentReadService.Refere
     }
 
     private boolean validSnapshot(ReviewContentState row){return matches(row,store.snapshot(row));}
+    public static boolean matchesQualification(ReviewContentState row,Current snapshot){return matches(row,snapshot);}
 
     private Current requireCurrent(String kind, String id, long expectedRevision) {
         if (kind == null || id == null || id.isBlank() || expectedRevision < 1) {
