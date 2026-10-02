@@ -39,6 +39,11 @@ public interface SourcesService {
     record ActionResult(String operationRef, ResourceRef resultResourceRef, long resultRevision,
                         Long generation, Instant cutoff, Coverage coverage, List<ResourceRef> affected,
                         String nextCursor) { }
+    record ItemCommandRef(String sourceId, String runId, String itemId, long expectedRevision,
+                          String action, String commandHash) { }
+    record ItemActionResult(String operationRef, ResourceRef resultResourceRef, long resultRevision,
+                            Long generation, Instant cutoff, Coverage coverage, List<ResourceRef> affected,
+                            String nextCursor, ItemCommandRef commandRef) { }
 
     SourcePage listSources(Actor actor, long page, int pageSize);
     RunPage listRuns(Actor actor, String sourceId, LocalDate businessDate, long page, int pageSize);
@@ -50,6 +55,6 @@ public interface SourcesService {
     ActionResult sourceAction(Actor actor, String sourceId, SourceAction command, String idempotencyKey,
                               String csrfToken, String origin);
     Run createRun(Actor actor, RunCreate command, String idempotencyKey, String csrfToken, String origin);
-    ActionResult itemAction(Actor actor, String runId, String itemId, ItemAction command,
+    ItemActionResult itemAction(Actor actor, String runId, String itemId, ItemAction command,
                             String idempotencyKey, String csrfToken, String origin);
 }

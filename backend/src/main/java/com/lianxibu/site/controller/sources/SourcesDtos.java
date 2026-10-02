@@ -36,4 +36,9 @@ public final class SourcesDtos {
     public record ActionResult(String operation_ref, ResourceRef result_resource_ref, long result_revision,
                                Long generation, String cutoff, Coverage coverage, List<ResourceRef> affected,
                                String next_cursor) { }
+    public record ItemCommandRef(String source_id, String run_id, String item_id, long expected_revision,
+                                 String action, String command_hash) { }
+    public record ItemActionResult(String operation_ref, ResourceRef result_resource_ref, long result_revision,
+                                   Long generation, String cutoff, Coverage coverage, List<ResourceRef> affected,
+                                   String next_cursor, ItemCommandRef command_ref) { }
 }

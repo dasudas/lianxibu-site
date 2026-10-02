@@ -119,11 +119,11 @@ class SourcesControllerTest {
                         + "\"expected_revision\":0,\"reason\":\"fixture\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.run_id").value("fixture-run"));
         when(service.itemAction(eq(OWNER), eq("fixture-run"), eq("fixture-item"), any(),
-                eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN))).thenReturn(ACTION);
+                eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN))).thenReturn(itemReceipt("{\"expected_revision\":0,\"action\":\"link_existing\",\"reason\":\"fixture\",\"entity_id\":\"fixture-entity\"}",false));
         mvc.perform(write(post("/admin/source-runs/fixture-run/items/fixture-item/actions"),
                         "{\"expected_revision\":0,\"action\":\"link_existing\","
                         + "\"reason\":\"fixture\",\"entity_id\":\"fixture-entity\"}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.data.result_resource_ref.id").value("fixture"));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.result_resource_ref.id").value("fixture-item"));
         verify(service).itemAction(eq(OWNER), eq("fixture-run"), eq("fixture-item"),
                 eq(new SourcesService.ItemAction(0, "link_existing", "fixture", "fixture-entity",
                         null, null, null)), eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN));
@@ -242,6 +242,44 @@ class SourcesControllerTest {
                 .andExpect(jsonPath("$.error.code").value("revision_conflict"));
     }
 
+    @Test void sixItemCommandsBindFullBodyAndBothResultRoots() throws Exception {
+        for(String action:List.of("confirm_new","link_existing","exclude","resolve_projection","revalidate","seal")) {
+            String extra=action.equals("link_existing")?",\"entity_id\":\"fictional-entity\"":action.equals("resolve_projection")?",\"decision\":\"promote\",\"expected_article_revision\":4,\"evidence_refs\":[\"fictional-evidence\"]":"";
+            String body="{\"expected_revision\":7,\"action\":\""+action+"\",\"reason\":\"Fictional explicit reason\""+extra+"}";
+            for(boolean correction:List.of(false,true)) {
+                var result=itemReceipt(body,correction);stubItem(result);
+                mvc.perform(write(post("/admin/source-runs/fixture-run/items/fixture-item/actions"),body))
+                    .andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store"))
+                    .andExpect(jsonPath("$.data.command_ref.run_id").value("fixture-run"))
+                    .andExpect(jsonPath("$.data.command_ref.item_id").value("fixture-item"))
+                    .andExpect(jsonPath("$.data.command_ref.action").value(action))
+                    .andExpect(jsonPath("$.data.command_ref.command_hash").value(result.commandRef().commandHash()))
+                    .andExpect(jsonPath("$.data.result_resource_ref.kind").value(correction?"source_run":"source_run_item"));
+            }
+        }
+    }
+    @Test void borrowedOriginalCommandAndInvalidResultRootsReturnSafeUnavailable() throws Exception {
+        String body="{\"expected_revision\":7,\"action\":\"exclude\",\"reason\":\"Fictional explicit reason\"}";var good=itemReceipt(body,false);var c=good.commandRef();
+        for(var bad:List.of(new SourcesService.ItemCommandRef(c.sourceId(),"fictional-other",c.itemId(),7,c.action(),c.commandHash()),
+                new SourcesService.ItemCommandRef(c.sourceId(),c.runId(),"fictional-other",7,c.action(),c.commandHash()),
+                new SourcesService.ItemCommandRef(c.sourceId(),c.runId(),c.itemId(),8,c.action(),c.commandHash()),
+                new SourcesService.ItemCommandRef(c.sourceId(),c.runId(),c.itemId(),7,"confirm_new",c.commandHash()),
+                new SourcesService.ItemCommandRef(c.sourceId(),c.runId(),c.itemId(),7,c.action(),"0".repeat(64)))) {
+            stubItem(new SourcesService.ItemActionResult(good.operationRef(),good.resultResourceRef(),8,null,null,null,List.of(),null,bad));itemUnavailable(body);
+        }
+        for(var root:List.of(new SourcesService.ResourceRef("source_run_item","fictional-other",null),new SourcesService.ResourceRef("source_run_item","fixture-item","fictional-package"),new SourcesService.ResourceRef("source_run","fixture-run",null),new SourcesService.ResourceRef("source","fixture-item",null))) {
+            stubItem(new SourcesService.ItemActionResult(good.operationRef(),root,8,null,null,null,List.of(),null,c));itemUnavailable(body);
+        }
+        stubItem(new SourcesService.ItemActionResult(good.operationRef(),good.resultResourceRef(),7,null,null,null,List.of(),null,c));itemUnavailable(body);
+        stubItem(new SourcesService.ItemActionResult(good.operationRef(),good.resultResourceRef(),8,1L,null,null,List.of(),null,c));itemUnavailable(body);
+        stubItem(itemReceipt(body.replace("explicit reason","different reason"),false));itemUnavailable(body);
+    }
+    private void itemUnavailable(String body) throws Exception {mvc.perform(write(post("/admin/source-runs/fixture-run/items/fixture-item/actions"),body)).andExpect(status().isServiceUnavailable()).andExpect(header().string("Retry-After","1")).andExpect(jsonPath("$.error.code").value("temporarily_unavailable")).andExpect(jsonPath("$.data").doesNotExist());}
+    private void stubItem(SourcesService.ItemActionResult result){when(service.itemAction(eq(OWNER),eq("fixture-run"),eq("fixture-item"),any(),eq("fixture-key"),eq("fixture-csrf"),eq(ORIGIN))).thenReturn(result);}
+    private static SourcesService.ItemActionResult itemReceipt(String raw,boolean correction){
+        var body=com.lianxibu.site.domain.protocol.CanonicalJson.parse(raw);long revision=body.path("expected_revision").asLong();String hash=com.lianxibu.site.domain.protocol.CanonicalJson.hash(com.lianxibu.site.domain.protocol.CanonicalJson.Domain.ACTION,body);
+        return new SourcesService.ItemActionResult("fictional-operation",new SourcesService.ResourceRef(correction?"source_run":"source_run_item",correction?"fictional-correction":"fixture-item",null),correction?0:revision+1,correction?2L:null,null,null,List.of(),null,new SourcesService.ItemCommandRef("fixture","fixture-run","fixture-item",revision,body.path("action").asText(),hash));
+    }
     private static MockHttpServletRequestBuilder auth(MockHttpServletRequestBuilder request) {
         return request.cookie(new jakarta.servlet.http.Cookie("lianxibu_session", "fixture-session"));
     }

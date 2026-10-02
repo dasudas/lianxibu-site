@@ -181,7 +181,7 @@ public final class SourcesController {
 
     @PostMapping(path = "/admin/source-runs/{id}/items/{item_id}/actions",
             consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<SourcesDtos.Envelope<SourcesDtos.ActionResult>> itemAction(
+    public ResponseEntity<SourcesDtos.Envelope<SourcesDtos.ItemActionResult>> itemAction(
             @CookieValue(name = "lianxibu_session", required = false) String cookie,
             @PathVariable("id") String runId, @PathVariable("item_id") String itemId,
             @RequestHeader(name = "X-CSRF-Token", required = false) String csrf,
@@ -208,7 +208,9 @@ public final class SourcesController {
                 text(value.get("reason"), 1, 2048), link ? id(value.get("entity_id")) : null,
                 decision, projection ? number(value.get("expected_article_revision")) : null,
                 projection ? ids(value.get("evidence_refs"), 1, 100, false) : null);
-        return success(action(service().itemAction(actor, id(runId), id(itemId), command, key, csrf, origin)));
+        String exactRun=id(runId),exactItem=id(itemId);
+        return success(itemActionResult(service().itemAction(actor, exactRun, exactItem, command, key, csrf, origin),
+                exactRun,exactItem,command,CanonicalJson.hash(CanonicalJson.Domain.ACTION,value)));
     }
 
     @ExceptionHandler(BoundaryFailure.class)
@@ -452,6 +454,26 @@ public final class SourcesController {
         } catch (IllegalArgumentException invalid) { throw unavailable(); }
     }
 
+    private static SourcesDtos.ItemActionResult itemActionResult(SourcesService.ItemActionResult v,String runId,
+            String itemId,SourcesService.ItemAction command,String hash) {
+        if(v==null||v.commandRef()==null||v.resultResourceRef()==null||v.affected()==null||v.affected().size()>1000)throw unavailable();
+        var c=v.commandRef();var r=v.resultResourceRef();
+        try {
+            WireValues.id(v.operationRef(),false);WireValues.id(r.id(),false);
+            if(c.sourceId()==null||c.sourceId().isEmpty()||c.sourceId().codePointCount(0,c.sourceId().length())>80||c.sourceId().chars().anyMatch(x->x<32||x>=127&&x<=159)
+                    ||!runId.equals(c.runId())||!itemId.equals(c.itemId())||command.expectedRevision()!=c.expectedRevision()
+                    ||!command.action().equals(c.action())||!hash.equals(c.commandHash())||r.packageId()!=null
+                    ||v.resultRevision()<0||v.resultRevision()>CanonicalJson.MAX_SAFE_INTEGER)throw unavailable();
+            if("source_run_item".equals(r.kind())) {
+                if(!itemId.equals(r.id())||command.expectedRevision()>=CanonicalJson.MAX_SAFE_INTEGER||v.resultRevision()!=command.expectedRevision()+1||v.generation()!=null)throw unavailable();
+            } else if("source_run".equals(r.kind())) {
+                if(runId.equals(r.id())||v.generation()==null||v.generation()<1||v.generation()>CanonicalJson.MAX_SAFE_INTEGER)throw unavailable();
+            } else throw unavailable();
+            for(var ref:v.affected()){if(ref==null)throw unavailable();WireValues.id(ref.id(),false);WireValues.id(ref.kind(),false);if(ref.kind().codePointCount(0,ref.kind().length())>32)throw unavailable();if(ref.packageId()!=null)WireValues.id(ref.packageId(),false);}
+            if(v.nextCursor()!=null&&(v.nextCursor().isEmpty()||v.nextCursor().length()>4096))throw unavailable();
+            return new SourcesDtos.ItemActionResult(v.operationRef(),ref(r),v.resultRevision(),v.generation(),time(v.cutoff()),v.coverage()==null?null:coverage(v.coverage()),v.affected().stream().map(SourcesController::ref).toList(),v.nextCursor(),new SourcesDtos.ItemCommandRef(c.sourceId(),c.runId(),c.itemId(),c.expectedRevision(),c.action(),c.commandHash()));
+        } catch(IllegalArgumentException invalid){throw unavailable();}
+    }
     private static SourcesDtos.ActionResult action(SourcesService.ActionResult value) {
         if (value == null || value.affected() == null) throw unavailable();
         return new SourcesDtos.ActionResult(value.operationRef(), ref(value.resultResourceRef()),
