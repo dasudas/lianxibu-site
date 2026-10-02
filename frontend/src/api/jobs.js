@@ -1,6 +1,7 @@
 import {ApiError} from './client.js';
 const fail=()=>{throw new TypeError('Invalid job wire');};
 const kinds=['generation_intent','logical_task','ai_attempt','snapshot_part','disposition'];
+export {coverage as jobCoverage};
 function closed(v,keys){if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).length!==keys.length||keys.some(k=>!Object.hasOwn(v,k)))fail();}
 function options(v,keys){if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).some(k=>!keys.includes(k)))fail();}
 function text(v,max){if(typeof v!=='string'||!v||[...v].length>max||!v.isWellFormed())fail();return v;}
