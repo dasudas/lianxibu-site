@@ -11,6 +11,7 @@ import (
 	"errors"
 	"io"
 	"net/url"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -260,7 +261,7 @@ func (a *FeedAdapter) atomItem(c client.RunClaim, e atomEntry, base string) (sch
 	link := ""
 	for _, candidate := range e.Links {
 		if candidate.Rel == "alternate" || candidate.Rel == "" {
-			checked, err := articleURL(candidate.Href, base)
+			checked, err := a.articleLinkURL(candidate.Href, base)
 			if err == nil {
 				link = checked
 				break
@@ -413,6 +414,23 @@ func parseSourceTime(raw string) (time.Time, error) {
 	return value.UTC().Truncate(time.Microsecond), nil
 }
 func wireTime(at time.Time) string { return at.UTC().Format("2006-01-02T15:04:05.000000Z") }
+
+// Only this source's verified historical article metadata has an HTTPS
+// counterpart. Fetch entry URLs and pagination still use strict sourceURL.
+func (a *FeedAdapter) articleLinkURL(raw, base string) (string, error) {
+	if a.sourceID == "cn-ruanyifeng" {
+		u, err := url.Parse(raw)
+		if err == nil && u.Scheme == "http" && strings.EqualFold(u.Hostname(), "www.ruanyifeng.com") &&
+			u.User == nil && (u.Port() == "" || u.Port() == "80") && u.RawQuery == "" && !u.ForceQuery &&
+			strings.HasPrefix(path.Clean(u.Path), "/blog/") {
+			u.Scheme = "https"
+			u.Host = "www.ruanyifeng.com"
+			return articleURL(u.String(), base)
+		}
+	}
+	return articleURL(raw, base)
+}
+
 func articleURL(raw, base string) (string, error) {
 	u, err := url.Parse(raw)
 	if err != nil || raw == "" {
