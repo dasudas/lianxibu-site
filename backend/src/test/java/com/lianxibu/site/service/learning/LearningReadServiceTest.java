@@ -79,6 +79,14 @@ class LearningReadServiceTest {
                         null, "fixture-key", "fixture-csrf", "https://site.example.invalid"));
     }
 
+    @Test void unknownPublicationAndGenerationFactsFailClosedInsteadOfInventingState(){
+        var fixture=new Fixture();
+        for(String state:new String[]{null,"not_generated","needs_review","unknown"}){fixture.jdbc.update("UPDATE learning_items SET answer_state=? WHERE package_id='fixture-a' AND kind='question'",state);rejected(IdentityService.Refusal.TEMPORARILY_UNAVAILABLE,()->fixture.reads.question("fixture-a","shared-question"));}
+        for(String state:new String[]{"draft","approved","withdrawn"}){fixture.jdbc.update("UPDATE learning_items SET answer_state=? WHERE package_id='fixture-a' AND kind='question'",state);assertEquals(state,fixture.reads.question("fixture-a","shared-question").answerState());assertNull(fixture.reads.question("fixture-a","shared-question").answer());}
+        fixture.jdbc.update("UPDATE learning_items SET answer_generation_state=NULL WHERE package_id='fixture-a' AND kind='question'");rejected(IdentityService.Refusal.TEMPORARILY_UNAVAILABLE,()->fixture.reads.question("fixture-a","shared-question"));
+        fixture.jdbc.update("UPDATE learning_items SET answer_text=NULL WHERE package_id='fixture-b' AND kind='question'");rejected(IdentityService.Refusal.TEMPORARILY_UNAVAILABLE,()->fixture.reads.question("fixture-b","shared-question"));
+    }
+
     private static void rejected(IdentityService.Refusal refusal, Runnable work) {
         assertEquals(refusal, assertThrows(IdentityService.Rejected.class, work::run).refusal());
     }
@@ -104,7 +112,7 @@ class LearningReadServiceTest {
             pack("fixture-a", "published");
             pack("fixture-b", "published");
             pack("fixture-draft", "draft");
-            hierarchy("fixture-a", "Alpha", "needs_review", "private answer");
+            hierarchy("fixture-a", "Alpha", "draft", "private answer");
             hierarchy("fixture-b", "Beta", "published", "published answer");
             item("fixture-draft", "node", "hidden-node", "Hidden", "{}", null, null);
             reads = new LearningReadService(new JdbcLearningReads(source));

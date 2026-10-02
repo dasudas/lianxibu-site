@@ -158,13 +158,16 @@ public final class LearningReadService implements LearningService {
 
     private Question question(ItemRow row) {
         JsonNode body = body(row);
-        String state = row.answerState() == null ? "not_generated" : row.answerState();
+        String state = row.answerState();
+        if(state==null||!Set.of("draft","approved","published","withdrawn").contains(state))throw unavailable();
+        String generation=row.generationState();
+        if(generation==null||!Set.of("not_generated","generated","reviewed","needs_revision").contains(generation))throw unavailable();
         String answer = "published".equals(state) ? row.answerText() : null;
         if ("published".equals(state) && answer == null) throw unavailable();
         return new Question(row.packageId(), row.id(), row.title(), text(body, "question"),
                 text(body, "difficulty"), text(body, "question_kind"),
                 ordered(body, "assessment_points_raw"), state,
-                row.generationState() == null ? "not_generated" : row.generationState(),
+                generation,
                 row.revision(), answer);
     }
 
