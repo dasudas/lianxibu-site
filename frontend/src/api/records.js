@@ -51,7 +51,7 @@ export function createRecordsApi(client){return Object.freeze({
     const {data}=await client.request('PUT',request.path,{signal,idempotencyKey,body:request.body});const result=same(recordProjection(data),target);
     if(target.kind!=='article'){
       if(![fields.expected_revision,fields.expected_revision+1].includes(result.revision))invalid();
-      for(const [wire,field]of [['status','status'],['self_assessment','selfAssessment'],['note','note'],['artifact_url','artifactUrl'],...target.kind==='question'?[['latest_answer_text','latestAnswerText']]:target.kind==='project'?[['latest_submission_url','latestSubmissionUrl']]:[]])if(result[field]!==fields[wire])invalid();
+      for(const [wire,field]of [['status','status'],['self_assessment','selfAssessment'],['note','note'],['artifact_url','artifactUrl'],...target.kind==='question'?[['latest_answer_text','latestAnswerText']]:target.kind==='project'?[['latest_submission_url','latestSubmissionUrl']]:[]])if(result[field]!==(['note','latest_answer_text'].includes(wire)?fields[wire].replace(/\r\n?/g,'\n'):fields[wire]))invalid();
     }
     return result;
   }
