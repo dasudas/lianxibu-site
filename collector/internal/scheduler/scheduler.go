@@ -25,6 +25,10 @@ type Store interface {
 	HasMember(context.Context, string, string) (bool, error)
 	SavePage(context.Context, string, string, uint64, string, string, []outbox.Record) error
 }
+
+type durablePageStore interface {
+	SaveFetchedPage(context.Context, string, string, uint64, string, string, []outbox.Record, bool, []string) error
+}
 type Item struct {
 	Kind         string
 	SourceItemID string
@@ -116,7 +120,16 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 		return Outcome{}, err
 	}
 	deadline := s.now().Add(s.maxDuration)
-	out := Outcome{Cursor: state.Cursor}
+	out := Outcome{Cursor: state.Cursor, Finished: state.FetchComplete, CoverageGaps: append([]string(nil), state.CoverageGaps...)}
+	if out.Finished {
+		return out, nil
+	}
+	checkpoint := func(after string, records []outbox.Record, complete bool, gaps []string) error {
+		if durable, ok := s.store.(durablePageStore); ok {
+			return durable.SaveFetchedPage(ctx, claim.Run.RunID, *claim.ClaimToken, revision, out.Cursor, after, records, complete, gaps)
+		}
+		return s.store.SavePage(ctx, claim.Run.RunID, *claim.ClaimToken, revision, out.Cursor, after, records)
+	}
 	seen := map[string]bool{}
 	for out.Pages < s.maxPages && s.now().Before(deadline) {
 		if !s.now().Before(lease) {
@@ -128,6 +141,11 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 				return out, err
 			}
 			if finished {
+				if _, durable := s.store.(durablePageStore); durable {
+					if err := checkpoint(out.Cursor, nil, true, gaps); err != nil {
+						return out, err
+					}
+				}
 				out.Finished = true
 				out.CoverageGaps = append(out.CoverageGaps, gaps...)
 				return out, nil
@@ -140,6 +158,8 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 		if request.SourceID != claim.Run.SourceID {
 			return out, ErrRunChanged
 		}
+		optional, supportsNotFound := s.adapter.(NotFoundAdapter)
+		request.AllowNotFound = supportsNotFound && optional.AllowNotFound()
 		if claim.Run.FetchMode == "materialize" {
 			request.IfNoneMatch = ""
 			request.IfModifiedSince = ""
@@ -159,6 +179,11 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 				out.CoverageGaps = append(out.CoverageGaps, "materialize_unexpected_304")
 			}
 			out.Finished = true
+			if _, durable := s.store.(durablePageStore); durable {
+				if err := checkpoint(out.Cursor, nil, true, out.CoverageGaps); err != nil {
+					return out, err
+				}
+			}
 			return out, nil
 		}
 		optionalMissing := false
@@ -211,7 +236,10 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 				seen[item.SourceItemID] = true
 			}
 		}
-		if err := s.store.SavePage(ctx, claim.Run.RunID, *claim.ClaimToken, revision, out.Cursor, page.NextCursor, records); err != nil {
+		if page.End && claim.Run.FetchMode == "materialize" && priorCount+out.Observations+len(records) == 0 {
+			page.Gaps = append(page.Gaps, "target_material_unavailable")
+		}
+		if err := checkpoint(page.NextCursor, records, page.End, page.Gaps); err != nil {
 			return out, err
 		}
 		revision++
@@ -221,9 +249,6 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 		out.CoverageGaps = append(out.CoverageGaps, page.Gaps...)
 		if page.End {
 			out.Finished = true
-			if claim.Run.FetchMode == "materialize" && priorCount+out.Observations == 0 {
-				out.CoverageGaps = append(out.CoverageGaps, "target_material_unavailable")
-			}
 			return out, nil
 		}
 	}

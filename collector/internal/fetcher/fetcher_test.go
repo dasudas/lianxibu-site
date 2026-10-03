@@ -35,7 +35,7 @@ func stub(t *testing.T, handler http.HandlerFunc) (*Fetcher, *httptest.Server, *
 		t.Fatal(err)
 	}
 	certTemplate := &x509.Certificate{SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "fixture"},
-		DNSNames: []string{"feed.example.test", "cdn.example.test"}, NotBefore: time.Now().Add(-time.Hour),
+		DNSNames: []string{"feed.example.test", "cdn.example.test", "api.github.com"}, NotBefore: time.Now().Add(-time.Hour),
 		NotAfter: time.Now().Add(time.Hour), KeyUsage: x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}
 	der, err := x509.CreateCertificate(rand.Reader, certTemplate, certTemplate, &key.PublicKey, key)
@@ -82,9 +82,52 @@ func stub(t *testing.T, handler http.HandlerFunc) (*Fetcher, *httptest.Server, *
 	return f, server, addresses
 }
 
+// LoopbackFixture is linked only into the external integration test binary.
+func LoopbackFixture(t *testing.T, handler http.HandlerFunc) *Fetcher {
+	f, _, _ := stub(t, handler)
+	f.resolver.(fakeResolver)["api.github.com"] = []net.IPAddr{{IP: net.ParseIP("192.0.2.1")}}
+	return f
+}
+
 func fixtureRequest() Request {
 	return Request{SourceID: "fixture-source", URL: "https://feed.example.test/rss",
 		AllowedHosts: []string{"feed.example.test", "cdn.example.test"}, Format: RSS}
+}
+
+func TestOptionalNotFoundRequiresOptInAndPreservesResponseBounds(t *testing.T) {
+	for _, scenario := range []struct {
+		name       string
+		allow      bool
+		status     int
+		mime, body string
+		accept     bool
+	}{
+		{"optional", true, 404, "application/json", `{"message":"Not Found"}`, true},
+		{"ordinary", false, 404, "application/json", `{}`, false},
+		{"forbidden", true, 403, "application/json", `{}`, false},
+		{"server", true, 500, "application/json", `{}`, false},
+		{"binary", true, 404, "application/octet-stream", `{}`, false},
+		{"oversize", true, 404, "application/json", strings.Repeat("x", maxBodyBytes+1), false},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			f, _, _ := stub(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", scenario.mime)
+				w.WriteHeader(scenario.status)
+				w.Write([]byte(scenario.body))
+			})
+			request := fixtureRequest()
+			request.Format = JSON
+			request.AllowNotFound = scenario.allow
+			result, err := f.Fetch(context.Background(), request)
+			if scenario.accept {
+				if err != nil || result.StatusCode != 404 || string(result.Body) != scenario.body || result.FinalURL != request.URL {
+					t.Fatal(result, err)
+				}
+			} else if err == nil {
+				t.Fatal("unsafe response accepted")
+			}
+		})
+	}
 }
 
 func TestVerifiedTLSPinnedDNSAndCrossHostRedirectDropsAuthorization(t *testing.T) {

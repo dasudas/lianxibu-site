@@ -50,9 +50,11 @@ type Record struct {
 }
 
 type RunState struct {
-	Frozen    client.RunClaim `json:"frozen"`
-	Cursor    string          `json:"cursor"`
-	Retention *RetentionMark  `json:"retention,omitempty"`
+	Frozen        client.RunClaim `json:"frozen"`
+	Cursor        string          `json:"cursor"`
+	Retention     *RetentionMark  `json:"retention,omitempty"`
+	FetchComplete bool            `json:"fetch_complete,omitempty"`
+	CoverageGaps  []string        `json:"coverage_gaps,omitempty"`
 }
 
 func Open(path, nodeID string, now func() time.Time) (*Store, error) {
@@ -241,6 +243,17 @@ VALUES(?,'control_attempt',?,?,?,?,?,'0.11',1,?,?,?,?)`, attemptID, operationID,
 
 func (s *Store) SavePage(ctx context.Context, runID, token string, expectedRevision uint64,
 	before, after string, records []Record) error {
+	return s.savePage(ctx, runID, token, expectedRevision, before, after, records, false, nil)
+}
+
+// SaveFetchedPage commits completion and coverage with the page checkpoint.
+func (s *Store) SaveFetchedPage(ctx context.Context, runID, token string, expectedRevision uint64,
+	before, after string, records []Record, complete bool, gaps []string) error {
+	return s.savePage(ctx, runID, token, expectedRevision, before, after, records, complete, gaps)
+}
+
+func (s *Store) savePage(ctx context.Context, runID, token string, expectedRevision uint64,
+	before, after string, records []Record, complete bool, gaps []string) error {
 	if runID == "" || token == "" || expectedRevision > maxSafe || len(records) > 100 {
 		return ErrStaleRun
 	}
@@ -252,7 +265,7 @@ func (s *Store) SavePage(ctx context.Context, runID, token string, expectedRevis
 			return err
 		}
 		var state RunState
-		if json.Unmarshal(payload, &state) != nil || state.Retention != nil || revision != expectedRevision || state.Cursor != before || string(claimToken) != token || micros(s.now()) >= lease {
+		if json.Unmarshal(payload, &state) != nil || state.Retention != nil || state.FetchComplete || revision != expectedRevision || state.Cursor != before || string(claimToken) != token || micros(s.now()) >= lease {
 			return ErrStaleRun
 		}
 		for _, record := range records {
@@ -264,6 +277,25 @@ func (s *Store) SavePage(ctx context.Context, runID, token string, expectedRevis
 			}
 		}
 		state.Cursor = after
+		state.FetchComplete = complete
+		for _, gap := range gaps {
+			if gap == "" || len(gap) > 256 {
+				return ErrConflict
+			}
+			found := false
+			for _, old := range state.CoverageGaps {
+				if old == gap {
+					found = true
+					break
+				}
+			}
+			if !found {
+				state.CoverageGaps = append(state.CoverageGaps, gap)
+			}
+		}
+		if len(state.CoverageGaps) > 64 {
+			return ErrConflict
+		}
 		updated, err := json.Marshal(state)
 		if err != nil {
 			return err

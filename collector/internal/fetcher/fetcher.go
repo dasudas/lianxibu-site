@@ -46,6 +46,8 @@ type Request struct {
 	MinInterval     time.Duration
 	IfNoneMatch     string
 	IfModifiedSince string
+	// Only explicitly optional documents may return a bounded 404 representation.
+	AllowNotFound bool
 }
 
 type Result struct {
@@ -149,7 +151,7 @@ func (f *Fetcher) Fetch(parent context.Context, input Request) (Result, error) {
 			current = current.ResolveReference(relative)
 			continue
 		}
-		result, err := readResponse(response, current.String(), input.Format)
+		result, err := readResponse(response, current.String(), input.Format, input.AllowNotFound)
 		response.Body.Close()
 		transport.CloseIdleConnections()
 		return result, err
@@ -246,12 +248,12 @@ func (f *Fetcher) transport(host string, addresses []netip.Addr) *http.Transport
 	}
 }
 
-func readResponse(response *http.Response, finalURL string, format Format) (Result, error) {
+func readResponse(response *http.Response, finalURL string, format Format, allowNotFound bool) (Result, error) {
 	if response.StatusCode == http.StatusNotModified {
 		return Result{StatusCode: response.StatusCode, FinalURL: finalURL,
 			ETag: response.Header.Get("ETag"), LastModified: response.Header.Get("Last-Modified")}, nil
 	}
-	if response.StatusCode != http.StatusOK {
+	if response.StatusCode != http.StatusOK && !(allowNotFound && response.StatusCode == http.StatusNotFound) {
 		return Result{}, fmt.Errorf("source returned HTTP %d", response.StatusCode)
 	}
 	if encoding := response.Header.Get("Content-Encoding"); encoding != "" && !strings.EqualFold(encoding, "identity") {
