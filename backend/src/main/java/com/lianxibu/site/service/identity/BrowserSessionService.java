@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Browser-only identity use cases. Composition and trusted role/password providers follow in B02/B03. */
-public final class BrowserSessionService {
+public class BrowserSessionService {
     private static final Duration ANONYMOUS_TTL = Duration.ofMinutes(15);
     private static final Duration SESSION_TTL = Duration.ofDays(7);
     private static final Duration LIMIT_WINDOW = Duration.ofMinutes(15);
