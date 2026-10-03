@@ -28,7 +28,7 @@ import tools.jackson.databind.JsonNode;
 /** Real TCP and permanent MySQL qualification; display metadata is explicitly fictional. */
 @EnabledIfEnvironmentVariable(named="B44_MYSQL",matches="true")
 class PublishedContentHttpMySqlTest {
-    @Configuration(proxyBeanMethods=false)
+    @org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods=false)
     @EnableAutoConfiguration(exclude=org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration.class)
     @Import({ContentController.class,PublicReadController.class})
     static class HttpFixture {

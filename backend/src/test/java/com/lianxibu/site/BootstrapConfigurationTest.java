@@ -41,10 +41,11 @@ class BootstrapConfigurationTest {
 
     @Test
     void bootstrapRejectsAllHttpRequests() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/actuator/health"))
-                .GET().build();
         try (HttpClient client = HttpClient.newHttpClient()) {
-            assertEquals(403, client.send(request, java.net.http.HttpResponse.BodyHandlers.discarding()).statusCode());
+            for (String path : java.util.List.of("/actuator/health", "/home", "/reports", "/interpretations")) {
+                HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).GET().build();
+                assertEquals(403, client.send(request, java.net.http.HttpResponse.BodyHandlers.discarding()).statusCode(), path);
+            }
         }
     }
 }
