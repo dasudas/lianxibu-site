@@ -71,6 +71,12 @@ public final class ContentReadService {
     }
 
     public Page publishedPage(String kind, long page, int size) {
+        return publishedMatchingPage(kind, row -> true, page, size);
+    }
+
+    /** Apply public filters after qualification and before counting, in one candidate scan. */
+    public Page publishedMatchingPage(String kind, java.util.function.Predicate<Row> filter, long page, int size) {
+        java.util.Objects.requireNonNull(filter);
         if (kind != null && !KINDS.contains(kind)) throw new IllegalArgumentException("invalid kind");
         if (page < 1 || size < 1 || size > 50 || page > Long.MAX_VALUE / size) {
             throw new IllegalArgumentException("invalid page");
@@ -85,7 +91,7 @@ public final class ContentReadService {
                 List<Row> batch = store.publishedCandidates(kind, afterKind, afterId, 500);
                 if (batch.isEmpty()) break;
                 for (Row row : batch) {
-                    if (eligible(row)) {
+                    if (eligible(row) && filter.test(row)) {
                         if (visible >= start && items.size() < size) items.add(row);
                         visible++;
                     }
