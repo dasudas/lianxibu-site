@@ -51,46 +51,65 @@ public final class EntityDedupService {
 
     public Decision applyAutomatic(Automatic value, ActionContext action) {
         validateAutomatic(value);
-        String requestHash = fingerprint("automatic", value.itemId(), value.expectedItemRevision(),
+        String requestHash = automaticHash(value);
+        return writes.execute(action, key -> log.committed(key, requestHash), context -> applyAutomaticInTransaction(value, context));
+    }
+
+    /** Joins the caller's B04 transaction, so result retention, all members and downstream work commit together. */
+    public Decision applyAutomaticInTransaction(Automatic value, ActionContext context) {
+        if (!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()
+                || org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly())
+            throw new IllegalStateException("automatic dedup requires shared write transaction");
+        if (context == null) throw new Rejected();
+        validateAutomatic(value);
+        String requestHash = automaticHash(value);
+        Decision committed = log.committed(context.actionKey(), requestHash);
+        if (committed != null) return committed;
+        return applyAutomaticCurrent(value, context, requestHash);
+    }
+
+    private static String automaticHash(Automatic value) {
+        return fingerprint("automatic", value.itemId(), value.expectedItemRevision(),
                 value.decision(), value.category(), value.identityKey(), value.proposedEntityId(),
                 value.candidateEntityIds(), value.title(), value.summary(), value.reason());
-        return writes.execute(action, key -> log.committed(key, requestHash), context -> {
-            Member item = requiredMember(value.itemId(), value.expectedItemRevision());
-            requireEvidence(item);
-            if (item.entityId() != null) throw new Rejected();
-            if (!value.category().equals(item.category())) throw new Rejected();
-            if ("needs_review".equals(value.decision())) {
-                store.setReview(item);
-                Decision result = new Decision(item.id(), null, "needs_review", false, null);
-                log.append(context.actionKey(), requestHash, result, "needs_review", item.id(),
-                        null, null, value.reason());
-                return result;
-            }
-            Entity entity;
-            boolean created = false;
-            if ("new".equals(value.decision())) {
-                entity = store.byIdentity(value.category(), value.identityKey());
-                if (entity == null) {
-                    store.insertEntity(context.preallocatedResourceId(), value.category(),
-                            value.identityKey(), value.title(), value.summary(),
-                            item.businessDate(), clock.instant());
-                    entity = store.entity(context.preallocatedResourceId());
-                    created = true;
-                }
-            } else {
-                if (!value.candidateEntityIds().contains(value.proposedEntityId())) throw new Rejected();
-                entity = store.entity(value.proposedEntityId());
-                if (entity == null) throw new Rejected();
-                Entity byIdentity = store.byIdentity(value.category(), value.identityKey());
-                if (byIdentity != null && !byIdentity.id().equals(entity.id())) throw new Rejected();
-            }
-            if (entity == null || !value.category().equals(entity.category())
-                    || entity.legacy() && entity.occurrenceCount() == null) throw new Rejected();
-            Decision result = assign(item, entity.id(), created, value.decision(), value.reason());
-            log.append(context.actionKey(), requestHash, result, value.decision(), item.id(),
-                    null, entity.id(), value.reason());
+    }
+
+    private Decision applyAutomaticCurrent(Automatic value, ActionContext context, String requestHash) {
+        Member item = requiredMember(value.itemId(), value.expectedItemRevision());
+        requireEvidence(item);
+        if (item.entityId() != null) throw new Rejected();
+        if (!value.category().equals(item.category())) throw new Rejected();
+        if ("needs_review".equals(value.decision())) {
+            store.setReview(item);
+            Decision result = new Decision(item.id(), null, "needs_review", false, null);
+            log.append(context.actionKey(), requestHash, result, "needs_review", item.id(),
+                    null, null, value.reason());
             return result;
-        });
+        }
+        Entity entity;
+        boolean created = false;
+        if ("new".equals(value.decision())) {
+            entity = store.byIdentity(value.category(), value.identityKey());
+            if (entity == null) {
+                store.insertEntity(context.preallocatedResourceId(), value.category(),
+                        value.identityKey(), value.title(), value.summary(),
+                        item.businessDate(), clock.instant());
+                entity = store.entity(context.preallocatedResourceId());
+                created = true;
+            }
+        } else {
+            if (!value.candidateEntityIds().contains(value.proposedEntityId())) throw new Rejected();
+            entity = store.entity(value.proposedEntityId());
+            if (entity == null) throw new Rejected();
+            Entity byIdentity = store.byIdentity(value.category(), value.identityKey());
+            if (byIdentity != null && !byIdentity.id().equals(entity.id())) throw new Rejected();
+        }
+        if (entity == null || !value.category().equals(entity.category())
+                || entity.legacy() && entity.occurrenceCount() == null) throw new Rejected();
+        Decision result = assign(item, entity.id(), created, value.decision(), value.reason());
+        log.append(context.actionKey(), requestHash, result, value.decision(), item.id(),
+                null, entity.id(), value.reason());
+        return result;
     }
 
     public Decision associate(String itemId, long expectedItemRevision, String entityId,

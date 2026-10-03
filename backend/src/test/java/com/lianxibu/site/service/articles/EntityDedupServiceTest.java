@@ -29,6 +29,7 @@ class EntityDedupServiceTest {
     private EntityDedupService service;
     private JdbcEntityDedup store;
     private boolean failLog;
+    private SharedWriteExecutor writes;
 
     @BeforeEach void setup() {
         JdbcDataSource source = new JdbcDataSource();
@@ -56,7 +57,7 @@ class EntityDedupServiceTest {
                 + "entity_id VARCHAR(64),state VARCHAR(32),fresh INT,occurrence_count BIGINT,"
                 + "operation VARCHAR(32),old_entity_id VARCHAR(64),reason VARCHAR(2048),"
                 + "request_hash VARCHAR(64))");
-        var writes = new SharedWriteExecutor(new JdbcSharedWriteEntry(source),
+        writes = new SharedWriteExecutor(new JdbcSharedWriteEntry(source),
                 new DataSourceTransactionManager(source), () -> 25, ignored -> { });
         store = new JdbcEntityDedup(source);
         EntityDedupService.DispositionLog log = new EntityDedupService.DispositionLog() {
@@ -81,6 +82,31 @@ class EntityDedupServiceTest {
         };
         service = new EntityDedupService(store, writes, log,
                 Clock.fixed(Instant.parse("2026-09-30T12:00:00Z"), ZoneOffset.UTC));
+    }
+
+    @Test void joinedAutomaticResultRollsBackWithOuterWorkAndReplaysItsOwnReceipt() {
+        item("joined", "run-one", "source-a", "item-a", "news_tech");
+        var command = newDecision("joined", "news_tech", "fictional-stable-key");
+        var memberAction = action("joined-member");
+        assertThrows(IllegalStateException.class, () -> writes.execute(action("joined-outer-failed"), key -> null, context -> {
+            service.applyAutomaticInTransaction(command, memberAction);
+            throw new IllegalStateException("fictional downstream failure");
+        }));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM analyzed_entities", Integer.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM dispositions", Integer.class));
+        assertNull(jdbc.queryForObject("SELECT entity_id FROM source_run_items WHERE id='joined'", String.class));
+        var applied = writes.execute(action("joined-outer"), key -> null, context -> service.applyAutomaticInTransaction(command, memberAction));
+        assertEquals(applied, writes.execute(action("joined-outer-replay"), key -> null, context -> service.applyAutomaticInTransaction(command, memberAction)));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dispositions", Integer.class));
+        assertEquals(1L, jdbc.queryForObject("SELECT occurrence_count FROM analyzed_entities", Long.class));
+    }
+
+    @Test void joinedAutomaticRejectsMissingOrReadOnlyTransaction() {
+        var command = newDecision("fictional", "news_tech", "fictional-stable-key");
+        assertThrows(IllegalStateException.class, () -> service.applyAutomaticInTransaction(command, action("joined-none")));
+        var reads = new org.springframework.transaction.support.TransactionTemplate(new DataSourceTransactionManager(jdbc.getDataSource()));
+        reads.setReadOnly(true);
+        assertThrows(IllegalStateException.class, () -> reads.execute(status -> service.applyAutomaticInTransaction(command, action("joined-read"))));
     }
 
     @Test void windowExcludedEvidenceCannotAcquireEntityContribution() {
