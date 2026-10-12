@@ -53,6 +53,20 @@ public record ObservationEnvelope(String observationId, String memberId, String 
         JsonNode replaces = value.get("replaces_observation_id");
         if (!replaces.isNull()) WireValues.id(replaces, false);
         JsonNode payload = value.get("payload");
+        validatePayloadShape(protocol,kind,payload);
+        String payloadHash = WireValues.sha256(value.get("payload_hash"));
+        ObjectNode unhashed = ((ObjectNode) value).deepCopy();
+        unhashed.remove("payload_hash");
+        if (!payloadHash.equals(CanonicalJson.hash(CanonicalJson.Domain.OBSERVATION, unhashed))) {
+            throw new IllegalArgumentException("observation payload hash mismatch");
+        }
+        return new ObservationEnvelope(observationId, memberId, runId, sourceId,
+                sourceItemId, kind, payloadHash, value.deepCopy());
+    }
+
+    /** Schema validation shared by the wire envelope and the already retained payload. */
+    public static void validatePayloadShape(String protocol,String kind,JsonNode payload) {
+        if(!Set.of("0.11","0.12").contains(protocol))throw new IllegalArgumentException("schema_not_supported");
         Set<String> payloadFields = switch (kind) {
             case "article" -> "0.12".equals(protocol) ? ARTICLE_FIELDS_V012 : ARTICLE_FIELDS;
             case "catalog" -> CATALOG_FIELDS;
@@ -65,13 +79,5 @@ public record ObservationEnvelope(String observationId, String memberId, String 
         } else if (!"1".equals(WireValues.text(payload.get("schema_version")))) {
             throw new IllegalArgumentException("schema_not_supported");
         }
-        String payloadHash = WireValues.sha256(value.get("payload_hash"));
-        ObjectNode unhashed = ((ObjectNode) value).deepCopy();
-        unhashed.remove("payload_hash");
-        if (!payloadHash.equals(CanonicalJson.hash(CanonicalJson.Domain.OBSERVATION, unhashed))) {
-            throw new IllegalArgumentException("observation payload hash mismatch");
-        }
-        return new ObservationEnvelope(observationId, memberId, runId, sourceId,
-                sourceItemId, kind, payloadHash, value.deepCopy());
     }
 }

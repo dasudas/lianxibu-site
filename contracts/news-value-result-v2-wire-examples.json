@@ -1,0 +1,324 @@
+{
+  "schema_ref": "news-value-result-v2.schema.json",
+  "cases": [
+    {
+      "name": "ordinary-and-high-value",
+      "schema_valid": true,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": true,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty."
+          },
+          {
+            "item_id": "fictional-new-item",
+            "category": "news_tech",
+            "valuable": true,
+            "high_value": true,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "zero-selection",
+      "schema_valid": true,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": true,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty."
+          },
+          {
+            "item_id": "fictional-new-item",
+            "category": "news_tech",
+            "valuable": false,
+            "high_value": false,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "ordinary-no-value",
+      "schema_valid": true,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": false,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty."
+          },
+          {
+            "item_id": "fictional-new-item",
+            "category": "news_tech",
+            "valuable": true,
+            "high_value": true,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "missing-valuable",
+      "schema_valid": false,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": true,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty."
+          },
+          {
+            "item_id": "fictional-new-item",
+            "category": "news_tech",
+            "high_value": true,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "string-valuable",
+      "schema_valid": false,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": true,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty."
+          },
+          {
+            "item_id": "fictional-new-item",
+            "category": "news_tech",
+            "valuable": "true",
+            "high_value": true,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "high-without-value",
+      "schema_valid": false,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": true,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty."
+          },
+          {
+            "item_id": "fictional-new-item",
+            "category": "news_tech",
+            "valuable": false,
+            "high_value": true,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "numeric-id",
+      "schema_valid": false,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": true,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty."
+          },
+          {
+            "item_id": 9007199254740993,
+            "category": "news_tech",
+            "valuable": true,
+            "high_value": true,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "unknown-category",
+      "schema_valid": false,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": true,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty."
+          },
+          {
+            "item_id": "fictional-new-item",
+            "category": "fictional-other",
+            "valuable": true,
+            "high_value": true,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "unknown-field",
+      "schema_valid": false,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": true,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty.",
+            "unrecognized": true
+          },
+          {
+            "item_id": "fictional-new-item",
+            "category": "news_tech",
+            "valuable": true,
+            "high_value": true,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "missing-version",
+      "schema_valid": false,
+      "value": {
+        "kind": "value",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": true,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty."
+          },
+          {
+            "item_id": "fictional-new-item",
+            "category": "news_tech",
+            "valuable": true,
+            "high_value": true,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "duplicate-selection",
+      "schema_valid": false,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-old-item",
+            "category": "agent",
+            "valuable": true,
+            "high_value": false,
+            "reason": "Fictional useful prior object; no current-day novelty."
+          },
+          {
+            "item_id": "fictional-new-item",
+            "category": "news_tech",
+            "valuable": true,
+            "high_value": true,
+            "reason": "Fictional new useful evidence."
+          }
+        ],
+        "selected_item_ids": [
+          "fictional-new-item",
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    },
+    {
+      "name": "empty-model-batch",
+      "schema_valid": false,
+      "value": {
+        "kind": "value",
+        "value_result_version": "2",
+        "items": [],
+        "selected_item_ids": [
+          "fictional-new-item"
+        ],
+        "summary": "Fictional source summary."
+      }
+    }
+  ]
+}

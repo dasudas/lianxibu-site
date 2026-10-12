@@ -15,20 +15,29 @@ import tools.jackson.databind.node.ObjectNode;
 public final class FrozenApplicationContext {
     public static final String FIELD="application_context_v1";
     private static final Set<String> FIELDS=Set.of("schema_version","stage","generation","target_content","target_entity_id","period_start","period_end","item_ids","candidates_by_item","eligible_high_value_item_ids","allowed_citation_ids","version_eligible_item_ids","reference_targets","references_complete");
+    private static final Set<String> ALLOWED;
+    static {var fields=new HashSet<>(FIELDS);fields.add("value_result_version");fields.add("dedup_result_version");fields.add("catalog_version_qualifications");ALLOWED=Set.copyOf(fields);}
     private static final ZoneId ZONE=ZoneId.of("Asia/Shanghai");
     private final String json,contentKind,contentId,entity,periodStart,periodEnd;
     private final Long contentRevision;
     private final Stage stage;
+    private final String valueResultVersion,dedupResultVersion;
+    private final Map<String,FrozenCatalogVersionQualifications.Qualification> catalogVersions;
     private final long generation;
     private final Set<String> items,high,citations,versions;
     private final Map<String,Set<String>> candidates;
     private final List<String> targets;
     private final boolean complete;
     private FrozenApplicationContext(JsonNode original) {
-        WireValues.object(original,FIELDS,FIELDS);var root=(ObjectNode)CanonicalJson.parse(CanonicalJson.bytes(original));
+        WireValues.object(original,ALLOWED,FIELDS);var root=(ObjectNode)CanonicalJson.parse(CanonicalJson.bytes(original));
         if(!"frozen-application-context-v1".equals(WireValues.text(root.get("schema_version"))))throw invalid();
         String wireStage=WireValues.text(root.get("stage"));try{stage=Stage.valueOf(wireStage.toUpperCase(Locale.ROOT));}catch(IllegalArgumentException e){throw invalid();}
         if(!wireStage.equals(stage.name().toLowerCase(Locale.ROOT)))throw invalid();
+        valueResultVersion=root.has("value_result_version")?WireValues.text(root.get("value_result_version")):"1";
+        if(root.has("value_result_version")&&(stage!=Stage.NEWS_VALUE||!"2".equals(valueResultVersion)))throw invalid();
+        dedupResultVersion=root.has("dedup_result_version")?WireValues.text(root.get("dedup_result_version")):"1";
+        if(root.has("dedup_result_version")&&(!Set.of(Stage.AGENT_DEDUP,Stage.SKILL_DEDUP,Stage.WORKFLOW_DEDUP,Stage.MODEL_DEDUP).contains(stage)||!"2".equals(dedupResultVersion)))throw invalid();
+        if(root.has("catalog_version_qualifications")!=root.has("dedup_result_version"))throw invalid();
         generation=WireValues.nonnegativeInteger(root.get("generation"));if(generation<1)throw invalid();
         var target=root.get("target_content");
         if(stage.report()||stage.analysis()) {
@@ -50,6 +59,9 @@ public final class FrozenApplicationContext {
         var map=new TreeMap<String,Set<String>>(FrozenApplicationContext::utf8);var entries=root.get("candidates_by_item");if(!entries.isArray()||entries.size()>1000)throw invalid();
         for(var entry:entries){var fields=Set.of("item_id","entity_ids");WireValues.object(entry,fields,fields);String id=WireValues.id(entry.get("item_id"),false);Set<String> entities=ids((ObjectNode)entry,"entity_ids",1000);if(!items.contains(id)||map.putIfAbsent(id,entities)!=null)throw invalid();}
         candidates=Map.copyOf(map);var sorted=root.putArray("candidates_by_item");map.forEach((id,entities)->{var entry=sorted.addObject();entry.put("item_id",id);var values=entry.putArray("entity_ids");entities.stream().sorted(FrozenApplicationContext::utf8).forEach(values::add);});
+        if("2".equals(dedupResultVersion)){
+            var qualifications=FrozenCatalogVersionQualifications.read(root.get("catalog_version_qualifications"),items,candidates,versions);catalogVersions=qualifications.entries();root.set("catalog_version_qualifications",qualifications.toJson());
+        }else catalogVersions=Map.of();
         var refs=root.get("reference_targets");if(!refs.isArray()||refs.size()>1000)throw invalid();var all=new TreeSet<String>(FrozenApplicationContext::utf8);
         for(var ref:refs){reference(ref);if(!all.add(canonical(ref)))throw invalid();}targets=List.copyOf(all);var canonicalRefs=root.putArray("reference_targets");all.forEach(t->canonicalRefs.add(CanonicalJson.parse(t)));
         var flag=root.get("references_complete");if(!flag.isBoolean())throw invalid();complete=flag.booleanValue();json=canonical(root);if(json.getBytes(StandardCharsets.UTF_8).length>262144)throw invalid();
@@ -58,6 +70,7 @@ public final class FrozenApplicationContext {
     public String json(){return json;}
     public JsonNode toJson(){return CanonicalJson.parse(json);}
     public Stage stage(){return stage;}
+    public String dedupResultVersion(){return dedupResultVersion;}
     public long generation(){return generation;}
     public String contentKind(){return contentKind;}
     public String contentId(){return contentId;}
@@ -66,7 +79,7 @@ public final class FrozenApplicationContext {
     public String periodEnd(){return periodEnd;}
     public boolean referencesComplete(){return complete;}
     public List<JsonNode> referenceTargets(){return targets.stream().map(CanonicalJson::parse).toList();}
-    public Input input(String rootId,String attemptId,String inputHash,long expectedRootRevision){WireValues.id(rootId,false);WireValues.id(attemptId,false);if(inputHash==null||!inputHash.matches("[0-9a-f]{64}"))throw invalid();if(expectedRootRevision<0||expectedRootRevision>CanonicalJson.MAX_SAFE_INTEGER)throw invalid();return new Input(rootId,attemptId,stage,generation,inputHash,expectedRootRevision,contentRevision,items,candidates,high,citations,versions,entity,periodStart,periodEnd);}
+    public Input input(String rootId,String attemptId,String inputHash,long expectedRootRevision){WireValues.id(rootId,false);WireValues.id(attemptId,false);if(inputHash==null||!inputHash.matches("[0-9a-f]{64}"))throw invalid();if(expectedRootRevision<0||expectedRootRevision>CanonicalJson.MAX_SAFE_INTEGER)throw invalid();return new Input(rootId,attemptId,stage,generation,inputHash,expectedRootRevision,contentRevision,items,candidates,high,citations,versions,entity,periodStart,periodEnd,valueResultVersion,dedupResultVersion,catalogVersions);}
     private static Set<String> ids(ObjectNode root,String field,int maximum){var values=root.get(field);if(values==null||!values.isArray()||values.size()>maximum)throw invalid();var sorted=new TreeSet<String>(FrozenApplicationContext::utf8);for(var value:values)if(!sorted.add(WireValues.id(value,false)))throw invalid();var canonical=root.putArray(field);sorted.forEach(canonical::add);return Set.copyOf(sorted);}
     private static String optionalId(JsonNode n){return n.isNull()?null:WireValues.id(n,false);}
     private static void reference(JsonNode ref){if(ref==null||!ref.isObject())throw invalid();String kind=WireValues.text(ref.get("kind"));if(kind.equals("content_version")){if(ContentVersionKey.fromJson(ref).revision()<1)throw invalid();}else if(kind.equals("article_revision")||kind.equals("catalog_evidence")){String id=kind.equals("article_revision")?"id":"item_id";var fields=Set.of("kind",id);WireValues.object(ref,fields,fields);WireValues.id(ref.get(id),false);}else throw invalid();}

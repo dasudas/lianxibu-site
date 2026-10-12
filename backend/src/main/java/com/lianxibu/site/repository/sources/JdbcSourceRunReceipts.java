@@ -11,6 +11,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.Calendar;
+import java.util.TimeZone;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -60,7 +62,7 @@ public final class JdbcSourceRunReceipts implements Store {
         String leaseJson = value.originalLeaseUntil() == null ? null
                 : JSON.writeValueAsString(value.originalLeaseUntil().toString());
         byte[] businessHash = value.claimHash() == null ? digest(value.requestScope()) : value.claimHash();
-        jdbc.update("INSERT INTO request_receipts(principal,operation,request_key,request_hash,"
+        mutate("INSERT INTO request_receipts(principal,operation,request_key,request_hash,"
                         + "status_code,response_json,expires_at,id,receipt_kind,actor_id,scope,key_hash,"
                         + "run_id,original_status,current_status,ack_json,result_ref_json,created_at,revision,"
                         + "request_key_raw,business_hash,control_operation)"
@@ -72,6 +74,15 @@ public final class JdbcSourceRunReceipts implements Store {
                 value.runId(), "applied", "applied", scopeJson, leaseJson,
                 Timestamp.from(now), value.resultRevision(), value.actionKey(),
                 businessHash, "schedule".equals(value.operation()) ? null : value.operation());
+    }
+
+    private int mutate(String sql,Object...args) {
+        return jdbc.update(sql,ps->{
+            for(int i=0;i<args.length;i++) {
+                if(args[i] instanceof Timestamp time) ps.setTimestamp(i+1,time,Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+                else ps.setObject(i+1,args[i]);
+            }
+        });
     }
 
     private static byte[] digest(String value) {

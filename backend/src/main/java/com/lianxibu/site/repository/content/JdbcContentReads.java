@@ -43,6 +43,54 @@ public final class JdbcContentReads {
         return rows.isEmpty() ? null : rows.getFirst();
     }
 
+
+    public record ComparisonRow(String kind,String id,long revision,Long bodyRevision,
+            String inputJobId,byte[] bodyHash,String bodyJson,String versionKeyJson) {
+        public ComparisonRow { bodyHash=bodyHash==null?null:bodyHash.clone(); }
+        @Override public byte[] bodyHash(){return bodyHash==null?null:bodyHash.clone();}
+        @Override public String toString(){return "ContentComparisonRow[redacted]";}
+    }
+    /** Native nullable body revision; bounded before JSON leaves the database. */
+    public ComparisonRow comparisonCurrent(String kind,String id) {
+        if(!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()
+                ||!org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+                ||!Integer.valueOf(org.springframework.transaction.TransactionDefinition.ISOLATION_REPEATABLE_READ).equals(org.springframework.transaction.support.TransactionSynchronizationManager.getCurrentTransactionIsolationLevel()))
+            throw new IllegalStateException("content comparison snapshot unavailable");
+        return boundedComparison(kind,id);
+    }
+    /** A strict native proof read joining the original shared writer; no new transaction. */
+    public ComparisonRow applicationComparisonCurrent(String kind,String id){
+        if(!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()
+                ||org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+                ||!Integer.valueOf(org.springframework.transaction.TransactionDefinition.ISOLATION_READ_COMMITTED).equals(org.springframework.transaction.support.TransactionSynchronizationManager.getCurrentTransactionIsolationLevel()))
+            throw new IllegalStateException("native content application writer unavailable");
+        return boundedComparison(kind,id);
+    }
+    private ComparisonRow boundedComparison(String kind,String id){
+        var values=jdbc.query("SELECT kind,id,revision,body_revision,input_job_id,body_hash_v1,CASE WHEN OCTET_LENGTH(body_json) BETWEEN 1 AND 262144 THEN body_json ELSE NULL END,CASE WHEN OCTET_LENGTH(content_key_json) BETWEEN 1 AND 16384 THEN content_key_json ELSE NULL END,content_key_json IS NOT NULL FROM contents WHERE kind=? AND id=?",
+            (r,n)->{
+                String body=r.getString(7),key=r.getString(8);
+                if(body==null||r.getBoolean(9)&&key==null)throw new IllegalStateException("content comparison data unavailable");
+                return new ComparisonRow(r.getString(1),r.getString(2),r.getLong(3),r.getObject(4,Long.class),r.getString(5),r.getBytes(6),body,key);
+            },kind,id);
+        if(values.size()>1)throw new IllegalStateException("content comparison identity unavailable");
+        return values.isEmpty()?null:values.getFirst();
+    }
+
+
+    public record ApplicationHeader(String kind,String id,long revision,Long bodyRevision,
+            String inputJobId,byte[] bodyHash,String state) {
+        public ApplicationHeader {bodyHash=bodyHash==null?null:bodyHash.clone();}
+        @Override public byte[] bodyHash(){return bodyHash==null?null:bodyHash.clone();}
+        @Override public String toString(){return "ContentApplicationHeader[redacted]";}
+    }
+    /** Scalar metadata only; never fetch body, review or blocking JSON for a revision check. */
+    public ApplicationHeader applicationHeader(String kind,String id){
+        if(!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive())throw new IllegalStateException("content application snapshot unavailable");
+        var values=jdbc.query("SELECT kind,id,revision,body_revision,input_job_id,body_hash_v1,state FROM contents WHERE kind=? AND id=?",(r,n)->new ApplicationHeader(r.getString(1),r.getString(2),r.getLong(3),r.getObject(4,Long.class),r.getString(5),r.getBytes(6),r.getString(7)),kind,id);
+        if(values.size()>1)throw new IllegalStateException("content application identity unavailable");return values.isEmpty()?null:values.getFirst();
+    }
+
     /** Stable scan used when eligibility depends on references outside the content row. */
     public List<Row> publishedCandidates(String kind, String afterKind, String afterId, int limit) {
         if (limit < 1 || limit > 1000) throw new IllegalArgumentException("invalid scan limit");

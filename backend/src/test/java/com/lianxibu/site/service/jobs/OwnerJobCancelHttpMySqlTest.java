@@ -1,0 +1,26 @@
+package com.lianxibu.site.service.jobs;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.lianxibu.site.controller.jobs.JobsController;
+import com.lianxibu.site.service.identity.IdentityService;
+import com.lianxibu.site.service.identity.IdentityService.Actor;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+/** Actual cancellation writer and HTTP with an explicit fixture authentication port. */
+@EnabledIfEnvironmentVariable(named="B45_MYSQL",matches="true")
+class OwnerJobCancelHttpMySqlTest {
+    OwnerJobCancelMySqlTest f;MockMvc mvc;IdentityService auth;
+    @BeforeEach @SuppressWarnings("unchecked") void setup(){f=new OwnerJobCancelMySqlTest();f.setup();auth=mock(IdentityService.class);when(auth.authenticate("fictional-session")).thenReturn(f.f.owner);when(auth.authorizeWrite("fictional-session","fictional-csrf","https://site.example.invalid")).thenReturn(f.f.owner);ObjectProvider<IdentityService> identity=mock(ObjectProvider.class);when(identity.getIfAvailable()).thenReturn(auth);ObjectProvider<JobsService> jobs=mock(ObjectProvider.class);when(jobs.getIfAvailable()).thenReturn(new OwnerJobsService(f.f.service,new OwnerJobCommandsService(f.service)));mvc=MockMvcBuilders.standaloneSetup(new JobsController(identity,jobs)).build();}
+    jakarta.servlet.http.Cookie cookie(){return new jakarta.servlet.http.Cookie("lianxibu_session","fictional-session");}
+    org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder action(String id,long revision,String key,String operation){return post("/admin/jobs/"+id+"/actions").cookie(cookie()).header("X-CSRF-Token","fictional-csrf").header("Origin","https://site.example.invalid").header("Idempotency-Key",key).contentType("application/json").content("{\"expected_revision\":"+revision+",\"action\":\""+operation+"\",\"reason\":\"Fictional cancellation\"}");}
+    @Test void actualCancellationResponseAndOldRevisionReplayUseOneOriginalReceipt()throws Exception{var first=mvc.perform(action(f.f.f.root,0,"fictional-cancel!","cancel")).andExpect(status().isOk()).andExpect(jsonPath("$.data.result_resource_ref.kind").value("job")).andExpect(jsonPath("$.data.result_resource_ref.id").value(f.f.f.root)).andExpect(jsonPath("$.data.result_revision").value(1)).andReturn();var replay=mvc.perform(action(f.f.f.root,0,"fictional-cancel!","cancel")).andExpect(status().isOk()).andReturn();var json=tools.jackson.databind.json.JsonMapper.shared();assertEquals(json.readTree(first.getResponse().getContentAsString()).get("data"),json.readTree(replay.getResponse().getContentAsString()).get("data"));assertEquals(1,f.f.f.f.f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE target_type='job_cancel'",Integer.class));mvc.perform(get("/admin/jobs/"+f.f.f.root).cookie(cookie())).andExpect(status().isOk()).andExpect(jsonPath("$.data.state").value("cancelled")).andExpect(jsonPath("$.data.call_count").value(0));}
+    @Test void actualRevisionIdentityFrozenAndUnknownResourceHaveFixedCodes()throws Exception{mvc.perform(action(f.f.f.root,1,"fictional-revision","cancel")).andExpect(status().isConflict()).andExpect(jsonPath("$.error.code").value("revision_conflict"));mvc.perform(action("fictional-absent",0,"fictional-absent-key","cancel")).andExpect(status().isNotFound());f.f.f.f.f.jdbc.update("UPDATE jobs SET state='unknown_external',call_count=1 WHERE id=?",f.f.f.root);mvc.perform(action(f.f.f.root,0,"fictional-unknown","cancel")).andExpect(status().isConflict()).andExpect(jsonPath("$.error.code").value("run_frozen"));f.f.f.f.f.jdbc.update("UPDATE jobs SET state='queued' WHERE id=?",f.f.f.root);mvc.perform(action(f.f.f.root,0,"fictional-first","cancel")).andExpect(status().isOk());mvc.perform(action(f.f.f.root,1,"fictional-first","cancel")).andExpect(status().isConflict()).andExpect(jsonPath("$.error.code").value("identity_conflict"));}
+    @Test void authAndCsrfRefuseBeforeSqlAndMissingOtherActionsRemainUnavailable()throws Exception{f.f.f.f.f.jdbc.execute("DROP TABLE jobs");mvc.perform(post("/admin/jobs/"+f.f.f.root+"/actions").contentType("application/json").content("{}")).andExpect(status().isUnauthorized());when(auth.authenticate("fictional-session")).thenReturn(new Actor("fictional-member","member"));mvc.perform(action(f.f.f.root,0,"fictional-forbidden","cancel")).andExpect(status().isForbidden());when(auth.authenticate("fictional-session")).thenReturn(f.f.owner);mvc.perform(post("/admin/jobs/"+f.f.f.root+"/actions").cookie(cookie()).contentType("application/json").content("{}")).andExpect(status().isForbidden());mvc.perform(action(f.f.f.root,0,"fictional-recover","recover")).andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.error.code").value("temporarily_unavailable"));mvc.perform(action(f.f.f.root,0,"fictional-sql-error","cancel")).andExpect(status().isServiceUnavailable()).andExpect(header().string("Retry-After","1"));}
+}

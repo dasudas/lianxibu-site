@@ -3,6 +3,34 @@ import assert from 'node:assert/strict';
 import { createApiClient } from '../src/api/client.js';
 import { createIdentityApi } from '../src/api/identity.js';
 const response = (status, data) => ({ status, ok: status === 200, json: async () => status >= 400 ? { error: { code: status === 401 ? 'unauthenticated' : 'temporarily_unavailable' } } : { data } });
+
+test('manual retry after bad credentials obtains a fresh one-use challenge', async () => {
+  let issued = 0, current, consumed = false, writes = 0;
+  const client = createApiClient({ fetchImpl: async (_url, options) => {
+    if (options.method === 'GET') { current = `fictional-${++issued}`; consumed = false; return response(200, { csrf_token: current }); }
+    writes++;
+    if (consumed || options.headers['X-CSRF-Token'] !== current) return response(403);
+    consumed = true;
+    return JSON.parse(options.body).password === 'correct' ? response(200, { authenticated: true, user_id: 'fictional', role: 'user' }) : response(401);
+  } });
+  await client.getSession(); const api = createIdentityApi(client);
+  await assert.rejects(api.login({ username: 'fictional', password: 'wrong' }), e => e.status === 401);
+  assert.equal((await api.login({ username: 'fictional', password: 'correct' })).id, 'fictional');
+  assert.equal(writes, 2);
+});
+
+test('challenge failure or a cancelled login never submits credentials', async () => {
+  let writes = 0;
+  const client = createApiClient({ fetchImpl: async (_url, options) => {
+    if(options.method === 'POST') writes++;
+    return response(503);
+  }, sleep: async () => {} });
+  await assert.rejects(createIdentityApi(client).login({ username: 'fictional', password: 'correct' }), e => e.status === 503);
+  assert.equal(writes, 0);
+  const abort = new AbortController(); abort.abort();
+  await assert.rejects(createIdentityApi(client).login({ username: 'fictional', password: 'correct' }, { signal: abort.signal }), e => e.name === 'AbortError');
+  assert.equal(writes, 0);
+});
 test('login sends the exact credential command once without synthetic idempotency and projects no token', async () => {
   let submitted;
   const client = createApiClient({ fetchImpl: async (_u, options) => { if (options.method === 'GET') return response(200, { csrf_token: 'fictional-anonymous' }); submitted = options; return response(200, { authenticated: true, user_id: 'fictional-user', role: 'user', csrf_token: 'fictional-new' }); } });
@@ -16,7 +44,7 @@ test('credential rejection retains anonymous session for feedback and session PO
   }
 });
 test('invalid credentials are rejected before transport and invalid authenticated identity is refused', async () => {
-  let calls = 0; const api = createIdentityApi({ request: async () => { calls++; return { data: { authenticated: true, user_id: null, role: 'owner' } }; } });
+  let calls = 0; const api = createIdentityApi({ getSession: async () => {}, request: async () => { calls++; return { data: { authenticated: true, user_id: null, role: 'owner' } }; } });
   await assert.rejects(api.login({ username: '', password: 'Fictional' }), TypeError); await assert.rejects(api.login({ username: 'Fictional', password: 'x'.repeat(1025) }), TypeError); assert.equal(calls, 0);
   await assert.rejects(api.login({ username: 'Fictional', password: 'Fictional' }), e => e.code === 'invalid_response');
 });

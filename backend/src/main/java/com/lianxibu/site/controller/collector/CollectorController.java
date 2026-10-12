@@ -176,7 +176,7 @@ public final class CollectorController {
                                  String probeId, Principal principal) {
         if (Set.of(Operation.CONFIG, Operation.RUNS, Operation.RUN, Operation.MANIFEST_READ).contains(operation)) return null;
         if (raw == null || raw.length == 0) throw validation("request body required");
-        if (raw.length > MAX_BODY) throw new BoundaryFailure(413, "payload_too_large");
+        if (raw.length > MAX_BODY || operation == Operation.HEARTBEAT && raw.length > 4096) throw new BoundaryFailure(413, "payload_too_large");
         JsonNode value;
         try { value = CanonicalJson.parse(raw); }
         catch (IllegalArgumentException invalid) { throw protocol("invalid JSON"); }
@@ -274,14 +274,7 @@ public final class CollectorController {
     }
 
     private static void heartbeat(JsonNode value) {
-        Set<String> fields = Set.of("observed_at", "pending_observations", "pending_controls", "quarantined",
-                "outbox_bytes", "free_bytes", "oldest_pending_at");
-        WireValues.object(value, fields, fields);
-        WireValues.utcMicroseconds(value.get("observed_at"));
-        for (String field : List.of("pending_observations", "pending_controls", "quarantined", "outbox_bytes", "free_bytes")) {
-            WireValues.nonnegativeInteger(value.get(field));
-        }
-        if (!value.get("oldest_pending_at").isNull()) WireValues.utcMicroseconds(value.get("oldest_pending_at"));
+        com.lianxibu.site.domain.protocol.CollectorHeartbeatTelemetry.parse(CanonicalJson.bytes(value));
     }
 
     private static void probeResult(JsonNode value) {

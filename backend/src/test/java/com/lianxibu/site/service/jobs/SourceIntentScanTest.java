@@ -1,0 +1,32 @@
+package com.lianxibu.site.service.jobs;
+import static org.junit.jupiter.api.Assertions.*;
+import com.lianxibu.site.domain.protocol.CanonicalJson;
+import com.lianxibu.site.repository.jobs.*;
+import java.time.*;
+import java.util.*;
+import org.junit.jupiter.api.*;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
+class SourceIntentScanTest {
+    GenerationJdbcStoreTest f;JdbcSourceIntentScan store;List<String> active;
+    GenerationJdbcStoreTest database(){return new GenerationJdbcStoreTest();}
+    @BeforeEach void setup(){f=database();f.fixture();store=new JdbcSourceIntentScan(f.source);var ids=new ArrayList<String>();f.writes.execute(new SharedWriteExecutor.ActionContext("fictional-scan-seed","fictional-seed",null),k->null,a->{
+        var records=new JdbcJobRecords(f.source);for(int n=0;n<8;n++){String natural="fictional-source-intent-"+n,id=JdbcFrozenInputs.stableId("intent",natural+":1");records.ensureIntent(new JdbcJobRecords.Intent(id,natural,1,n==7?"daily_report":n>=5||n%2==0?"news_dedup":"news_value",LocalDate.of(2026,1,1)),f.clock.instant());if(n<5)ids.add(id);else if(n<7)f.jdbc.update("UPDATE jobs SET state=? WHERE id=?",n==5?"succeeded":"cancelled",id);}return true;});active=ids.stream().sorted().toList();}
+    <T>T readonly(java.util.function.Supplier<T> work){var tx=new TransactionTemplate(new DataSourceTransactionManager(f.source));tx.setReadOnly(true);return tx.execute(s->work.get());}
+    JdbcSourceIntentScan.Page page(String cursor,int limit){return readonly(()->store.page(cursor,limit));}
+    @Test void nativePagesAreStableCompleteBoundedAndReadOnly(){
+        int count=f.count("1=1");var first=page(null,2);assertTrue(first.hasMore());assertEquals(active.subList(0,2),first.candidates().stream().map(JdbcSourceIntentScan.Candidate::id).toList());var second=page(first.nextCursor(),2);assertTrue(second.hasMore());assertEquals(active.subList(2,4),second.candidates().stream().map(JdbcSourceIntentScan.Candidate::id).toList());var last=page(second.nextCursor(),2);assertFalse(last.hasMore());assertNull(last.nextCursor());assertEquals(active.subList(4,5),last.candidates().stream().map(JdbcSourceIntentScan.Candidate::id).toList());store=new JdbcSourceIntentScan(f.source);assertEquals(first.candidates().stream().map(JdbcSourceIntentScan.Candidate::id).toList(),page(null,2).candidates().stream().map(JdbcSourceIntentScan.Candidate::id).toList());assertTrue(page(active.getLast(),2).candidates().isEmpty());assertEquals(count,f.count("1=1"));byte[] hash=first.candidates().getFirst().keyHash();hash[0]^=1;assertArrayEquals(JdbcGenerationLineage.hash(first.candidates().getFirst().key()),first.candidates().getFirst().keyHash());
+    }
+    @Test void malformedNativeIdentityKeyHashAndNullableFieldsRefuseThePage(){
+        String id=active.getFirst();f.jdbc.update("UPDATE jobs SET id=? WHERE id=?",id.toUpperCase(Locale.ROOT),id);assertThrows(RuntimeException.class,()->page(null,50));f.jdbc.update("UPDATE jobs SET id=? WHERE id=?",id,id.toUpperCase(Locale.ROOT));byte[] hash=f.jdbc.queryForObject("SELECT logical_key_hash FROM jobs WHERE id=?",byte[].class,id);f.jdbc.update("UPDATE jobs SET logical_key_hash=? WHERE id=?",new byte[32],id);assertThrows(RuntimeException.class,()->page(null,50));f.jdbc.update("UPDATE jobs SET logical_key_hash=? WHERE id=?",hash,id);
+        for(String field:List.of("generation","business_date","revision")){Object original=f.jdbc.queryForObject("SELECT "+field+" FROM jobs WHERE id=?",Object.class,id);if(field.equals("revision"))f.jdbc.update("UPDATE jobs SET revision=-1 WHERE id=?",id);else f.jdbc.update("UPDATE jobs SET "+field+"=NULL WHERE id=?",id);assertThrows(RuntimeException.class,()->page(null,50));f.jdbc.update("UPDATE jobs SET "+field+"=? WHERE id=?",original,id);}f.jdbc.update("UPDATE jobs SET logical_key=? WHERE id=?","x".repeat(4097),id);assertThrows(RuntimeException.class,()->page(null,50));
+    }
+    @Test void transactionAndCursorBoundsRejectBeforeAnyMutation(){
+        assertThrows(RuntimeException.class,()->store.page(null,1));assertThrows(RuntimeException.class,()->f.writes.execute(new SharedWriteExecutor.ActionContext("fictional-writer-read","fictional-seed",null),k->null,a->store.page(null,1)));for(int limit:List.of(0,-1,51))assertThrows(RuntimeException.class,()->page(null,limit));for(String cursor:List.of("","INVALID","x".repeat(65),"invalid cursor"))assertThrows(RuntimeException.class,()->page(cursor,1));assertThrows(RuntimeException.class,()->readonly(()->store.origins(active.getFirst(),"daily_report")));assertThrows(RuntimeException.class,()->store.origins(active.getFirst(),"news_dedup"));
+    }
+    @Test void actualCollectionAndOriginalValueMetadataAreReadWithoutGrantingCompletion() throws Exception {
+        var x=new SourceValueIntentHandoffTest(){@Override GenerationJdbcStoreTest database(){return SourceIntentScanTest.this.database();}};x.setup();f=x.f.f;store=new JdbcSourceIntentScan(f.source);var originals=readonly(()->store.origins(x.ref.ownerId(),"news_dedup"));assertEquals(1,originals.size());assertEquals(x.f.p1.collection.dispositionId(),originals.getFirst().id());assertEquals("collection-worker",originals.getFirst().actor());assertEquals("collection_handoff",originals.getFirst().type());var relation=x.service.handoff(x.ref);var raw=readonly(()->store.origins(relation.p2Owner(),"news_value")).getFirst();assertEquals(SourceValueIntentReceiptService.receiptId(x.ref.ownerId()),raw.id());assertEquals(relation.json(),JdbcFrozenInputs.canonical(CanonicalJson.parse(raw.payload())));assertArrayEquals(JdbcGenerationLineage.hash(JdbcFrozenInputs.canonical(CanonicalJson.parse(raw.payload()))),raw.payloadHash());byte[] hash=raw.payloadHash();hash[0]^=1;assertNotEquals(hash[0],raw.payloadHash()[0]);assertEquals(List.of(relation.p2Owner()),page(null,50).candidates().stream().map(JdbcSourceIntentScan.Candidate::id).toList());
+        var changed=(tools.jackson.databind.node.ObjectNode)CanonicalJson.parse(raw.payload());changed.put("fictional_padding","x".repeat(8193));String body=JdbcFrozenInputs.canonical(changed);f.jdbc.update("UPDATE jobs SET action_payload=?,action_payload_hash=? WHERE id=?",body,JdbcGenerationLineage.hash(body),raw.id());var bounded=readonly(()->store.origins(relation.p2Owner(),"news_value")).getFirst();assertNull(bounded.payload());assertTrue(bounded.payloadBytes()>8192);assertEquals("SourceIntentOriginMetadata[redacted]",bounded.toString());
+    }
+}

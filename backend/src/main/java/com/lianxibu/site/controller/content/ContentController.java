@@ -94,7 +94,7 @@ public final class ContentController {
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
         Actor actor = owner(cookie);
-        writeHeaders(csrf, origin, key);
+        writeHeaders(actor, cookie, csrf, origin, key);
         String contentKind = kind(kind);
         JsonNode value = parse(raw);
         ContentService.ContentWrite command = contentWrite(contentKind, value);
@@ -111,7 +111,7 @@ public final class ContentController {
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
         Actor actor = owner(cookie);
-        writeHeaders(csrf, origin, key);
+        writeHeaders(actor, cookie, csrf, origin, key);
         JsonNode value = parse(raw);
         String action = text(value.get("action"), 1, 32);
         if (!CONTENT_ACTIONS.contains(action)) throw validation("invalid content action");
@@ -136,7 +136,7 @@ public final class ContentController {
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
         Actor actor = owner(cookie);
-        writeHeaders(csrf, origin, key);
+        writeHeaders(actor, cookie, csrf, origin, key);
         if (!Set.of("article_revision", "catalog_evidence").contains(kind)) {
             throw validation("invalid evidence kind");
         }
@@ -180,7 +180,7 @@ public final class ContentController {
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
         Actor actor = owner(cookie);
-        writeHeaders(csrf, origin, key);
+        writeHeaders(actor, cookie, csrf, origin, key);
         JsonNode value = parse(raw);
         String action = text(value.get("action"), 1, 32);
         if (!Set.of("invalidate_conclusion", "reverse_invalidation").contains(action)) {
@@ -207,7 +207,7 @@ public final class ContentController {
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
         Actor actor = owner(cookie);
-        writeHeaders(csrf, origin, key);
+        writeHeaders(actor, cookie, csrf, origin, key);
         var command = generationIntent(parse(raw));
         try {
             return ResponseEntity.accepted().header(HttpHeaders.CACHE_CONTROL, "no-store")
@@ -244,6 +244,11 @@ public final class ContentController {
         }
         return response.body(new ContentDtos.ErrorEnvelope(new ContentDtos.ErrorDetail(code, code),
                 new ContentDtos.Meta(requestId())));
+    }
+    @ExceptionHandler(com.lianxibu.site.service.content.OwnerContentValidityService.Refused.class)
+    public ResponseEntity<ContentDtos.ErrorEnvelope> validityRefused(com.lianxibu.site.service.content.OwnerContentValidityService.Refused refusal){
+        return ResponseEntity.status(refusal.status()).header(HttpHeaders.CACHE_CONTROL,"no-store")
+            .body(new ContentDtos.ErrorEnvelope(new ContentDtos.ErrorDetail(refusal.code(),refusal.code()),new ContentDtos.Meta(requestId())));
     }
 
     private Actor owner(String cookie) {
@@ -360,6 +365,23 @@ public final class ContentController {
         Instant end = instant(value.get("period_end"));
         if (!end.isAfter(start)) throw validation("invalid report period");
         if (!"Asia/Shanghai".equals(text(value.get("timezone"), 1, 32))) throw validation("invalid timezone");
+        try {
+            var zone = java.time.ZoneId.of("Asia/Shanghai");
+            var day = end.atZone(zone).toLocalDate().minusDays(1);
+            var first = switch (kind) {
+                case "daily" -> day;
+                case "weekly" -> day.minusDays(6);
+                case "monthly" -> day.withDayOfMonth(1);
+                default -> throw validation("invalid report kind");
+            };
+            if (kind.equals("weekly") && day.getDayOfWeek() != java.time.DayOfWeek.SUNDAY
+                    || kind.equals("monthly") && day.getDayOfMonth() != day.lengthOfMonth()
+                    || !first.atStartOfDay(zone).toInstant().equals(start)
+                    || !day.plusDays(1).atStartOfDay(zone).toInstant().equals(end))
+                throw validation("invalid natural report period");
+        } catch (java.time.DateTimeException invalid) {
+            throw validation("invalid natural report period");
+        }
         return new ContentService.GenerationIntentWrite(kind, start, end, "Asia/Shanghai", mode,
                 mode.equals("supplement") ? number(value.get("intent_revision")) : null,
                 text(value.get("reason"), 1, 2048));
@@ -431,10 +453,14 @@ public final class ContentController {
         } catch (NumberFormatException ignored) { }
         throw validation("invalid positive integer query");
     }
-    private static void writeHeaders(String csrf, String origin, String key) {
+    private void writeHeaders(Actor actor, String cookie, String csrf, String origin, String key) {
         if (csrf == null || csrf.isBlank() || origin == null || origin.isBlank()) {
             throw new BoundaryFailure(403, "forbidden", "CSRF token and Origin required");
         }
+        IdentityService trusted = identity.getIfAvailable();
+        if (trusted == null) throw unavailable();
+        Actor authorized = trusted.authorizeWrite(cookie, csrf, origin);
+        if (!actor.equals(authorized)) throw new BoundaryFailure(403, "forbidden", "write authorization required");
         if (key == null || !key.matches("[!-~]{1,128}")) throw validation("valid Idempotency-Key required");
     }
     private static <T> ResponseEntity<ContentDtos.Envelope<T>> success(T data) {

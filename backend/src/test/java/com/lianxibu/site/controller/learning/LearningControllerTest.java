@@ -59,6 +59,7 @@ class LearningControllerTest {
         when(identityProvider.getIfAvailable()).thenReturn(identity);
         when(learningProvider.getIfAvailable()).thenReturn(service);
         when(identity.authenticate("fixture-session")).thenReturn(OWNER);
+        when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN)).thenReturn(OWNER);
         mvc = MockMvcBuilders.standaloneSetup(new LearningController(identityProvider, learningProvider)).build();
     }
 
@@ -217,5 +218,23 @@ class LearningControllerTest {
     private static MockHttpServletRequestBuilder write(MockHttpServletRequestBuilder request, String body) {
         return auth(request).contentType(MediaType.APPLICATION_JSON).header("X-CSRF-Token", "fixture-csrf")
                 .header("Origin", ORIGIN).header("Idempotency-Key", "fixture-key").content(body);
+    }
+
+    @Test
+    void everyWriteRejectsInvalidCsrfAndChangedActorBeforeBusinessCall() throws Exception {
+        for (boolean changedActor : new boolean[]{false, true}) {
+            if (changedActor) when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN))
+                    .thenReturn(new Actor("another-fixture-owner", "owner"));
+            else when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN))
+                    .thenThrow(new IdentityService.Rejected(IdentityService.Refusal.FORBIDDEN, null));
+            mvc.perform(write(post("/admin/learning/packages"), "{}")).andExpect(status().isForbidden());
+            mvc.perform(write(put("/admin/learning/packages/fixture"), "{}")).andExpect(status().isForbidden());
+            mvc.perform(write(post("/admin/learning/packages/fixture/actions"), "{}")).andExpect(status().isForbidden());
+            mvc.perform(write(put("/admin/learning/packages/fixture/questions/question/answer"), "{}")).andExpect(status().isForbidden());
+            mvc.perform(write(post("/admin/learning/packages/fixture/questions/question/answer/actions"), "{}")).andExpect(status().isForbidden());
+            org.mockito.Mockito.verifyNoInteractions(service);
+            org.mockito.Mockito.reset(identity);
+            when(identity.authenticate("fixture-session")).thenReturn(OWNER);
+        }
     }
 }

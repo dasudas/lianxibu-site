@@ -1,0 +1,22 @@
+package com.lianxibu.site.service.jobs;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import com.lianxibu.site.repository.jobs.*;
+import java.time.*;
+import java.util.*;
+import org.junit.jupiter.api.*;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.*;
+import org.springframework.transaction.support.*;
+/** Native generation-intent locators, explicitly fictional genesis. No complete source proof is created. */
+class ReportSchedulePagesTest {
+ GenerationJdbcStoreTest f;JdbcReportSchedulePages pages;
+ GenerationJdbcStoreTest fixture(){return new GenerationJdbcStoreTest();}
+ @BeforeEach void setup(){f=fixture();f.fixture();pages=new JdbcReportSchedulePages(f.source);}
+ <T>T rr(java.util.function.Supplier<T> work){var tx=new TransactionTemplate(new DataSourceTransactionManager(f.source));tx.setReadOnly(true);tx.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);return tx.execute(s->work.get());}
+ String add(String type,LocalDate day,long generation){String key="source_day_roster".equals(type)?"source-day-roster:"+day:"report:"+type.replace("_report","")+":"+day;String id="source_day_roster".equals(type)?JdbcSourceDayRosters.owner(day):JdbcFrozenInputs.stableId("intent",key+":"+generation);return ReportOriginalCompletionTest.utc(()->f.writes.execute(new SharedWriteExecutor.ActionContext("fictional-report-locator-"+id,id,null),k->null,a->new JdbcJobRecords(f.source).ensureIntent(new JdbcJobRecords.Intent(id,key,generation,type,day),f.clock.instant())));}
+ @Test void ActualInitialDayAndReportIntentsAreImmutableLocatorsWithoutGrantingCoverage(){var day=LocalDate.parse("2026-01-01");add("source_day_roster",day,1);add("daily_report",day,1);add("weekly_report",LocalDate.parse("2026-01-04"),1);add("monthly_report",LocalDate.parse("2026-01-31"),1);add("daily_report",day,2);var page=rr(()->pages.read(null,64));assertEquals(4,page.rows().size());assertFalse(page.hasMore());assertEquals(Set.of("source_day_roster","daily_report","weekly_report","monthly_report"),new HashSet<>(page.rows().stream().map(JdbcReportSchedulePages.Locator::type).toList()));assertThrows(UnsupportedOperationException.class,()->page.rows().clear());assertTrue(page.toString().contains("redacted"));assertEquals(0L,f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE record_kind='logical_task'",Long.class));}
+ @Test void AllSeventyOneOriginalLocatorsSurviveEveryBoundedPageAndLookahead(){for(int n=0;n<71;n++)add("source_day_roster",LocalDate.parse("2025-01-01").plusDays(n),1);for(int size:List.of(1,7,64)){var all=rr(()->{var values=new ArrayList<String>();String after=null;boolean more;do{var page=pages.read(after,size);assertTrue(page.rows().size()<=size);values.addAll(page.rows().stream().map(JdbcReportSchedulePages.Locator::id).toList());after=page.nextCursor();more=page.hasMore();}while(more);return values;});assertEquals(71,all.size());assertEquals(71,new HashSet<>(all).size());}assertTrue(rr(()->pages.read(null,64)).hasMore());}
+ @Test void MalformedCanonicalIdKeyHashOrPeriodIsStorageFailureInsteadOfSilentSkipping(){var day=LocalDate.parse("2026-01-01");String id=add("daily_report",day,1);f.jdbc.update("UPDATE jobs SET logical_key_hash=? WHERE id=?",new byte[32],id);assertThrows(RuntimeException.class,()->rr(()->pages.read(null,64)));setup();add("weekly_report",day,1);assertThrows(RuntimeException.class,()->rr(()->pages.read(null,64)));setup();id=add("daily_report",day,1);f.jdbc.update("UPDATE jobs SET logical_key=? WHERE id=?","x".repeat(97),id);assertThrows(RuntimeException.class,()->rr(()->pages.read(null,64)));}
+ @Test void NativeLocatorIsColdAndRequiresBoundedReadonlyRrWithNoClockOrWriterFallback(){var source=mock(javax.sql.DataSource.class);new JdbcReportSchedulePages(source);verifyNoInteractions(source);assertThrows(RuntimeException.class,()->pages.read(null,64));assertThrows(RuntimeException.class,()->rr(()->pages.read(null,0)));assertThrows(RuntimeException.class,()->rr(()->pages.read(null,65)));var tx=new TransactionTemplate(new DataSourceTransactionManager(f.source));tx.setReadOnly(true);tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);assertThrows(RuntimeException.class,()->tx.execute(s->pages.read(null,64)));assertThrows(RuntimeException.class,()->f.writes.execute(new SharedWriteExecutor.ActionContext("fictional-roster-writer","fictional-roster-writer",null),k->null,a->pages.read(null,64)));}
+}

@@ -13,7 +13,9 @@ import static java.nio.file.StandardOpenOption.*;
 public final class OperationalNoticeLog implements OperationalNoticeDelivery.Sink {
     private final Path directory;private final Clock clock;private final long segmentBytes,totalBytes;private final Duration retention;
     private static final String CURRENT="ops-notice-current.jsonl";
-    private static final String ARCHIVE="ops-notice-[0-9]{17}-[0-9a-f-]{36}\\.jsonl";
+    private static final String START="ops-notice-current.started";
+    private static final java.time.format.DateTimeFormatter STAMP=java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
+    private static final String ARCHIVE="ops-notice-(?:v2-)?[0-9]{17}-[0-9a-f-]{36}\\.jsonl";
     public OperationalNoticeLog(Path directory,Clock clock,long segmentBytes,long totalBytes,Duration retention) throws IOException {
         if(directory==null||clock==null||segmentBytes<4096||totalBytes<segmentBytes||totalBytes>256L*1024*1024
                 ||retention==null||retention.isZero()||retention.isNegative()||retention.compareTo(Duration.ofDays(7))>0)
@@ -28,17 +30,28 @@ public final class OperationalNoticeLog implements OperationalNoticeDelivery.Sin
         try(var guard=FileChannel.open(lock,CREATE,WRITE,LinkOption.NOFOLLOW_LINKS);var held=guard.tryLock()) {
             if(held==null)throw new IOException("log writer busy");
             Instant now=clock.instant();Path current=owned(CURRENT);
+            Path marker=owned(START);
             if(Files.exists(current,LinkOption.NOFOLLOW_LINKS)) {
                 repairTail(current);
-                if(Files.size(current)+bytes.length>segmentBytes||Files.getLastModifiedTime(current).toInstant().isBefore(now.minus(retention))) {
-                    String stamp=java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS").withZone(ZoneOffset.UTC).format(now);
-                    Files.move(current,owned("ops-notice-"+stamp+"-"+UUID.randomUUID()+".jsonl"),StandardCopyOption.ATOMIC_MOVE);
+                Instant started=segmentStart(current,marker,now);
+                if(Files.size(current)+bytes.length>segmentBytes||!started.isAfter(now.minus(retention))) {
+                    String stamp=STAMP.withZone(ZoneOffset.UTC).format(started);
+                    Files.move(current,owned("ops-notice-v2-"+stamp+"-"+UUID.randomUUID()+".jsonl"),StandardCopyOption.ATOMIC_MOVE);
+                    Files.deleteIfExists(marker);
                 }
             }
+            if(!Files.exists(current,LinkOption.NOFOLLOW_LINKS)) {
+                // An orphan marker can remain if rotation completed just before a crash.
+                Files.deleteIfExists(marker);
+                writeStart(marker,now);
+            }
             var archives=archives();long size=Files.exists(current)?Files.size(current):0;
-            for(Path path:archives)size+=Files.size(path);
+            var ages=new HashMap<Path,Instant>();
+            for(Path path:archives){size+=Files.size(path);ages.put(path,archiveStart(path));}
+            archives.sort(Comparator.comparing(ages::get));
             for(Path path:archives) {
-                if(Files.getLastModifiedTime(path).toInstant().isBefore(now.minus(retention))||size+bytes.length>totalBytes) {
+                Instant started=ages.get(path);
+                if(!started.isAfter(now.minus(retention))||size+bytes.length>totalBytes) {
                     long removed=Files.size(path);Files.delete(path);size-=removed;
                 }
             }
@@ -50,6 +63,45 @@ public final class OperationalNoticeLog implements OperationalNoticeDelivery.Sin
             }
             Files.setLastModifiedTime(current,java.nio.file.attribute.FileTime.from(now));
         }
+    }
+    private Instant segmentStart(Path current,Path marker,Instant now) throws IOException {
+        if(Files.exists(marker,LinkOption.NOFOLLOW_LINKS)) {
+            if(Files.size(marker)>64)throw new IOException("invalid log start marker");
+            try{return Instant.parse(Files.readString(marker));}
+            catch(java.time.DateTimeException invalid){throw new IOException("invalid log start marker",invalid);}
+        }
+        // Upgrade existing logs using their first record, never their refreshed mtime.
+        Instant started=firstEventTime(current,now);
+        writeStart(marker,started);return started;
+    }
+    private Instant archiveStart(Path path) throws IOException {
+        String name=path.getFileName().toString();boolean versioned=name.startsWith("ops-notice-v2-");int offset=versioned?14:11;
+        Instant stamp;
+        try{stamp=LocalDateTime.parse(name.substring(offset,offset+17),STAMP).toInstant(ZoneOffset.UTC);}
+        catch(java.time.DateTimeException invalid){throw new IOException("invalid archive timestamp",invalid);}
+        // Old names describe rotation, not segment creation. Read their first record once per inspection.
+        if(versioned)return stamp;
+        Instant first=firstEventTime(path,stamp);return first.isBefore(stamp)?first:stamp;
+    }
+    private Instant firstEventTime(Path current,Instant fallback) throws IOException {
+        Instant started=fallback;
+        if(Files.size(current)>0) {
+            try(var input=Files.newInputStream(current,LinkOption.NOFOLLOW_LINKS)) {
+                byte[] prefix=input.readNBytes(8192);int end=0;while(end<prefix.length&&prefix[end]!='\n')end++;
+                if(end==prefix.length)throw new IOException("invalid log first record");
+                try{started=Instant.parse(JsonMapper.shared().readTree(Arrays.copyOf(prefix,end)).get("event_time").asString());}
+                catch(RuntimeException invalid){throw new IOException("invalid log first record",invalid);}
+            }
+        }
+        return started;
+    }
+    private void writeStart(Path marker,Instant started) throws IOException {
+        Path pending=owned("ops-notice-start.pending");
+        try(var file=FileChannel.open(pending,CREATE,TRUNCATE_EXISTING,WRITE,LinkOption.NOFOLLOW_LINKS)) {
+            var buffer=ByteBuffer.wrap(started.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            while(buffer.hasRemaining())file.write(buffer);file.force(true);
+        }
+        Files.move(pending,marker,StandardCopyOption.ATOMIC_MOVE);
     }
     private Path owned(String name) throws IOException {
         Path path=directory.resolve(name);

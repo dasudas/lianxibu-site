@@ -90,11 +90,14 @@ public final class JobsController {
             @RequestBody(required = false) byte[] raw) {
         Actor actor = ownerWrite(cookie,csrf,origin,key);
         JsonNode value = parse(raw);
-        fields(value, Set.of("task_type", "target", "expected_revision", "reason"));
-        var command = new JobsService.JobCreate(text(value.get("task_type"), 1, 32),
-                ref(value.get("target")), number(value.get("expected_revision")),
-                text(value.get("reason"), 1, 2048));
-        return success(job(service().create(actor, command, key, csrf, origin)));
+        if(!value.has("task_type"))throw protocol("missing task type");
+        String task=text(value.get("task_type"),1,32);boolean temporary="ad_hoc_ai".equals(task);
+        fields(value,temporary?Set.of("task_type","target","expected_revision","reason","request"):Set.of("task_type","target","expected_revision","reason"));
+        JobsService.AdHocRequest request=null;
+        if(temporary){var rawRequest=value.get("request");fields(rawRequest,Set.of("prompt"));request=new JobsService.AdHocRequest(text(rawRequest.get("prompt"),1,32768));}
+        var command=new JobsService.JobCreate(task,ref(value.get("target")),number(value.get("expected_revision")),text(value.get("reason"),1,2048),request);
+        try{return success(job(service().create(actor,command,key,csrf,origin)));}
+        catch(com.lianxibu.site.service.jobs.OwnerJobCommandsService.InvalidAdHocCreate rejected){throw validation("invalid temporary question");}
     }
 
     @PostMapping(path = "/admin/jobs/{id}/actions", consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -109,7 +112,9 @@ public final class JobsController {
         Actor actor = ownerWrite(cookie,csrf,origin,key);
         JsonNode value = parse(raw);
         var command = action(value);
-        return success(result(service().action(actor, id(id), command, key, csrf, origin)));
+        try {return success(result(service().action(actor, id(id), command, key, csrf, origin)));}
+        catch(com.lianxibu.site.service.jobs.OwnerJobCommandsService.InvalidExternalEvidence refused){throw validation("invalid external verification evidence");}
+        catch(com.lianxibu.site.service.jobs.OwnerJobApplyResultService.InvalidConfirmation refused){throw validation("invalid content revision confirmation");}
     }
 
     @ExceptionHandler(BoundaryFailure.class)
@@ -137,6 +142,14 @@ public final class JobsController {
         }
         return response.body(new JobsDtos.ErrorEnvelope(new JobsDtos.ErrorDetail(code, code),
                 new JobsDtos.Meta(requestId())));
+    }
+
+    @ExceptionHandler(JobsService.JobRejected.class)
+    public ResponseEntity<JobsDtos.ErrorEnvelope> jobFailure(JobsService.JobRejected error) {
+        String code=error.refusal().name().toLowerCase(java.util.Locale.ROOT);
+        return ResponseEntity.status(error.refusal()==JobsService.JobRefusal.NOT_FOUND?404:409)
+                .header(HttpHeaders.CACHE_CONTROL,"no-store")
+                .body(new JobsDtos.ErrorEnvelope(new JobsDtos.ErrorDetail(code,code),new JobsDtos.Meta(requestId())));
     }
 
     @ExceptionHandler(JobsService.OpsRejected.class)
@@ -191,7 +204,7 @@ public final class JobsController {
         var required = new java.util.HashSet<>(common); required.addAll(branch);
         fields(value, Set.copyOf(required));
         String attemptId = branch.contains("attempt_id") ? id(value.get("attempt_id")) : null;
-        Long contentRevision = action.equals("apply_result") ? number(value.get("expected_content_revision")) : null;
+        Long contentRevision = action.equals("apply_result")&&!value.get("expected_content_revision").isNull() ? number(value.get("expected_content_revision")) : null;
         String hash = action.equals("apply_result") ? sha(value.get("result_hash")) : null;
         String externalState = null;
         List<String> evidence = null;
@@ -226,7 +239,13 @@ public final class JobsController {
         String kind = text(payload.get("kind"), 1, 32);
         Set<String> required = switch (kind) {
             case "dedup" -> Set.of("kind", "items", "summary");
-            case "value" -> Set.of("kind", "items", "selected_item_ids", "summary");
+            case "value" -> {
+                if(payload.has("value_result_version")) {
+                    if(!"2".equals(text(payload.get("value_result_version"),1,8)))throw validation("invalid value result version");
+                    yield Set.of("kind","items","selected_item_ids","summary","value_result_version");
+                }
+                yield Set.of("kind", "items", "selected_item_ids", "summary");
+            }
             case "analysis", "report" -> Set.of("kind", "body");
             case "ad_hoc" -> Set.of("kind", "title", "sections", "citation_ids");
             default -> throw validation("invalid result payload kind");

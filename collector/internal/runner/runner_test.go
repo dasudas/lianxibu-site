@@ -85,6 +85,9 @@ func TestDurableRuntimeWithTLSBackendAndRestart(t *testing.T) {
 			w.WriteHeader(403)
 			return
 		}
+		if replySourceContractSnapshot(t, w, r, now) {
+			return
+		}
 		switch r.URL.Path {
 		case "/api/collector/v1/config":
 			reply(client.ConfigSnapshot{ProtocolRevision: "0.11", ValidUntil: until, Sources: []client.SourceConfig{source}})
@@ -156,6 +159,9 @@ func TestDurableRuntimeWithTLSBackendAndRestart(t *testing.T) {
 			outer := value.(map[string]any)
 			business := outer["business"].(map[string]any)
 			operation := ""
+			if replySourceContractSnapshot(t, w, r, now) {
+				return
+			}
 			switch {
 			case strings.HasSuffix(r.URL.Path, "/claim"):
 				operation = "claim_" + business["action"].(string)
@@ -298,6 +304,9 @@ func TestFailedSourceDoesNotStarveAnotherClaim(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		reply := func(data any) {
 			json.NewEncoder(w).Encode(map[string]any{"data": data, "meta": map[string]any{"request_id": "fictional"}})
+		}
+		if replySourceContractSnapshot(t, w, req, now) {
+			return
 		}
 		switch {
 		case strings.HasSuffix(req.URL.Path, "/config"):

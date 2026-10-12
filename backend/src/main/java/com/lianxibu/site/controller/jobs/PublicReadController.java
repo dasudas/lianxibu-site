@@ -2,6 +2,8 @@ package com.lianxibu.site.controller.jobs;
 
 import com.lianxibu.site.service.content.ContentService;
 import com.lianxibu.site.service.jobs.PublicReadService;
+import com.lianxibu.site.service.jobs.RuntimeCapabilities;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -26,8 +28,12 @@ public final class PublicReadController {
     private static final DateTimeFormatter MICROS = new DateTimeFormatterBuilder().appendInstant(6).toFormatter();
     private final ObjectProvider<PublicReadService> services;
 
-    public PublicReadController(ObjectProvider<PublicReadService> services) {
+    private final ObjectProvider<RuntimeCapabilities> capabilities;
+    public PublicReadController(ObjectProvider<PublicReadService> services) { this(services, null); }
+    @Autowired
+    public PublicReadController(ObjectProvider<PublicReadService> services,ObjectProvider<RuntimeCapabilities> capabilities) {
         this.services = services;
+        this.capabilities = capabilities;
     }
 
     public record Meta(String request_id) { }
@@ -43,7 +49,8 @@ public final class PublicReadController {
     @GetMapping(path = "/capabilities", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Envelope<Capabilities>> capabilities(@RequestParam MultiValueMap<String, String> query) {
         if (!query.isEmpty()) throw new ProtocolError();
-        return success(new Capabilities("0.12", "0.15", List.of(), 50, 10));
+        RuntimeCapabilities actual = capabilities == null ? null : capabilities.getIfAvailable();
+        return success(new Capabilities("0.12", "0.15", actual == null ? List.of() : actual.supportedFeatures(), 50, 10));
     }
 
     @GetMapping(path = "/home", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -51,7 +58,9 @@ public final class PublicReadController {
         if (!query.isEmpty()) throw new ProtocolError();
         PublicReadService service = services.getIfAvailable();
         if (service == null) throw new Unavailable();
-        var snapshot = service.home();
+        PublicReadService.HomeSnapshot snapshot;
+        try { snapshot = service.home(); }
+        catch (RuntimeException failure) { throw new Unavailable(); }
         if (snapshot == null || snapshot.reports() == null || snapshot.learningPackages() == null
                 || snapshot.reports().size() > 50 || snapshot.learningPackages().size() > 50) {
             throw new Unavailable();

@@ -68,6 +68,9 @@ public final class EntityDedupService {
         return applyAutomaticCurrent(value, context, requestHash);
     }
 
+    /** Pure validated original business identity, shared with independent original-input readers. */
+    public static String automaticFingerprint(Automatic value){validateAutomatic(value);return automaticHash(value);}
+
     private static String automaticHash(Automatic value) {
         return fingerprint("automatic", value.itemId(), value.expectedItemRevision(),
                 value.decision(), value.category(), value.identityKey(), value.proposedEntityId(),
@@ -252,7 +255,7 @@ public final class EntityDedupService {
     }
     private static boolean validText(String value, int limit) {
         return value != null && !value.isBlank()
-                && value.getBytes(StandardCharsets.UTF_8).length <= limit;
+                && value.codePointCount(0, value.length()) <= limit;
     }
     private static String fingerprint(String operation, Object... fields) {
         ObjectNode value = JsonMapper.shared().createObjectNode();

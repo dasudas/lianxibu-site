@@ -1,0 +1,27 @@
+package com.lianxibu.site.controller.content;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.lianxibu.site.domain.protocol.*;
+import com.lianxibu.site.service.content.ContentService;
+import com.lianxibu.site.service.identity.IdentityService;
+import java.time.*;
+import java.util.*;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+/** Natural period request validation occurs before any report provider. Authentication is an explicit fictional port. */
+class ReportNaturalPeriodHttpTest {
+ MockMvc mvc;ContentService service;IdentityService.Actor actor=new IdentityService.Actor("fictional-owner","owner");
+ @BeforeEach @SuppressWarnings("unchecked") void setup(){service=mock(ContentService.class);var identity=mock(IdentityService.class);when(identity.authenticate("fictional-session")).thenReturn(actor);when(identity.authorizeWrite("fictional-session","fictional-csrf","https://site.example.invalid")).thenReturn(actor);ObjectProvider<IdentityService> auth=mock(ObjectProvider.class);when(auth.getIfAvailable()).thenReturn(identity);ObjectProvider<ContentService> content=mock(ObjectProvider.class);when(content.getIfAvailable()).thenReturn(service);mvc=MockMvcBuilders.standaloneSetup(new ContentController(auth,content)).build();var coverage=new ContentService.Coverage("partial",List.of(new ContentService.MissingInput("input_snapshot","fictional-intent",null,"not_frozen")),List.of(),List.of());when(service.generationIntent(any(),any(),any(),any(),any())).thenReturn(new ContentService.Job("fictional-intent","generation_intent",0,"daily_report",0,"waiting_input","fictional-intent",0L,"fictional-content",null,"waiting_input",null,null,coverage,null,0,null,0,false,"free",0,null,null,null,null,List.of(),List.of("waiting_input")));}
+ String body(String kind,Instant start,Instant end){var format=new java.time.format.DateTimeFormatterBuilder().appendInstant(6).toFormatter();return "{\"kind\":\""+kind+"\",\"period_start\":\""+format.format(start)+"\",\"period_end\":\""+format.format(end)+"\",\"timezone\":\"Asia/Shanghai\",\"mode\":\"initial\",\"reason\":\"Fictional natural period\"}";}
+ org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder postBody(String body){return post("/admin/reports/generation-intents").cookie(new jakarta.servlet.http.Cookie("lianxibu_session","fictional-session")).header("X-CSRF-Token","fictional-csrf").header("Origin","https://site.example.invalid").header("Idempotency-Key","fictional-natural-period").contentType("application/json").content(body);}
+ Instant start(LocalDate day){return day.atStartOfDay(ZoneId.of("Asia/Shanghai")).toInstant();}
+ @Test void DailyMustUseExactShanghaiNaturalMidnightAndOneDayBeforeAnyProvider()throws Exception{LocalDate day=LocalDate.parse("2026-01-01");for(String body:List.of(body("daily",start(day).plusSeconds(1),start(day.plusDays(1))),body("daily",start(day),start(day.plusDays(2))),body("daily",start(day).plusSeconds(28800),start(day.plusDays(1)).plusSeconds(28800))))mvc.perform(postBody(body)).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.error.code").value("validation"));verifyNoInteractions(service);}
+ @Test void WeeklyMustEndAfterSundayAndIncludeExactlySevenNaturalDays()throws Exception{LocalDate sunday=LocalDate.parse("2026-01-04");for(String body:List.of(body("weekly",start(sunday.minusDays(5)),start(sunday.plusDays(1))),body("weekly",start(sunday.minusDays(5)),start(sunday.plusDays(2))),body("weekly",start(sunday.minusDays(6)),start(sunday.plusDays(1)).plusNanos(1000))))mvc.perform(postBody(body)).andExpect(status().isUnprocessableEntity());verifyNoInteractions(service);}
+ @Test void MonthlyMustCoverEntireNaturalMonthIncludingLeapFebruary()throws Exception{for(String body:List.of(body("monthly",start(LocalDate.parse("2026-01-02")),start(LocalDate.parse("2026-02-01"))),body("monthly",start(LocalDate.parse("2026-01-01")),start(LocalDate.parse("2026-01-31"))),body("monthly",start(LocalDate.parse("2024-02-01")),start(LocalDate.parse("2024-02-29")))))mvc.perform(postBody(body)).andExpect(status().isUnprocessableEntity());verifyNoInteractions(service);}
+ @Test void CanonicalDailyWeeklyAndLeapMonthDelegateOriginalInstantsExactly()throws Exception{var daily=new ContentService.GenerationIntentWrite("daily",start(LocalDate.parse("2026-01-01")),start(LocalDate.parse("2026-01-02")),"Asia/Shanghai","initial",null,"Fictional natural period");var weekly=new ContentService.GenerationIntentWrite("weekly",start(LocalDate.parse("2025-12-29")),start(LocalDate.parse("2026-01-05")),"Asia/Shanghai","initial",null,"Fictional natural period");var monthly=new ContentService.GenerationIntentWrite("monthly",start(LocalDate.parse("2024-02-01")),start(LocalDate.parse("2024-03-01")),"Asia/Shanghai","initial",null,"Fictional natural period");for(var command:List.of(daily,weekly,monthly)){mvc.perform(postBody(body(command.kind(),command.periodStart(),command.periodEnd()))).andExpect(status().isAccepted());verify(service).generationIntent(actor,command,"fictional-natural-period","fictional-csrf","https://site.example.invalid");}verifyNoMoreInteractions(service);}
+}

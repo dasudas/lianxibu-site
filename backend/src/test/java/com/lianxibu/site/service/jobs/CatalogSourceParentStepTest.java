@@ -1,0 +1,38 @@
+package com.lianxibu.site.service.jobs;
+import static org.junit.jupiter.api.Assertions.*;
+import com.lianxibu.site.repository.jobs.*;
+import java.util.*;
+import org.junit.jupiter.api.*;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+
+/** Actual original parent, collection/preparation/finalizer/observation; retained application fixture is fictional. */
+class CatalogSourceParentStepTest {
+ CatalogSourceFinalAvailabilityTest x;CatalogSourceFinalProofTest f;CatalogSourceParentStepService parent;CatalogSourcePlanPreparationCoordinator preparation;boolean allowed=true;String category;
+ GenerationJdbcStoreTest database(){return new GenerationJdbcStoreTest();}
+ void install(String category,boolean empty)throws Exception{this.category=category;x=new CatalogSourceFinalAvailabilityTest(){@Override GenerationJdbcStoreTest database(){return CatalogSourceParentStepTest.this.database();}};x.install(category,empty);f=x.f;preparation=new CatalogSourcePlanPreparationCoordinator(f.prepared.preparation,f.parts,new JdbcFrozenSourcePlans(f.f.source),f.f.writes,category,()->allowed);parent=provider(category);}
+ @BeforeEach void setup()throws Exception{install("agent",false);}
+ CatalogSourceParentStepService provider(String category){return new CatalogSourceParentStepService(f.origin.service,new JdbcFrozenSourcePlans(f.f.source),f.prepared.plans,f.parts,preparation,f.resolutions,f.seals,x.x.service,x.service,new DataSourceTransactionManager(f.f.source),f.f.clock,category);}
+ JdbcSourceIntentScan.Candidate candidate(){return f.results.readonly(()->new JdbcCatalogSourceIntentScan(f.f.source,category).find(f.ref.ownerId()));}
+ @Test void fourActualParentsWaitForOriginalResultThenFinalizeAndReplayOneObservation()throws Exception{
+  for(String category:List.of("agent","skill","workflow","model")){install(category,false);var candidate=candidate();assertEquals(CatalogSourceParentStepService.Status.PENDING,parent.step(candidate).status());assertEquals(0,x.observations());assertEquals(0,x.x.receipts());f.complete();assertEquals(CatalogSourceParentStepService.Status.FINALIZED,parent.step(candidate).status());assertEquals(1,x.observations());assertEquals(1,x.x.receipts());assertNotNull(x.x.sourceText("dedup_summary"));int rows=f.f.count("1=1");f.f.jdbc.execute("DROP TABLE source_run_items");f.f.jdbc.execute("DROP TABLE analyzed_entities");parent=provider(category);assertEquals(CatalogSourceParentStepService.Status.FINALIZED,parent.step(candidate()).status());assertEquals(rows,f.f.count("1=1"));assertEquals(1,f.f.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));}
+ }
+ @Test void zeroPlansStillNeedTheirOriginalCollectionAndFinalReceiptWithoutAnAiRoot()throws Exception{
+  for(String category:List.of("agent","skill","workflow","model")){install(category,true);assertEquals(CatalogSourceParentStepService.Status.FINALIZED,parent.step(candidate()).status());assertEquals("no_input",x.x.intentState());assertEquals(1,x.observations());assertEquals(0,f.f.count("record_kind IN ('logical_task','ai_attempt')"));f.f.jdbc.update("DELETE FROM jobs WHERE id=?",f.prepared.collection.dispositionId());assertThrows(RuntimeException.class,()->parent.step(candidate()));assertEquals(1,x.x.receipts());}
+ }
+ @Test void nativeFailedBudgetCreatesDurablePartialSealBeforeFinalCommitAndObservation(){
+  f.f.jdbc.update("UPDATE jobs SET state='failed',call_count=3 WHERE id=?",f.results.chunk.rootId());assertEquals(CatalogSourceParentStepService.Status.FINALIZED,parent.step(candidate()).status());assertEquals(1,f.f.count("target_type='source_dedup_partial_result'"));assertEquals(1,x.x.receipts());assertEquals(1,x.observations());assertEquals("partial",x.x.sourceText("analysis_state"));assertTrue(x.x.sourceText("dedup_summary").contains("尚未获得已应用"));assertEquals(3,f.f.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));
+ }
+ @Test void actualOriginalCollectionWithNoPlanGetsOneOriginalPreparationAndThenWaits(){
+  String intent=f.ref.ownerId(),origin=f.prepared.collection.dispositionId();f.f.jdbc.update("DELETE FROM jobs WHERE id<>? AND id<>?",intent,origin);f.f.jdbc.update("UPDATE jobs SET state='waiting_input',input_state='waiting',input_hash=NULL WHERE id=?",intent);f.f.jdbc.update("UPDATE source_runs SET job_refs_json=?",com.lianxibu.site.repository.jobs.JdbcFrozenInputs.canonical(tools.jackson.databind.json.JsonMapper.shared().createArrayNode().add(intent)));
+  assertEquals(CatalogSourceParentStepService.Status.PREPARED,parent.step(candidate()).status());assertEquals(1,f.f.count("target_type='source_stage_plan'"));assertEquals(1,f.f.count("record_kind='logical_task'"));assertEquals(1,f.f.count("record_kind='ai_attempt'"));assertEquals(0,f.f.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));assertEquals(0,x.x.receipts());assertEquals(CatalogSourceParentStepService.Status.PENDING,parent.step(candidate()).status());
+ }
+ @Test void preparationGateDefersARealUnpreparedRootWithoutChangingBudgetOrClaim(){
+  String intent=f.ref.ownerId(),root=f.results.chunk.rootId();String target=JdbcFrozenInputs.canonical(tools.jackson.databind.json.JsonMapper.shared().createObjectNode().put("kind","logical_task").put("id",root));f.f.jdbc.update("DELETE FROM jobs WHERE id=? OR root_job_id=? OR owner_job_id=? OR target_key_hash=?",root,root,root,JdbcGenerationLineage.hash(target));allowed=false;int rows=f.f.count("1=1");assertEquals(CatalogSourceParentStepService.Status.GATED,parent.step(candidate()).status());assertEquals(rows,f.f.count("1=1"));assertEquals(0,f.f.count("record_kind='ai_attempt'"));assertEquals(0,x.x.receipts());allowed=true;assertEquals(CatalogSourceParentStepService.Status.PREPARED,parent.step(candidate()).status());assertEquals(1,f.f.count("record_kind='ai_attempt'"));assertEquals(0,f.f.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));assertEquals(CatalogSourceParentStepService.Status.PENDING,parent.step(candidate()).status());
+ }
+ @Test void brokenOriginalPlanWrongCategoryAndOuterTransactionCannotFinalize(){
+  f.complete();assertThrows(RuntimeException.class,()->provider("skill").step(candidate()));assertThrows(RuntimeException.class,()->f.prepared.tx(()->parent.step(candidate())));f.f.jdbc.update("UPDATE jobs SET action_payload_hash=? WHERE target_type='source_stage_plan'",new byte[32]);assertThrows(RuntimeException.class,()->parent.step(candidate()));assertEquals(0,x.x.receipts());assertEquals(0,x.observations());assertNull(x.x.sourceText("dedup_summary"));
+ }
+ @Test void observationFailureKeepsActualFinalCommitAndRestartCompletesOnlyObservation(){
+  f.complete();f.f.jdbc.execute("ALTER TABLE jobs ADD CONSTRAINT fictional_catalog_parent_observer_failure CHECK(target_type IS NULL OR target_type<>'catalog_final_availability')");assertThrows(RuntimeException.class,()->parent.step(candidate()));assertEquals(1,x.x.receipts());assertEquals("succeeded",x.x.intentState());assertEquals(0,x.observations());long revision=f.f.jdbc.queryForObject("SELECT revision FROM source_runs",Long.class);f.f.jdbc.execute(f.f.source instanceof org.h2.jdbcx.JdbcDataSource?"ALTER TABLE jobs DROP CONSTRAINT fictional_catalog_parent_observer_failure":"ALTER TABLE jobs DROP CHECK fictional_catalog_parent_observer_failure");parent=provider(category);assertEquals(CatalogSourceParentStepService.Status.FINALIZED,parent.step(candidate()).status());assertEquals(1,x.observations());assertEquals(revision,f.f.jdbc.queryForObject("SELECT revision FROM source_runs",Long.class));assertEquals(1,f.f.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));
+ }
+}

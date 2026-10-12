@@ -1,6 +1,6 @@
 # API contracts
 
-Contract package revision: 0.28. Observations accept wire revisions 0.11 and
+Contract package revision: 0.34. Observations accept wire revisions 0.11 and
 0.12; configuration and control messages remain at 0.11.
 
 The two OpenAPI 3.1 documents define the business and collector HTTP
@@ -110,3 +110,71 @@ The existing `POST /admin/sources/{id}/actions` now returns `SourceActionResult`
 ## Source member command receipts
 
 The owner source member action now returns `SourceItemActionResult`, with an exact source/run/item/original revision/action and complete `action-v1` command hash. An in-place member update and a new correction run have different root types; a correction preserves the frozen original. The previously unconsumed generic response for this operation is replaced; all other operations and ActionResult remain unchanged. [Fictional receipt vectors](source-item-action-wire-examples.json). No trial execution, schema migration or collector wire change.
+
+
+Value result revision 2 is an additive model-only contract in
+news-value-result-v2.schema.json. Its fictional schema cases are in
+news-value-result-v2-wire-examples.json. It separates valuable from high_value;
+high_value requires valuable. The frozen input must explicitly select version 2.
+Existing inputs, requests, results and HTTP/collector schemas retain version 1.
+Static schemas do not prove original membership, current-day eligibility,
+unique entity selection or result hashes. Runtime consumers must be installed
+before new preparations select this version.
+
+
+External result verification also accepts value result revision 2 through
+the existing owner resolve_external action. Its closed result branch is
+additive; original ValueDecision/ValueResult definitions and operations are
+unchanged. news-value-external-result-wire-examples.json contains 13 fictional
+HTTP schema cases. Services must still verify the original input version,
+result hash, attempt, evidence, permission, revision and call budget.
+
+
+## 0.30 人工结果应用
+
+`JobAction.apply_result.expected_content_revision` 字段仍必需，允许整数或 `null`。`null` 仅用于原始去重、价值判定或临时回答的无正文结果；分析与报告仍须提供实际当前正文版本。核实外部结果与应用结果是两次独立操作。原结果比较接口对无正文任务保持 `not_content_result`，不提供正文应用许可。
+
+
+## 0.31 临时 AI 问题
+
+`JobCreate` 的 `ad_hoc_ai` 分支必需 `request.prompt`（1～32768 Unicode 码点，语义非空），目标固定为 `ad_hoc_request`、`package_id: null`、`expected_revision: 0`。审计 `reason` 独立填写。相同问题不能通过更换编号或原因重置调用额度。新建回执表示原始意图 `waiting_input`，后续状态需读取该意图。其他任务保留原四字段；未知/重复字段拒绝。见 [虚构正负向样例](ad-hoc-job-wire-examples.json)。
+
+
+## 0.32 站长临时问题及保留答案
+
+`GET /admin/jobs/{id}/ad-hoc` 使用原临时问题的意图 ID，返回当前意图、精确原问题、可空原任务及可空保留答案。已有但损坏的证明返回 503；读取不发送 AI 或修改调用额度。所有信息仅站长可见，`no-store`。参见[虚构问答样例](ad-hoc-question-view-wire-examples.json)。
+
+
+## 0.33 临时问题原意图取消
+
+既有 `POST /admin/jobs/{id}/actions` 的 `cancel` 可处理尚未准备执行任务的原临时问题意图。已有原执行任务时，从原逻辑任务处理。取消保留原问题及调用身份，不重置额度；原幂等回执保持。参见[虚构取消样例](ad-hoc-intent-cancel-wire-examples.json)。
+
+
+## 0.34 目录去重版本判断
+
+`CatalogDedupResultV2` requires `dedup_result_version: "2"` and retains the
+complete item set. It applies only to agent, skill, workflow and model dedup.
+`version_changed` is a nullable boolean: null means unknown. Known comparisons
+require both typed `catalog_version_evidence` proof references; unknown
+comparisons keep both null. Reanalysis can be recommended only for an existing
+candidate with a known version change. A known change may still recommend no
+reanalysis. New or needs-review decisions keep the version unknown.
+
+The original DedupDecision/DedupResult and news behavior remain at revision 1.
+Services select revision 2 from the original frozen input and verify exact
+items, candidates, version facts and both original native proof hashes. Schema
+validation does not prove source admission, evidence ownership, result hashes
+or permission to create a new generation. Unknown evidence is never a negative
+reanalysis judgment. Install consumers before enabling new preparations.
+See [standalone result schema](catalog-dedup-result-v2.schema.json) and
+[fictional cases](catalog-dedup-result-v2-wire-examples.json).
+
+## Optional collector host memory v1
+
+The independently versioned host-memory extension has a
+[closed schema](collector-host-memory-v1.schema.json),
+[fictional wire cases](collector-host-memory-v1-wire-examples.json), and
+[HTTP and replay requirements](collector-host-memory-v1.md).
+It is separate from the original collector operation list and does not alter
+the seven-field heartbeat, observation revisions, or SQLite v3 layout.
+ACK acceptance does not imply healthy telemetry or business admission.

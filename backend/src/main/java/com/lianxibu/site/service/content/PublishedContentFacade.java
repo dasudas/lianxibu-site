@@ -24,13 +24,29 @@ public final class PublishedContentFacade implements ContentService {
          * Never return source payloads, prompts or current settings as historical metadata. */
         ContentView project(Version version);
     }
+    @FunctionalInterface public interface Versions {VersionPage list(Actor actor,String kind,String id,long page,int size);}
+    public record OwnerOperations(OwnerContentReadService reads,OwnerContentCommands commands,OwnerContentEditService edits,
+                                  OwnerContentValidityService validity,Versions versions){
+        public OwnerOperations{Objects.requireNonNull(reads);Objects.requireNonNull(commands);Objects.requireNonNull(edits);Objects.requireNonNull(validity);Objects.requireNonNull(versions);}
+    }
     private static final List<String> INTERPRETATIONS=List.of("agent","model","skill","workflow");
     private static final Set<String> TYPES=Set.of("daily","weekly","monthly");
     private final ContentReadService content;
     private final Projection projection;
     private final TransactionTemplate reads;
+    private final OwnerOperations owner;
+    private final OwnerReportOperations reports;
 
     public PublishedContentFacade(ContentReadService content,Projection projection,PlatformTransactionManager tx) {
+        this(content,projection,tx,null);
+    }
+    public PublishedContentFacade(ContentReadService content,Projection projection,PlatformTransactionManager tx,
+            OwnerOperations owner) {
+        this(content,projection,tx,owner,null);
+    }
+    public PublishedContentFacade(ContentReadService content,Projection projection,PlatformTransactionManager tx,
+            OwnerOperations owner,OwnerReportOperations reports) {
+        this.owner=owner;this.reports=reports;
         this.content=Objects.requireNonNull(content);this.projection=Objects.requireNonNull(projection);
         reads=new TransactionTemplate(Objects.requireNonNull(tx));reads.setReadOnly(true);
         reads.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
@@ -127,11 +143,11 @@ public final class PublishedContentFacade implements ContentService {
     }
     private static IdentityService.Rejected missing(){return new IdentityService.Rejected(IdentityService.Refusal.NOT_FOUND,null);}
     private static IdentityService.Rejected unavailable(){return new IdentityService.Rejected(IdentityService.Refusal.TEMPORARILY_UNAVAILABLE,"1");}
-    @Override public ContentView adminContent(Actor a,String k,String id){throw unavailable();}
-    @Override public ContentView write(Actor a,String k,String id,ContentWrite c,String key,String csrf,String origin){throw unavailable();}
-    @Override public ActionResult action(Actor a,String k,String id,ContentAction c,String key,String csrf,String origin){throw unavailable();}
-    @Override public ActionResult evidenceAction(Actor a,String k,String id,EvidenceAction c,String key,String csrf,String origin){throw unavailable();}
-    @Override public VersionPage referencedVersions(Actor a,String k,String id,long page,int size){throw unavailable();}
-    @Override public ActionResult versionAction(Actor a,String k,String id,VersionAction c,String key,String csrf,String origin){throw unavailable();}
-    @Override public Job generationIntent(Actor a,GenerationIntentWrite c,String key,String csrf,String origin){throw unavailable();}
+    @Override public ContentView adminContent(Actor a,String k,String id){if(owner==null)throw unavailable();return owner.reads().read(a,k,id);}
+    @Override public ContentView write(Actor a,String k,String id,ContentWrite c,String key,String csrf,String origin){if(owner==null)throw unavailable();return owner.edits().write(a,k,id,c,key,csrf,origin);}
+    @Override public ActionResult action(Actor a,String k,String id,ContentAction c,String key,String csrf,String origin){if(c!=null&&"supplement_generate".equals(c.action())){if(reports==null)throw unavailable();return reports.supplement(a,k,id,c,key,csrf,origin);}if(owner==null)throw unavailable();return owner.commands().action(a,k,id,c,key,csrf,origin);}
+    @Override public ActionResult evidenceAction(Actor a,String k,String id,EvidenceAction c,String key,String csrf,String origin){if(owner==null)throw unavailable();return owner.validity().evidence(a,k,id,c,key,csrf,origin);}
+    @Override public VersionPage referencedVersions(Actor a,String k,String id,long page,int size){if(owner==null)throw unavailable();return owner.versions().list(a,k,id,page,size);}
+    @Override public ActionResult versionAction(Actor a,String k,String id,VersionAction c,String key,String csrf,String origin){if(owner==null)throw unavailable();return owner.validity().version(a,k,id,c,key,csrf,origin);}
+    @Override public Job generationIntent(Actor a,GenerationIntentWrite c,String key,String csrf,String origin){if(reports==null)throw unavailable();return reports.generationIntent(a,c,key,csrf,origin);}
 }

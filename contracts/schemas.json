@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:lianxibu:contracts:0.28",
+  "$id": "urn:lianxibu:contracts:0.34",
   "$defs": {
     "Id": {
       "type": "string",
@@ -5391,9 +5391,16 @@
               "maxLength": 2048
             },
             "expected_content_revision": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 9007199254740991
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "result_hash": {
               "type": "string",
@@ -6021,34 +6028,94 @@
       ]
     },
     "JobCreate": {
-      "type": "object",
-      "properties": {
-        "task_type": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 32
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "task_type": {
+              "allOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32
+                },
+                {
+                  "not": {
+                    "const": "ad_hoc_ai"
+                  }
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/ResourceRef"
+            },
+            "expected_revision": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          },
+          "required": [
+            "task_type",
+            "target",
+            "expected_revision",
+            "reason"
+          ],
+          "additionalProperties": false
         },
-        "target": {
-          "$ref": "#/$defs/ResourceRef"
-        },
-        "expected_revision": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 2048
+        {
+          "type": "object",
+          "properties": {
+            "task_type": {
+              "const": "ad_hoc_ai"
+            },
+            "target": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "ad_hoc_request"
+                },
+                "id": {
+                  "$ref": "#/$defs/Id"
+                },
+                "package_id": {
+                  "type": "null"
+                }
+              },
+              "required": [
+                "kind",
+                "id",
+                "package_id"
+              ],
+              "additionalProperties": false
+            },
+            "expected_revision": {
+              "const": 0
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            },
+            "request": {
+              "$ref": "#/$defs/AdHocJobRequest"
+            }
+          },
+          "required": [
+            "task_type",
+            "target",
+            "expected_revision",
+            "reason",
+            "request"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "task_type",
-        "target",
-        "expected_revision",
-        "reason"
-      ],
-      "additionalProperties": false
+      ]
     },
     "PackageImport": {
       "type": "object",
@@ -10732,6 +10799,12 @@
         },
         {
           "$ref": "#/$defs/AdHocResult"
+        },
+        {
+          "$ref": "#/$defs/ValueResultV2"
+        },
+        {
+          "$ref": "#/$defs/CatalogDedupResultV2"
         }
       ]
     },
@@ -12154,6 +12227,528 @@
       ],
       "additionalProperties": false,
       "description": "Owner-only permanent member action receipt. command_ref must exactly match submitted source/run/item/revision/action and complete wire command hash. In-place root is source_run_item with original item ID, revision expected+1 and generation null. Frozen item decision creates only a new correction run: root source_run with a different run ID, positive generation and original source binding; result_revision is new run management revision. Both roots have package_id null. Original frozen run/member remains unchanged. Receipt proves command acceptance only, never collection or analysis completion. No source credentials, original source payload or business body."
+    },
+    "ValueDecisionV2": {
+      "type": "object",
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "news_tech",
+            "agent",
+            "skill",
+            "workflow",
+            "model"
+          ]
+        },
+        "high_value": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "valuable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "item_id",
+        "category",
+        "high_value",
+        "reason",
+        "valuable"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "high_value": {
+                "const": true
+              }
+            },
+            "required": [
+              "high_value"
+            ]
+          },
+          "then": {
+            "properties": {
+              "valuable": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ValueResultV2": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "value"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ValueDecisionV2"
+          },
+          "minItems": 1,
+          "maxItems": 100
+        },
+        "selected_item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "minItems": 0,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 16384
+        },
+        "value_result_version": {
+          "const": "2"
+        }
+      },
+      "required": [
+        "kind",
+        "items",
+        "selected_item_ids",
+        "summary",
+        "value_result_version"
+      ],
+      "additionalProperties": false
+    },
+    "AdHocJobRequest": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32768
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "additionalProperties": false
+    },
+    "AdHocQuestionView": {
+      "type": "object",
+      "properties": {
+        "intent": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/Job"
+            },
+            {
+              "properties": {
+                "record_kind": {
+                  "const": "generation_intent"
+                },
+                "task_type": {
+                  "const": "ad_hoc_ai"
+                },
+                "priority": {
+                  "const": 0
+                },
+                "call_count": {
+                  "const": 0
+                },
+                "max_attempts": {
+                  "type": "null"
+                },
+                "content_id": {
+                  "type": "null"
+                },
+                "report_mode": {
+                  "type": "null"
+                }
+              }
+            }
+          ]
+        },
+        "original_request": {
+          "$ref": "#/$defs/AdHocJobRequest"
+        },
+        "prepared_job": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/Job"
+                },
+                {
+                  "properties": {
+                    "record_kind": {
+                      "const": "logical_task"
+                    },
+                    "task_type": {
+                      "const": "ad_hoc_ai"
+                    },
+                    "priority": {
+                      "const": 14
+                    },
+                    "max_attempts": {
+                      "const": 3
+                    },
+                    "content_id": {
+                      "type": "null"
+                    },
+                    "report_mode": {
+                      "type": "null"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "retained_result": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/ValidatedResult"
+                },
+                {
+                  "properties": {
+                    "payload": {
+                      "$ref": "#/$defs/AdHocResult"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "intent",
+        "original_request",
+        "prepared_job",
+        "retained_result"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "prepared_job": {
+                "type": "null"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "retained_result": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CatalogVersionEvidenceRef": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "catalog_version_evidence"
+        },
+        "proof_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+        }
+      },
+      "required": [
+        "kind",
+        "proof_hash"
+      ],
+      "additionalProperties": false
+    },
+    "CatalogDedupDecisionV2": {
+      "type": "object",
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "agent",
+            "skill",
+            "workflow",
+            "model"
+          ]
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "new",
+            "existing",
+            "needs_review"
+          ]
+        },
+        "candidate_entity_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "confidence": {
+          "type": "string",
+          "pattern": "^(0(\\.[0-9]{1,8})?|1(\\.0{1,8})?)$(?![\\s\\S])"
+        },
+        "suggested_title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "suggested_summary": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 16384
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reanalyze_recommended": {
+          "type": "boolean"
+        },
+        "version_changed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "previous_evidence_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CatalogVersionEvidenceRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "new_evidence_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CatalogVersionEvidenceRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "item_id",
+        "category",
+        "decision",
+        "candidate_entity_id",
+        "reason",
+        "confidence",
+        "suggested_title",
+        "suggested_summary",
+        "reanalyze_recommended",
+        "version_changed",
+        "previous_evidence_ref",
+        "new_evidence_ref"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "decision": {
+                "const": "existing"
+              }
+            },
+            "required": [
+              "decision"
+            ]
+          },
+          "then": {
+            "properties": {
+              "candidate_entity_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "version_changed": {
+                "type": "null"
+              },
+              "previous_evidence_ref": {
+                "type": "null"
+              },
+              "new_evidence_ref": {
+                "type": "null"
+              },
+              "reanalyze_recommended": {
+                "const": false
+              },
+              "candidate_entity_id": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "version_changed": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "version_changed"
+            ]
+          },
+          "then": {
+            "properties": {
+              "version_changed": {
+                "type": "null"
+              },
+              "previous_evidence_ref": {
+                "type": "null"
+              },
+              "new_evidence_ref": {
+                "type": "null"
+              },
+              "reanalyze_recommended": {
+                "const": false
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "previous_evidence_ref": {
+                "$ref": "#/$defs/CatalogVersionEvidenceRef"
+              },
+              "new_evidence_ref": {
+                "$ref": "#/$defs/CatalogVersionEvidenceRef"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "version_changed": {
+                "const": false
+              }
+            },
+            "required": [
+              "version_changed"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reanalyze_recommended": {
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "reanalyze_recommended": {
+                "const": true
+              }
+            },
+            "required": [
+              "reanalyze_recommended"
+            ]
+          },
+          "then": {
+            "properties": {
+              "decision": {
+                "const": "existing"
+              },
+              "version_changed": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CatalogDedupResultV2": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "dedup"
+        },
+        "dedup_result_version": {
+          "const": "2"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CatalogDedupDecisionV2"
+          },
+          "minItems": 1,
+          "maxItems": 100
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 16384
+        }
+      },
+      "required": [
+        "kind",
+        "dedup_result_version",
+        "items",
+        "summary"
+      ],
+      "additionalProperties": false
     }
   }
 }

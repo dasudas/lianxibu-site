@@ -9,6 +9,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 /** Immutable body evidence and permanent review action receipts, inside shared writes. */
 public final class JdbcContentReviewEvidence {
+    public static final class CommandMismatch extends RuntimeException { }
     private final JdbcTemplate jdbc;
     private final JdbcJobRecords records;
     public JdbcContentReviewEvidence(DataSource source){jdbc=new JdbcTemplate(Objects.requireNonNull(source));records=new JdbcJobRecords(source);}
@@ -21,7 +22,8 @@ public final class JdbcContentReviewEvidence {
     public JsonNode receipt(String key,String actor,String commandHash){
         var rows=jdbc.query("SELECT target_type,target_key_json,target_key_hash,operator_id,action_payload,action_payload_hash FROM jobs WHERE record_kind='disposition' AND action_key_hash=UNHEX(?)",(rs,n)->new Object[]{rs.getString(1),rs.getString(2),rs.getBytes(3),rs.getString(4),rs.getString(5),rs.getBytes(6)},JdbcResultState.sha(key));
         if(rows.isEmpty())return null;if(rows.size()!=1)throw invalid();var row=rows.getFirst();var target=CanonicalJson.parse((String)row[1]);var payload=CanonicalJson.parse((String)row[4]);
-        if(!"content_review_action".equals(row[0])||!actor.equals(row[3])||!Arrays.equals((byte[])row[2],HexFormat.of().parseHex(JdbcResultState.sha(JdbcFrozenInputs.canonical(target))))||!Arrays.equals((byte[])row[5],HexFormat.of().parseHex(JdbcResultState.sha(JdbcFrozenInputs.canonical(payload))))||!"content-review-receipt-v1".equals(payload.path("schema_version").asText())||!commandHash.equals(payload.path("command_hash").asText())||!target.path("content_kind").asText().equals(payload.path("kind").asText())||!target.path("id").asText().equals(payload.path("id").asText()))throw invalid();return payload;
+        if(!"content_review_action".equals(row[0])||!Arrays.equals((byte[])row[2],HexFormat.of().parseHex(JdbcResultState.sha(JdbcFrozenInputs.canonical(target))))||!Arrays.equals((byte[])row[5],HexFormat.of().parseHex(JdbcResultState.sha(JdbcFrozenInputs.canonical(payload))))||!"content-review-receipt-v1".equals(payload.path("schema_version").asText())||!target.path("content_kind").asText().equals(payload.path("kind").asText())||!target.path("id").asText().equals(payload.path("id").asText()))throw invalid();
+        if(!actor.equals(row[3])||!commandHash.equals(payload.path("command_hash").asText()))throw new CommandMismatch();return payload;
     }
     public void append(String key,String actor,String reason,String kind,String id,JsonNode payload,Instant now){
         JdbcFrozenInputs.requireTx();var target=JsonMapper.shared().createObjectNode();target.put("kind","content");target.put("content_kind",kind);target.put("id",id);

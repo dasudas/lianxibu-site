@@ -1,0 +1,42 @@
+{
+  "positive": [
+    {
+      "expected_revision": 0,
+      "action": "cancel",
+      "reason": "Fictional unprepared intent cancellation"
+    },
+    {
+      "expected_revision": 1,
+      "action": "cancel",
+      "reason": "Fictional already cancelled confirmation"
+    },
+    {
+      "expected_revision": 3,
+      "action": "cancel",
+      "reason": "Fictional original logical task cancellation"
+    }
+  ],
+  "negative": [
+    {
+      "expected_revision": 0,
+      "action": "cancel",
+      "reason": "Fictional unprepared intent cancellation",
+      "request": {
+        "prompt": "Fictional extra"
+      }
+    },
+    {
+      "expected_revision": -1,
+      "action": "cancel",
+      "reason": "Fictional unprepared intent cancellation"
+    },
+    {
+      "expected_revision": 0,
+      "action": "cancel",
+      "reason": "Fictional unprepared intent cancellation",
+      "attempt_id": "fictional-extra"
+    }
+  ],
+  "fictional_original_intent_id": "fictional-intent",
+  "semantics_note": "Native original acceptance and absence of original prepared root determine eligibility; these shapes do not grant it."
+}

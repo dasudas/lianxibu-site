@@ -28,9 +28,9 @@ public final class OperationalWaitingTime {
                 Instant end = date.atTime(LocalTime.of(7, 0)).atZone(ZONE).toInstant();
                 if (start.isBefore(span.start())) start = span.start();
                 if (end.isAfter(span.end())) end = span.end();
-                if (end.isAfter(start)) total = Math.addExact(total, Duration.between(start, end).getSeconds());
+                if (end.isAfter(start)) total = Math.addExact(total, Duration.between(start, end).toNanos());
             }
         }
-        return total;
+        return total / 1_000_000_000L;
     }
 }

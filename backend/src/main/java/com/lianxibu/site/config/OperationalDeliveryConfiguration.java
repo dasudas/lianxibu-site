@@ -31,7 +31,7 @@ public class OperationalDeliveryConfiguration {
                 new OperationalNoticeLog(path,clock,segmentBytes,totalBytes,Duration.parse(retention)),
                 new SharedWriteExecutor(new JdbcSharedWriteEntry(source),tx),clock,Duration.parse(lease),Duration.parse(retry),()->UUID.randomUUID().toString());
     }
-    @Bean DeliveryLoop operationalDeliveryLoop(OperationalNoticeDelivery delivery,
+    @Bean DeliveryLoop operationalDeliveryLoop(@Qualifier("operationalNoticeDelivery") OperationalNoticeDelivery delivery,
             @Qualifier("scheduleExecutor") TaskScheduler scheduler,
             @Value("${SITE_OPS_DELIVERY_INTERVAL}") String interval,@Value("${SITE_OPS_DELIVERY_BATCH}") int batch) {
         return new DeliveryLoop(delivery,scheduler,Duration.parse(interval),batch);

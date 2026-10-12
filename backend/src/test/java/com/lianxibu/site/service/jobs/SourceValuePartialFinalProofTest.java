@@ -1,0 +1,27 @@
+package com.lianxibu.site.service.jobs;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import com.lianxibu.site.domain.protocol.CanonicalJson;
+import com.lianxibu.site.repository.jobs.*;
+import java.time.*;
+import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+/** Actual sealed partial authority and first observations in owned fictional databases. */
+class SourceValuePartialFinalProofTest {
+    SourceValuePartialWholeProofTest q;SourceValuePartialResolutionTest f;SourceValueFinalProofService service;
+    GenerationJdbcStoreTest database(){return new GenerationJdbcStoreTest();}
+    void setup(boolean mixed)throws Exception{q=new SourceValuePartialWholeProofTest(){@Override GenerationJdbcStoreTest database(){return SourceValuePartialFinalProofTest.this.database();}};q.setup(mixed,false);f=q.f;service=provider(q.service);}
+    SourceValueFinalProofService provider(SourceValueStageProofService whole){return new SourceValueFinalProofService(whole,f.f.f.plans,f.original.p1.universes);}
+    SourceValueFinalProofService.Committed read(){return f.original.read(()->service.readCommitted(f.ref));}
+    @Test void RealZeroPartialSealIsRequiredAndItsFirstObservationCannotPrecedeTheSeal()throws Exception{
+        setup(false);assertNull(read());q.q.p.service.stage(f.ref);assertNull(read());var seal=q.q.service.seal(f.ref);var actual=read();assertEquals(SourceValueFinalResult.createPartial(f.f.plan,f.outcomes.original,seal.proof()).json(),actual.result().json());assertEquals(seal.minimumObservationTime(),actual.minimumObservationTime());var storage=new JdbcSourceValueStageAvailability(f.db.source);var tx=new DataSourceTransactionManager(f.db.source);var early=new SourceValueStageAvailabilityService(q.service,storage,f.db.writes,tx,Clock.fixed(actual.minimumObservationTime().minusNanos(1),ZoneOffset.UTC));assertThrows(RuntimeException.class,()->early.capture(f.ref));assertEquals(0,f.db.count("target_type='source_value_stage_availability'"));Clock clock=new Clock(){public ZoneId getZone(){return ZoneOffset.UTC;}public Clock withZone(ZoneId zone){return this;}public Instant instant(){assertFalse(TransactionSynchronizationManager.isActualTransactionActive());return actual.minimumObservationTime().plusNanos(1);}};var observer=new SourceValueStageAvailabilityService(q.service,storage,f.db.writes,tx,clock);var observed=observer.capture(f.ref);assertEquals(actual.minimumObservationTime().plusNanos(1000),observed);var whole=q.read();assertNull(f.original.read(()->observer.availableAt(whole,actual.minimumObservationTime())));assertEquals(observed,f.original.read(()->observer.availableAt(whole,observed)));assertEquals(observed,observer.capture(f.ref));assertEquals(1,f.db.count("target_type='source_value_stage_availability'"));assertEquals(actual.result().json(),read().result().json());
+    }
+    @Test void ActualAllFailedValueFinalRetainsOriginalCountsAndRestartsWithoutCurrentRows()throws Exception{
+        setup(true);assertNull(read());var seal=q.q.service.seal(f.ref);var first=read();var value=CanonicalJson.parse(first.result().json());assertEquals("source-value-final-result-v2",value.get("schema_version").asText());assertEquals(200,value.get("eligible_count").asInt());assertEquals(200,value.get("unapplied_member_count").asInt());assertTrue(first.result().missing().stream().anyMatch(m->m.reason().equals("dedup_failed")));assertEquals(f.f.plan.chunks().size(),first.result().missing().stream().filter(m->m.reason().equals("value_failed")).count());assertEquals(seal.minimumObservationTime(),first.minimumObservationTime());int rows=f.db.count("1=1"),calls=f.db.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class);f.db.jdbc.execute("DROP TABLE source_run_items");f.db.jdbc.execute("DROP TABLE analyzed_entities");service=provider(q.provider(q.q.service));assertEquals(first.result().json(),read().result().json());assertEquals(first.minimumObservationTime(),read().minimumObservationTime());assertEquals(rows,f.db.count("1=1"));assertEquals(calls,f.db.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));f.db.jdbc.update("UPDATE jobs SET revision=revision+1 WHERE id=?",f.f.plan.chunks().getFirst().rootId());assertThrows(RuntimeException.class,this::read);
+    }
+    @Test void DefaultPortsWritableTransactionsExternalReferencesAndCapacityStayClosed()throws Exception{
+        var stages=mock(SourceValueStageProofService.class);var plans=mock(FrozenSourceStagePlanService.class);var universe=mock(FrozenSourceUniverseService.class);new SourceValueFinalProofService(stages,plans,universe);verifyNoInteractions(stages,plans,universe);setup(false);q.q.service.seal(f.ref);assertThrows(RuntimeException.class,()->service.readCommitted(f.ref));assertThrows(RuntimeException.class,()->f.original.p1.tx(()->service.readCommitted(f.ref)));assertThrows(RuntimeException.class,()->f.original.read(()->service.readCommitted(new FrozenSourceStagePlan.Reference(f.ref.ownerId(),"b".repeat(64),f.ref.indexHash()))));service=provider(q.provider(null));assertThrows(RuntimeException.class,this::read);var guarded=spy(q.service);doThrow(new GenerationFlowService.CapacityGuarded()).when(guarded).readCommitted(f.ref);service=provider(guarded);assertThrows(GenerationFlowService.CapacityGuarded.class,this::read);
+    }
+}

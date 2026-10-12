@@ -110,7 +110,7 @@ public final class SourcesController {
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] body) {
         Actor actor = owner(cookie);
-        writeHeaders(csrf, origin, key);
+        writeHeaders(actor, cookie, csrf, origin, key);
         JsonNode value = body(body, Set.of("id", "name", "category", "config"));
         var command = new SourcesService.SourceCreate(sourceId(value.get("id")),
                 text(value.get("name"), 1, 200), category(value.get("category")), config(value.get("config")));
@@ -127,7 +127,7 @@ public final class SourcesController {
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] body) {
         Actor actor = owner(cookie);
-        writeHeaders(csrf, origin, key);
+        writeHeaders(actor, cookie, csrf, origin, key);
         JsonNode value = body(body, Set.of("expected_revision", "name", "category", "config"));
         var command = new SourcesService.SourceWrite(number(value.get("expected_revision")),
                 text(value.get("name"), 1, 200), category(value.get("category")), config(value.get("config")));
@@ -144,7 +144,7 @@ public final class SourcesController {
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] body) {
         Actor actor = owner(cookie);
-        writeHeaders(csrf, origin, key);
+        writeHeaders(actor, cookie, csrf, origin, key);
         JsonNode value = body(body, Set.of("expected_revision", "action", "reason"));
         String action = text(value.get("action"), 1, 32);
         if (!SOURCE_ACTIONS.contains(action)) throw validation("unknown source action");
@@ -164,7 +164,7 @@ public final class SourcesController {
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] body) {
         Actor actor = owner(cookie);
-        writeHeaders(csrf, origin, key);
+        writeHeaders(actor, cookie, csrf, origin, key);
         JsonNode value = body(body, Set.of("source_id", "business_date", "window_start", "window_end",
                 "run_kind", "config_version", "expected_revision", "reason"));
         String kind = text(value.get("run_kind"), 1, 32);
@@ -189,7 +189,7 @@ public final class SourcesController {
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] body) {
         Actor actor = owner(cookie);
-        writeHeaders(csrf, origin, key);
+        writeHeaders(actor, cookie, csrf, origin, key);
         JsonNode value = body(body, Set.of("expected_revision", "action", "reason"),
                 Set.of("entity_id", "decision", "expected_article_revision", "evidence_refs"));
         String action = text(value.get("action"), 1, 32);
@@ -241,6 +241,21 @@ public final class SourcesController {
                 new SourcesDtos.Meta(requestId())));
     }
 
+    @ExceptionHandler(com.lianxibu.site.service.sources.SourceAdmissionService.AdmissionDenied.class)
+    public ResponseEntity<SourcesDtos.ErrorEnvelope> admissionConflict(RuntimeException ignored) {
+        return failure(new BoundaryFailure(409,"revision_conflict","source revision or admission conflict"));
+    }
+    @ExceptionHandler(com.lianxibu.site.service.sources.OwnerSourceReadService.MappingRequired.class)
+    public ResponseEntity<SourcesDtos.ErrorEnvelope> mappingRequired(RuntimeException ignored) {
+        return failure(new BoundaryFailure(503,"source_mapping_required","source mapping required"));
+    }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<SourcesDtos.ErrorEnvelope> invalidCommand(IllegalArgumentException error) {
+        return failure("source_command_conflict".equals(error.getMessage())
+                ?new BoundaryFailure(409,"revision_conflict","source command conflict")
+                :validation("invalid source command"));
+    }
+
     private Actor owner(String cookie) {
         if (cookie == null || cookie.isBlank()) throw new BoundaryFailure(401, "unauthenticated", "session required");
         IdentityService auth = identity.getIfAvailable();
@@ -259,10 +274,14 @@ public final class SourcesController {
         return service;
     }
 
-    private static void writeHeaders(String csrf, String origin, String key) {
+    private void writeHeaders(Actor actor, String cookie, String csrf, String origin, String key) {
         if (csrf == null || csrf.isBlank() || origin == null || origin.isBlank()) {
             throw new BoundaryFailure(403, "forbidden", "CSRF token and Origin required");
         }
+        IdentityService trusted = identity.getIfAvailable();
+        if (trusted == null) throw unavailable();
+        Actor authorized = trusted.authorizeWrite(cookie, csrf, origin);
+        if (!actor.equals(authorized)) throw new BoundaryFailure(403, "forbidden", "write authorization required");
         if (key == null || !key.matches("[!-~]{1,128}")) throw validation("valid Idempotency-Key required");
     }
 

@@ -10,11 +10,13 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -158,6 +160,56 @@ func TestVerifiedTLSPinnedDNSAndCrossHostRedirectDropsAuthorization(t *testing.T
 	}
 	if len(*dials) != 2 || (*dials)[0] != "192.0.2.1:443" || (*dials)[1] != "192.0.2.1:443" {
 		t.Fatalf("connection was not pinned to validated address: %v", *dials)
+	}
+}
+
+func TestPersistentBudgetContinuesRedirectWithoutRestartingOriginalURL(t *testing.T) {
+	var original, destination int
+	f := LoopbackFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/old" {
+			original++
+			http.Redirect(w, r, "https://api.github.com/new", http.StatusMovedPermanently)
+			return
+		}
+		destination++
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"fixture":true}`))
+	})
+	var err error
+	f.budget, err = openBudget(filepath.Join(t.TempDir(), "budget.db"), time.Now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	result, err := f.Fetch(context.Background(), Request{SourceID: "fictional-source", URL: "https://api.github.com/old", AllowedHosts: []string{"api.github.com"}, Format: JSON})
+	if err != nil || result.FinalURL != "https://api.github.com/new" || original != 1 || destination != 1 {
+		t.Fatalf("redirect failed: original=%d destination=%d error=%v", original, destination, err)
+	}
+	var used int
+	if err = f.budget.db.QueryRow("SELECT used FROM host_budget WHERE host='api.github.com'").Scan(&used); err != nil || used != 2 {
+		t.Fatalf("redirect budget incorrect: %d %v", used, err)
+	}
+}
+
+func TestRedirectCannotWaitThroughLongPersistedPause(t *testing.T) {
+	requests := 0
+	f := LoopbackFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		w.Header().Set("X-RateLimit-Remaining", "0")
+		http.Redirect(w, r, "https://api.github.com/new", http.StatusMovedPermanently)
+	})
+	var err error
+	f.budget, err = openBudget(filepath.Join(t.TempDir(), "budget.db"), time.Now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, err = f.Fetch(ctx, Request{SourceID: "fictional-source", URL: "https://api.github.com/old", AllowedHosts: []string{"api.github.com"}, Format: JSON})
+	var deferred *HostDeferredError
+	if !errors.As(err, &deferred) || deferred.RetryAt.Before(time.Now().Add(59*time.Minute)) || requests != 1 {
+		t.Fatalf("pause ignored: requests=%d error=%v", requests, err)
 	}
 }
 

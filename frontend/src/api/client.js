@@ -142,9 +142,9 @@ export function createApiClient({
     }
   }
 
-  async function getSession() {
+  async function getSession({ signal } = {}) {
     const capturedGeneration = generation;
-    const response = await request('GET', '/session');
+    const response = await request('GET', '/session', { signal });
     if (capturedGeneration !== generation) throw new StaleSessionError();
     csrfToken = response.data.csrf_token || null;
     unauthorized = false;

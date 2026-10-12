@@ -11,6 +11,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 /** Jobs-owned audit port; current body proof is obtained through the content service. */
 public final class ContentReviewEvidenceService {
+    public record Recorded(Receipt receipt,ContentVersionKey version,FrozenContentVersionService.Proven proof) { }
+    public static String operationId(String actionKey){if(actionKey==null||actionKey.isBlank()||actionKey.length()>128)throw new IllegalArgumentException("invalid action key");return JdbcFrozenInputs.stableId("review-action",actionKey);}
     private final JdbcContentReviewEvidence store;
     private final JdbcFrozenInputs inputs;
     private final JdbcResultState roots;
@@ -29,14 +31,20 @@ public final class ContentReviewEvidenceService {
         store.archive(target,JdbcFrozenInputs.canonical(body),root.hash(),actor,now());return versions.find(target).orElseThrow(ContentReviewEvidenceService::invalid);
     }
     public Receipt committed(String key,String commandHash){
-        hash(commandHash);var payload=store.receipt(key,actor,commandHash);if(payload==null)return null;
+        hash(commandHash);JsonNode payload;try{payload=store.receipt(key,actor,commandHash);}catch(JdbcContentReviewEvidence.CommandMismatch mismatch){throw new com.lianxibu.site.service.content.ReviewPublicationService.Conflict("command_identity_conflict");}if(payload==null)return null;
         WireValues.object(payload,Set.of("schema_version","command_hash","kind","id","revision","state","stamp_hash","input_hash","content_version"),Set.of("schema_version","command_hash","kind","id","revision","state","stamp_hash","input_hash","content_version"));
         var version=ContentVersionKey.fromJson(payload.get("content_version"));var proof=versions.find(version).orElseThrow(ContentReviewEvidenceService::invalid);if(!proof.inputHash().equals(payload.path("input_hash").asText())||!version.contentKind().equals(payload.path("kind").asText())||!version.contentId().equals(payload.path("id").asText()))throw invalid();
-        long revision=WireValues.nonnegativeInteger(payload.get("revision"));if(revision<1)throw invalid();String state=WireValues.text(payload.get("state"));if(!Set.of("draft","approved","published").contains(state))throw invalid();String stamp=payload.path("stamp_hash").isNull()?null:WireValues.sha256(payload.get("stamp_hash"));return new Receipt(WireValues.id(payload.get("kind"),false),WireValues.id(payload.get("id"),false),revision,state,stamp);
+        long revision=WireValues.nonnegativeInteger(payload.get("revision"));if(revision<1)throw invalid();String state=WireValues.text(payload.get("state"));if(!Set.of("draft","approved","published","withdrawn").contains(state))throw invalid();String stamp=payload.path("stamp_hash").isNull()?null:WireValues.sha256(payload.get("stamp_hash"));return new Receipt(WireValues.id(payload.get("kind"),false),WireValues.id(payload.get("id"),false),revision,state,stamp);
     }
     public void append(String key,String commandHash,String reason,Receipt receipt,ContentVersionKey version){
         JdbcFrozenInputs.requireTx();hash(commandHash);var proof=archiveCurrent(version);var row=contents.administrativeVersion(version.contentKind(),version.contentId()).orElseThrow(ContentReviewEvidenceService::invalid);if(!receipt.kind().equals(version.contentKind())||!receipt.id().equals(version.contentId())||receipt.revision()!=row.revision()||!receipt.state().equals(row.state()))throw invalid();
         var payload=JsonMapper.shared().createObjectNode();payload.put("schema_version","content-review-receipt-v1");payload.put("command_hash",commandHash);payload.put("kind",receipt.kind());payload.put("id",receipt.id());payload.put("revision",receipt.revision());payload.put("state",receipt.state());payload.put("stamp_hash",receipt.stampHash());payload.put("input_hash",proof.inputHash());payload.set("content_version",CanonicalJson.parse(JdbcFrozenContentVersions.version(version)));store.append(key,actor,reason,receipt.kind(),receipt.id(),payload,now());
+    }
+    public Recorded recorded(String key,String commandHash){
+        var receipt=committed(key,commandHash);if(receipt==null)throw invalid();
+        var payload=store.receipt(key,actor,commandHash);if(payload==null)throw invalid();
+        var version=ContentVersionKey.fromJson(payload.get("content_version"));
+        return new Recorded(receipt,version,versions.find(version).orElseThrow(ContentReviewEvidenceService::invalid));
     }
     private static void checkCitations(JsonNode body,Set<String> allowed){checkIds(body.get("citation_ids"),allowed);var sections=body.get("sections");if(sections==null||!sections.isArray())throw invalid();for(var section:sections)checkIds(section.get("citation_ids"),allowed);}
     private static void checkIds(JsonNode ids,Set<String> allowed){if(ids==null||!ids.isArray())throw invalid();for(var id:ids)if(!id.isTextual()||!allowed.contains(id.asText()))throw invalid();}

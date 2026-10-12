@@ -19,6 +19,11 @@ management:
       exposure:
         include: health
 site:
+  ops:
+    cloud:
+      enabled: false
+    rds:
+      enabled: false
   browser:
     enabled: false
   collector:

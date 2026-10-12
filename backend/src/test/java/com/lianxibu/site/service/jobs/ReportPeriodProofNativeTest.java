@@ -1,0 +1,29 @@
+package com.lianxibu.site.service.jobs;
+import static org.junit.jupiter.api.Assertions.*;
+import com.lianxibu.site.config.ReportPeriodInputProofConfiguration;
+import com.lianxibu.site.domain.protocol.*;
+import com.lianxibu.site.repository.articles.JdbcEvidenceValidity;
+import com.lianxibu.site.repository.content.*;
+import com.lianxibu.site.repository.jobs.*;
+import com.lianxibu.site.service.articles.EvidenceValidityService;
+import com.lianxibu.site.service.content.*;
+import com.lianxibu.site.service.jobs.VersionValidityService.*;
+import java.util.*;
+import org.junit.jupiter.api.*;
+import org.springframework.transaction.*;
+import org.springframework.transaction.support.*;
+import tools.jackson.databind.JsonNode;
+
+/** Actual native original report, permanent version/reference validity and current metadata. Source/model genesis is fictional. */
+class ReportPeriodProofNativeTest {
+    ReportPeriodInputComponentTest f;ReportPeriodInputComponentService service;VersionValidityLedgerService ledger;
+    ReportPeriodInputComponentTest fixture(){return new ReportPeriodInputComponentTest();}
+    @BeforeEach void setup(){f=fixture();f.setup();var h=f.h.h.f;h.jdbc.execute("ALTER TABLE jobs ADD validity_revision BIGINT");h.jdbc.execute("ALTER TABLE jobs ADD reverses_disposition_id VARCHAR(64)");h.jdbc.execute("ALTER TABLE article_revisions ADD validity_revision BIGINT NOT NULL DEFAULT 0");h.jdbc.execute("ALTER TABLE article_revisions ADD article_id VARCHAR(64)");h.jdbc.update("UPDATE article_revisions SET article_id='fictional-article'");h.jdbc.execute("DROP TABLE IF EXISTS articles");h.jdbc.execute("CREATE TABLE articles(id VARCHAR(64) PRIMARY KEY)");h.jdbc.update("INSERT INTO articles VALUES('fictional-article')");service=ReportPeriodInputProofConfiguration.assemble(h.source,h.tx,h.clock,f.h.service);var versions=new FrozenContentVersionService(new JdbcFrozenContentVersions(h.source));var writer=new ContentReviewWriteService(new JdbcReviewPublication(h.source),new GeneratedContentService(new JdbcGeneratedContents(h.source),h.clock),h.clock);ledger=new VersionValidityLedgerService(new JdbcVersionValidity(h.source),versions,new EvidenceValidityService(new JdbcEvidenceValidity(h.source)),writer,h.clock,"fictional-owner");}
+    ReportPeriodInputComponentService.Captured capture(){return service.capture(GenerationFlowService.Stage.WEEKLY_REPORT,ReportPeriodInputComponentTest.LAST,ReportPeriodInputComponentTest.CUTOFF);}
+    <T>T rr(java.util.function.Supplier<T> work){var tx=new TransactionTemplate(f.h.h.f.tx);tx.setReadOnly(true);tx.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);return tx.execute(s->work.get());}
+    String change(JsonNode target,long revision,Action action,String reverse,String key){var c=new Command(target,revision,action,"Fictional original report evidence decision",reverse);return f.h.h.f.writes.execute(new SharedWriteExecutor.ActionContext(key,f.h.version.inputJobId(),f.h.h.f.store.input().inputHash()),k->null,a->ledger.append(c,VersionValidityService.commandHash(c,VersionValidityService.canonicalTarget(target)),revision+1,key));}
+    @Test void FormalNativeReferenceClosureAndCurrentStateSupplyActualEligibilityWithoutAnotherModelSend(){var c=capture();assertTrue(c.candidates().getFirst().evidence().effectiveValid());assertFalse(c.candidates().getFirst().evidence().blocked());assertEquals(1,c.dependencies().size());assertSame(c,rr(()->service.verifyObserved(c)));assertEquals(1,f.h.h.f.sends);}
+    @Test void ActualOriginalLeafInvalidationAndReversalRecheckTheWholeCapturedPeriod(){var old=capture();var leaf=f.h.read().context().referenceTargets().getFirst();String id=change(leaf,0,Action.INVALIDATE,null,"fictional-period-leaf-invalid");assertThrows(RuntimeException.class,()->rr(()->service.verifyObserved(old)));var invalid=capture();assertFalse(invalid.candidates().getFirst().evidence().effectiveValid());assertEquals(old.candidates().getFirst().evidence().bodyJson(),invalid.candidates().getFirst().evidence().bodyJson());assertEquals(1,f.h.h.f.jdbc.queryForObject("SELECT validity_revision FROM article_revisions",Long.class));assertFalse(f.h.h.f.jdbc.queryForObject("SELECT effective_valid FROM article_revisions",Boolean.class));change(leaf,1,Action.REVERSE_INVALIDATION,id,"fictional-period-leaf-reverse");assertThrows(RuntimeException.class,()->rr(()->service.verifyObserved(invalid)));assertTrue(capture().candidates().getFirst().evidence().effectiveValid());assertEquals(1,f.h.h.f.sends);}
+    @Test void OwnOriginalVersionInvalidationAndBlockedCurrentStateNeverReplaceOriginalBody(){var old=capture();change(FrozenReferenceClosure.version(f.h.version),0,Action.INVALIDATE,null,"fictional-period-version-invalid");assertFalse(capture().candidates().getFirst().evidence().effectiveValid());f.h.h.f.jdbc.update("UPDATE contents SET state='blocked',revision=99,body_revision=98,body_json='{}',input_job_id='fictional-current-input'");var c=capture();assertTrue(c.candidates().getFirst().evidence().blocked());assertEquals(old.candidates().getFirst().evidence().bodyJson(),c.candidates().getFirst().evidence().bodyJson());assertEquals(f.h.version,ContentVersionKey.fromJson(CanonicalJson.parse(c.referenceTargets().get(c.candidates().getFirst().evidence().id()))));}
+    @Test void UnknownOrCorruptNativeReferenceAndCurrentMetadataRejectRatherThanInventingValidity(){f.h.h.f.jdbc.update("DELETE FROM article_revisions");assertThrows(RuntimeException.class,this::capture);setup();f.h.h.f.jdbc.update("UPDATE article_revisions SET effective_valid=false");assertThrows(RuntimeException.class,this::capture);setup();f.h.h.f.jdbc.update("UPDATE contents SET input_job_id=NULL");assertThrows(RuntimeException.class,this::capture);setup();f.h.h.f.jdbc.update("DELETE FROM contents");assertThrows(RuntimeException.class,this::capture);}
+}

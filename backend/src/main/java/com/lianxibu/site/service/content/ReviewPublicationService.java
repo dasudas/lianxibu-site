@@ -45,6 +45,9 @@ public final class ReviewPublicationService implements ContentReadService.Refere
         void approve(ReviewContentState expected, Stamp stamp, String actionKey);
         void publish(ReviewContentState expected, String actionKey);
         void edit(ReviewContentState expected, String bodyJson, byte[] bodyHash, String actionKey);
+        default void reject(ReviewContentState expected,String actionKey){throw new IllegalStateException("review rejection unavailable");}
+        default void verifyWithdrawal(String cause){throw new IllegalStateException("withdrawal unavailable");}
+        default void withdraw(ReviewContentState expected,String actionKey){throw new IllegalStateException("withdrawal unavailable");}
     }
     public record Stamp(String json, String hash) { }
     public static final class Conflict extends RuntimeException {
@@ -81,6 +84,22 @@ public final class ReviewPublicationService implements ContentReadService.Refere
             store.publish(row, action.actionKey());
             return new Receipt(kind, id, expectedRevision + 1, "published",
                     HexFormat.of().formatHex(row.reviewStampHash()));
+        });
+    }
+
+    public Receipt reject(String kind,String id,long expectedRevision,ActionContext action) {
+        return writes.execute(action,key->committed(key,"reject",kind,id,expectedRevision,null),ignored->{
+            Current current=requireCurrent(kind,id,expectedRevision);
+            store.reject(current.row(),action.actionKey());
+            return new Receipt(kind,id,expectedRevision+1,"draft",null);
+        });
+    }
+    public Receipt withdraw(String kind,String id,long expectedRevision,String cause,ActionContext action){
+        store.verifyWithdrawal(cause);
+        return writes.execute(action,key->committed(key,"withdraw",kind,id,expectedRevision,null),ignored->{
+            Current current=requireCurrent(kind,id,expectedRevision);
+            if("withdrawn".equals(current.row().state()))throw new Conflict("withdrawal_state_conflict");
+            store.withdraw(current.row(),action.actionKey());return new Receipt(kind,id,expectedRevision+1,"withdrawn",null);
         });
     }
 

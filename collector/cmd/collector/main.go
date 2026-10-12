@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/dasudas/lianxibu-site/collector/internal/config"
 	"github.com/dasudas/lianxibu-site/collector/internal/fetcher"
 	"github.com/dasudas/lianxibu-site/collector/internal/outbox"
+	"github.com/dasudas/lianxibu-site/collector/internal/parsers"
 	"github.com/dasudas/lianxibu-site/collector/internal/runner"
 	"github.com/dasudas/lianxibu-site/collector/internal/telemetry"
 )
@@ -60,10 +62,38 @@ func run(ctx context.Context, cfg config.Config) error {
 	if err = monitor.SetIdentity("runtime-v1", "0.11", 0); err != nil {
 		return err
 	}
-	worker, err := runner.New(api, queue, fetcher.New(), monitor, time.Now)
+	sourceFetcher, err := fetcher.NewPersistent(cfg.SQLitePath + ".host-budget.db")
+	if err != nil {
+		return err
+	}
+	defer sourceFetcher.Close()
+	worker, err := runner.New(api, queue, sourceFetcher, monitor, time.Now)
 	if err != nil {
 		return err
 	}
 	log.Println("collector runtime started")
+	if location := os.Getenv("COLLECTOR_LICENSE_REVIEWS"); location != "" {
+		if !filepath.IsAbs(location) {
+			return errors.New("license review path invalid")
+		}
+		info, err := os.Lstat(location)
+		if err != nil || !info.Mode().IsRegular() || info.Size() > 65536 {
+			return errors.New("license reviews unavailable")
+		}
+		raw, err := os.ReadFile(location)
+		if err != nil {
+			return errors.New("license reviews unavailable")
+		}
+		reviews, err := parsers.ParseLicenseReviews(raw)
+		if err != nil {
+			return err
+		}
+		worker.SetLicenseReviews(reviews)
+	}
+	memoryStop, err := startHostMemory(ctx, os.Getenv("COLLECTOR_HOST_MEMORY_ENABLED"), queue, api)
+	if err != nil {
+		return err
+	}
+	defer memoryStop()
 	return worker.Run(ctx, func(error) { log.Println("collector cycle deferred; durable work retained") })
 }

@@ -25,6 +25,12 @@ public final class ObservationPayloadPolicy {
         validate(kind, payload, false, null);
     }
 
+    public static void validateStored(String kind,JsonNode payload,String sourceId) {
+        boolean v012="article".equals(kind)&&payload.has("submitted_at");
+        com.lianxibu.site.domain.protocol.ObservationEnvelope.validatePayloadShape(v012?"0.12":"0.11",kind,payload);
+        validate(kind,payload,v012,sourceId);
+    }
+
     public static void validate(com.lianxibu.site.domain.protocol.ObservationEnvelope observation) {
         validate(observation.kind(), observation.wire().get("payload"),
                 "0.12".equals(observation.wire().get("protocol_revision").asText()), observation.sourceId());

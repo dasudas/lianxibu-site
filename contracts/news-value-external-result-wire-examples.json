@@ -1,0 +1,557 @@
+{
+  "schema_ref": "#/$defs/JobAction",
+  "cases": [
+    {
+      "name": "ordinary-and-high-value",
+      "schema_valid": true,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": true,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "news_tech",
+                "valuable": true,
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "zero-selection",
+      "schema_valid": true,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": true,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "news_tech",
+                "valuable": false,
+                "high_value": false,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "ordinary-no-value",
+      "schema_valid": true,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": false,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "news_tech",
+                "valuable": true,
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "missing-valuable",
+      "schema_valid": false,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": true,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "news_tech",
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "string-valuable",
+      "schema_valid": false,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": true,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "news_tech",
+                "valuable": "true",
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "high-without-value",
+      "schema_valid": false,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": true,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "news_tech",
+                "valuable": false,
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "numeric-id",
+      "schema_valid": false,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": true,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": 9007199254740993,
+                "category": "news_tech",
+                "valuable": true,
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "unknown-category",
+      "schema_valid": false,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": true,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "fictional-other",
+                "valuable": true,
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "unknown-field",
+      "schema_valid": false,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": true,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty.",
+                "unrecognized": true
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "news_tech",
+                "valuable": true,
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "missing-version",
+      "schema_valid": false,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": true,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "news_tech",
+                "valuable": true,
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "duplicate-selection",
+      "schema_valid": false,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "valuable": true,
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "news_tech",
+                "valuable": true,
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item",
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "empty-model-batch",
+      "schema_valid": false,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "value_result_version": "2",
+            "items": [],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    },
+    {
+      "name": "original-v1-result",
+      "schema_valid": true,
+      "value": {
+        "expected_revision": 0,
+        "action": "resolve_external",
+        "reason": "Fictional verification evidence",
+        "attempt_id": "fictional-attempt",
+        "external_state": "succeeded",
+        "evidence_refs": [
+          "fictional-proof"
+        ],
+        "result": {
+          "schema_version": "1",
+          "input_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "result_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "payload": {
+            "kind": "value",
+            "items": [
+              {
+                "item_id": "fictional-old-item",
+                "category": "agent",
+                "high_value": false,
+                "reason": "Fictional useful prior object; no current-day novelty."
+              },
+              {
+                "item_id": "fictional-new-item",
+                "category": "news_tech",
+                "high_value": true,
+                "reason": "Fictional new useful evidence."
+              }
+            ],
+            "selected_item_ids": [
+              "fictional-new-item"
+            ],
+            "summary": "Fictional source summary."
+          }
+        },
+        "usage": null
+      }
+    }
+  ]
+}

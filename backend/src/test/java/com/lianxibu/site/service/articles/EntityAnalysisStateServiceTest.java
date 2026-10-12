@@ -1,0 +1,17 @@
+package com.lianxibu.site.service.articles;
+import static org.junit.jupiter.api.Assertions.*;
+import com.lianxibu.site.repository.articles.JdbcEntityAnalysisState;
+import org.h2.jdbcx.JdbcDataSource;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.junit.jupiter.api.*;
+
+class EntityAnalysisStateServiceTest {
+    JdbcTemplate jdbc;TransactionTemplate tx;EntityAnalysisStateService service;
+    @BeforeEach void setup(){var source=new JdbcDataSource();source.setURL("jdbc:h2:mem:entity-analysis-"+System.nanoTime()+";MODE=MySQL;DB_CLOSE_DELAY=-1");jdbc=new JdbcTemplate(source);tx=new TransactionTemplate(new DataSourceTransactionManager(source));jdbc.execute("CREATE TABLE analyzed_entities(id VARCHAR(64) PRIMARY KEY,category VARCHAR(16),revision BIGINT,analysis_generation BIGINT,analysis_state VARCHAR(32),legacy_flag INT,title VARCHAR(512),occurrence_count BIGINT)");jdbc.update("INSERT INTO analyzed_entities VALUES('fictional-entity','agent',0,0,'pending',0,'Fictional title',7)");service=new EntityAnalysisStateService(new JdbcEntityAnalysisState(source));}
+    EntityAnalysisStateService.State reserve(long revision,long generation){return tx.execute(s->service.reserve("fictional-entity","agent",revision,generation));}
+    @Test void reservationsAndCompletionKeepIndependentFieldsAndRejectOldGeneration(){var first=reserve(0,0);assertEquals(1,first.generation());assertEquals("queued",first.state());var second=reserve(1,1);assertEquals(2,second.generation());assertThrows(RuntimeException.class,()->tx.execute(s->service.finish("fictional-entity","agent",1,true)));jdbc.update("UPDATE analyzed_entities SET revision=3,occurrence_count=8");var completed=tx.execute(s->service.finish("fictional-entity","agent",2,true));assertEquals("analyzed",completed.state());assertEquals(4,completed.revision());assertEquals(8,jdbc.queryForObject("SELECT occurrence_count FROM analyzed_entities",Integer.class));assertEquals("Fictional title",jdbc.queryForObject("SELECT title FROM analyzed_entities",String.class));assertThrows(RuntimeException.class,()->tx.execute(s->service.finish("fictional-entity","agent",2,true)));}
+    @Test void rollbackAndFailedGenerationRemainExplicit(){assertThrows(RuntimeException.class,()->tx.execute(s->{service.reserve("fictional-entity","agent",0,0);throw new IllegalStateException("Fictional intent failure");}));assertEquals(0,jdbc.queryForObject("SELECT analysis_generation FROM analyzed_entities",Integer.class));reserve(0,0);assertEquals("failed",tx.execute(s->service.finish("fictional-entity","agent",1,false)).state());assertEquals(2,reserve(2,1).generation());}
+    @Test void staleReviewLegacyOverflowAndMissingTransactionReject(){assertThrows(RuntimeException.class,()->service.reserve("fictional-entity","agent",0,0));assertThrows(RuntimeException.class,()->reserve(1,0));assertThrows(RuntimeException.class,()->tx.execute(s->service.reserve("fictional-entity","model",0,0)));for(String change:new String[]{"analysis_state='needs_review'","legacy_flag=1","analysis_generation=9007199254740991"}){jdbc.update("UPDATE analyzed_entities SET analysis_state='pending',legacy_flag=0,analysis_generation=0");jdbc.update("UPDATE analyzed_entities SET "+change);assertThrows(RuntimeException.class,()->reserve(0,0));}}
+}

@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import java.util.Calendar;
+import java.util.TimeZone;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import tools.jackson.databind.JsonNode;
@@ -43,7 +45,7 @@ public final class JdbcRunManifestStore {
                     return new Run(rs.getString("id"), rs.getString("source_id"),
                             rs.getString("delivery_state"), rs.getLong("revision"),
                             rs.getString("claim_node_id"), rs.getBytes("claim_token_hash"),
-                            timestamp(rs.getTimestamp("lease_until")), parts == null ? null : parts.longValue(),
+                            timestamp(rs.getTimestamp("lease_until", utc())), parts == null ? null : parts.longValue(),
                             parsed == null ? null : parsed.get("part_count").longValue(), result,
                             rs.getLong("accepted_count"), rs.getLong("excluded_count"),
                             rs.getLong("pending_count"));
@@ -67,7 +69,7 @@ public final class JdbcRunManifestStore {
     public void saveReceipt(String nodeId, String runId, String scope, String actionKey, byte[] attemptHash,
                             byte[] businessHash, String json, Instant now) {
         String operation = scope.substring(0, scope.indexOf(':'));
-        jdbc.update("INSERT INTO request_receipts(principal,operation,request_key,request_hash,"
+        mutate("INSERT INTO request_receipts(principal,operation,request_key,request_hash,"
                         + "status_code,response_json,expires_at,id,receipt_kind,actor_id,scope,key_hash,"
                         + "run_id,original_status,current_status,ack_json,created_at,revision,request_key_raw,"
                         + "business_hash,control_operation) VALUES(?,?,?,?,200,NULL,NULL,?,"
@@ -102,7 +104,7 @@ public final class JdbcRunManifestStore {
             return;
         }
         byte[] sourceHash = sourceItemId == null ? null : sourceItemHash(run.sourceId(), sourceItemId);
-        jdbc.update("INSERT INTO source_run_items(id,created_at,revision,run_id,member_id,source_id,"
+        mutate("INSERT INTO source_run_items(id,created_at,revision,run_id,member_id,source_id,"
                         + "source_item_id,source_item_hash,observation_id,node_id,payload_hash,"
                         + "replaces_observation_id,part_no,terminal_state,state,validity_revision,effective_valid)"
                         + " VALUES(?,?,0,?,?,?,?,?,?,?,?,?,?,'pending','pending',0,1)",
@@ -144,12 +146,21 @@ public final class JdbcRunManifestStore {
     }
     public void updateCounts(String runId, String state, long accepted, long excluded,
                              long pending, Instant finished) {
-        jdbc.update("UPDATE source_runs SET delivery_state=?,accepted_count=?,excluded_count=?,"
+        mutate("UPDATE source_runs SET delivery_state=?,accepted_count=?,excluded_count=?,"
                         + "pending_count=?,finished_at=?,revision=revision+1 WHERE id=?",
                 state, accepted, excluded, pending,
                 finished == null ? null : Timestamp.from(finished), runId);
     }
     private static Instant timestamp(Timestamp value) { return value == null ? null : value.toInstant(); }
+    private static Calendar utc() { return Calendar.getInstance(TimeZone.getTimeZone("UTC")); }
+    private int mutate(String sql, Object... args) {
+        return jdbc.update(sql, ps -> {
+            for (int i=0;i<args.length;i++) {
+                if(args[i] instanceof Timestamp time) ps.setTimestamp(i+1,time,utc());
+                else ps.setObject(i+1,args[i]);
+            }
+        });
+    }
     private static byte[] sourceItemHash(String sourceId, String sourceItemId) {
         ObjectNode value = JsonMapper.shared().createObjectNode();
         value.put("source_id", sourceId);

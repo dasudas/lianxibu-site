@@ -195,7 +195,7 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 		}
 		page, err := s.adapter.Parse(claim, response)
 		if err != nil {
-			return out, fmt.Errorf("%w: %v", ErrUnusablePage, err)
+			return out, sourceFormatFailure(err)
 		}
 		if !page.End && (page.NextCursor == "" || page.NextCursor == out.Cursor) {
 			return out, ErrUnusablePage
@@ -213,7 +213,7 @@ func (s *Scheduler) Run(ctx context.Context, claim client.RunClaim) (Outcome, er
 				target.matches(item) && !seen[item.SourceItemID] {
 				record, err := s.adapter.Freeze(claim, item, s.now())
 				if err != nil {
-					return out, err
+					return out, sourceFormatFailure(err)
 				}
 				if record.RunID != claim.Run.RunID || record.SourceID != claim.Run.SourceID || record.MemberID == "" {
 					return out, ErrUnusablePage
@@ -294,4 +294,12 @@ func (target targetVersion) matches(item Item) bool {
 
 func parseTime(value string) (time.Time, error) {
 	return time.Parse("2006-01-02T15:04:05.000000Z", value)
+}
+
+// Pure adapter errors are format facts; cancellation is never a parser failure.
+func sourceFormatFailure(err error) error {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	return ErrUnusablePage
 }

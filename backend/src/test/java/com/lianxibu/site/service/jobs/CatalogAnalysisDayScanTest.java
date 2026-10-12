@@ -1,0 +1,24 @@
+package com.lianxibu.site.service.jobs;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import com.lianxibu.site.repository.jobs.*;
+import java.time.*;
+import java.util.*;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+
+/** Native typed roster intent locators only; these tests do not claim a sealed cohort. */
+class CatalogAnalysisDayScanTest {
+    boolean mysql(){return false;}
+    GenerationJdbcStoreTest fixture(){var f=mysql()?new GenerationJdbcStoreMySqlTest():new GenerationJdbcStoreTest();f.fixture();return f;}
+    <T> T read(GenerationJdbcStoreTest f,int level,java.util.function.Supplier<T> action){var tx=new TransactionTemplate(new DataSourceTransactionManager(f.source));tx.setReadOnly(true);tx.setIsolationLevel(level);return tx.execute(s->action.get());}
+    void intent(GenerationJdbcStoreTest f,LocalDate day){String id=JdbcSourceDayRosters.owner(day);f.writes.execute(new SharedWriteExecutor.ActionContext("fictional-day-scan-create:"+day,id,null),k->null,c->new JdbcJobRecords(f.source).ensureIntent(new JdbcJobRecords.Intent(id,"source-day-roster:"+day,1,"source_day_roster",day),Instant.parse("2026-01-01T16:10:00Z")));}
+    @Test void BoundedOriginalDaysUseStableDateCursorExcludeFutureAndDoNotReadWidePayloads(){var f=fixture();var base=LocalDate.of(2026,1,1);for(int n=0;n<5;n++)intent(f,base.plusDays(n));var dao=new JdbcCatalogAnalysisDays(f.source);var first=read(f,TransactionDefinition.ISOLATION_READ_COMMITTED,()->dao.page(null,base.plusDays(3),2));assertEquals(List.of(base,base.plusDays(1)),first.days().stream().map(JdbcCatalogAnalysisDays.Day::day).toList());assertTrue(first.hasMore());assertEquals(base.plusDays(1),first.nextCursor());var second=read(f,TransactionDefinition.ISOLATION_REPEATABLE_READ,()->dao.page(first.nextCursor(),base.plusDays(3),2));assertEquals(List.of(base.plusDays(2),base.plusDays(3)),second.days().stream().map(JdbcCatalogAnalysisDays.Day::day).toList());assertFalse(second.hasMore());assertNull(second.nextCursor());assertEquals(5,f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class));assertEquals(0,f.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));}
+    @Test void CorruptLookaheadRejectsWholePageRatherThanSilentlyTruncating(){var f=fixture();var day=LocalDate.of(2026,1,1);intent(f,day);intent(f,day.plusDays(1));f.jdbc.update("UPDATE jobs SET logical_key_hash=? WHERE id=?",new byte[32],JdbcSourceDayRosters.owner(day.plusDays(1)));assertThrows(RuntimeException.class,()->read(f,TransactionDefinition.ISOLATION_READ_COMMITTED,()->new JdbcCatalogAnalysisDays(f.source).page(null,day.plusDays(1),1)));assertEquals(2,f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class));}
+    @Test void OriginalIntentRoleIdentityStateAndDateDamageReject(){for(String column:List.of("state='queued'","input_state='ready'","revision=1","logical_key='fictional-alias'","record_identity_hash=X'0000000000000000000000000000000000000000000000000000000000000000'")){var f=fixture();var day=LocalDate.of(2026,1,1);intent(f,day);f.jdbc.update("UPDATE jobs SET "+column);assertThrows(RuntimeException.class,()->read(f,TransactionDefinition.ISOLATION_REPEATABLE_READ,()->new JdbcCatalogAnalysisDays(f.source).page(null,day,1)));}}
+    @Test void NativeBusinessDateIsStableAcrossDefaultJvmTimezones(){var before=TimeZone.getDefault();try{for(String zone:List.of("UTC","Asia/Shanghai","Asia/Tokyo","America/Los_Angeles")){TimeZone.setDefault(TimeZone.getTimeZone(zone));var f=fixture();var day=LocalDate.of(2026,1,1);intent(f,day);assertEquals(day,read(f,TransactionDefinition.ISOLATION_READ_COMMITTED,()->new JdbcCatalogAnalysisDays(f.source).page(null,day,1)).days().getFirst().day());}}finally{TimeZone.setDefault(before);}}
+    @Test void ColdConstructionAndReadonlyRolesBoundsAreMandatory(){var source=mock(DataSource.class);assertNotNull(new JdbcCatalogAnalysisDays(source));verifyNoInteractions(source);var f=fixture();var day=LocalDate.of(2026,1,1);var dao=new JdbcCatalogAnalysisDays(f.source);assertThrows(RuntimeException.class,()->dao.page(null,day,1));assertThrows(RuntimeException.class,()->f.writes.execute(new SharedWriteExecutor.ActionContext("fictional-scan-role","fictional-scan",null),k->null,c->dao.page(null,day,1)));for(int limit:List.of(0,65))assertThrows(RuntimeException.class,()->read(f,TransactionDefinition.ISOLATION_READ_COMMITTED,()->dao.page(null,day,limit)));assertThrows(RuntimeException.class,()->read(f,TransactionDefinition.ISOLATION_REPEATABLE_READ,()->dao.page(day,day,1)));assertTrue(read(f,TransactionDefinition.ISOLATION_READ_COMMITTED,()->dao.page(null,day,1)).days().isEmpty());}
+}

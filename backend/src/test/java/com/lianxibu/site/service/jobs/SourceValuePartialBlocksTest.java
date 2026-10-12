@@ -1,0 +1,26 @@
+package com.lianxibu.site.service.jobs;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import com.lianxibu.site.repository.jobs.*;
+import java.util.*;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.Test;
+
+/** Original zero-value partial plan, real owned transaction and immutable result rows. */
+class SourceValuePartialBlocksTest {
+    SourceValuePartialResolutionTest f;JdbcSourceValuePartialBlocks store;FrozenSourceValuePartial.Encoded archive;SourceValueStageResult original;String owner,stamp;
+    GenerationJdbcStoreTest database(){return new GenerationJdbcStoreTest();}
+    void setup()throws Exception{f=new SourceValuePartialResolutionTest(){@Override GenerationJdbcStoreTest database(){return SourceValuePartialBlocksTest.this.database();}};f.setup(false);original=SourceValueStageResult.createResolved(f.read());archive=FrozenSourceValuePartial.encode(original);owner=archive.reference().ownerId();stamp=JdbcSourceValuePartialBlocks.stamp(owner,archive.reference().indexHash());store=new JdbcSourceValuePartialBlocks(f.db.source);}
+    void put(){f.original.p1.tx(()->{store.lockOwner(owner);for(int n=0;n<archive.payloads().size();n++)store.put(owner,stamp,n,archive.payloads().get(n),f.f.f.clock.instant());return true;});}
+    List<JdbcSourceValuePartialBlocks.Part> parts(){return f.original.read(()->store.parts(owner,stamp));}
+    @Test void ExactP2RowsAndCodecReplayAreSeparateFromP1NamespaceAndSeal()throws Exception{
+        var source=mock(DataSource.class);new JdbcSourceValuePartialBlocks(source);verifyNoInteractions(source);setup();int calls=f.db.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class);put();var rows=parts();assertEquals(archive.payloads(),rows.stream().map(JdbcSourceValuePartialBlocks.Part::payload).toList());assertSame(original,FrozenSourceValuePartial.decode(archive.reference(),rows.stream().map(JdbcSourceValuePartialBlocks.Part::payload).toList(),original));int count=f.db.count("1=1");put();assertEquals(count,f.db.count("1=1"));assertEquals(calls,f.db.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));assertEquals(0,f.db.count("target_type='source_value_partial_result'"));assertEquals(0,f.db.count("record_kind='logical_task' AND task_type='news_value'"));assertNotEquals(stamp,JdbcSourceDedupPartialBlocks.stamp(owner,archive.reference().indexHash()));assertThrows(RuntimeException.class,()->f.original.read(()->new JdbcSourceDedupPartialBlocks(f.db.source).parts(owner,stamp)));assertThrows(UnsupportedOperationException.class,()->rows.clear());f.db.jdbc.execute("DROP TABLE source_run_items");f.db.jdbc.execute("DROP TABLE analyzed_entities");store=new JdbcSourceValuePartialBlocks(f.db.source);assertEquals(rows,parts());
+    }
+    @Test void CorruptHashStateOrGappedRowsAndConflictingPayloadCannotReplay()throws Exception{
+        setup();put();String id=JdbcSourceValuePartialBlocks.partId(owner,stamp,1);int count=f.db.count("1=1");assertThrows(RuntimeException.class,()->f.original.p1.tx(()->{store.lockOwner(owner);store.put(owner,stamp,1,"{}",f.f.f.clock.instant());return true;}));assertEquals(count,f.db.count("1=1"));f.db.jdbc.update("UPDATE jobs SET state='queued' WHERE id=?",id);assertThrows(RuntimeException.class,this::parts);f.db.jdbc.update("UPDATE jobs SET state='frozen' WHERE id=?",id);assertEquals(2,parts().size());f.db.jdbc.update("UPDATE jobs SET payload_hash=? WHERE id=?",new byte[32],id);assertThrows(RuntimeException.class,this::parts);
+        setup();put();f.db.jdbc.update("DELETE FROM jobs WHERE id=?",JdbcSourceValuePartialBlocks.partId(owner,stamp,0));assertThrows(RuntimeException.class,this::parts);assertThrows(RuntimeException.class,()->f.original.read(()->store.part(owner,stamp,129)));assertThrows(RuntimeException.class,()->f.original.p1.tx(()->{store.lockOwner(owner);store.put(owner,stamp,129,"{}",f.f.f.clock.instant());return true;}));
+    }
+    @Test void NaturalValueOwnerTransactionsSizeAndOuterRollbackRemainStrict()throws Exception{
+        setup();int count=f.db.count("1=1");assertThrows(RuntimeException.class,()->store.parts(owner,stamp));assertThrows(RuntimeException.class,()->store.put(owner,stamp,0,"{}",f.f.f.clock.instant()));assertThrows(RuntimeException.class,()->f.original.read(()->{store.lockOwner(owner);return true;}));assertThrows(RuntimeException.class,()->f.original.p1.tx(()->{store.lockOwner(owner);store.put(owner,stamp,0,archive.payloads().getFirst(),f.f.f.clock.instant());throw new IllegalStateException("fictional rollback");}));assertEquals(count,f.db.count("1=1"));assertTrue(parts().isEmpty());assertThrows(RuntimeException.class,()->f.original.p1.tx(()->{store.lockOwner(owner);store.put(owner,stamp,0,"\""+"F".repeat(262145)+"\"",f.f.f.clock.instant());return true;}));assertEquals(count,f.db.count("1=1"));assertThrows(RuntimeException.class,()->f.original.p1.tx(()->{store.lockOwner(f.authority.f.ref.ownerId());return true;}));f.db.jdbc.update("UPDATE jobs SET task_type='news_dedup' WHERE id=?",owner);assertThrows(RuntimeException.class,()->f.original.read(()->{store.immutableOwner(owner);return true;}));assertThrows(RuntimeException.class,()->f.original.p1.tx(()->{store.lockOwner(owner);return true;}));
+    }
+}

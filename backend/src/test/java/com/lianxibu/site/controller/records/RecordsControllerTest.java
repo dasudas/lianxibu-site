@@ -48,6 +48,7 @@ class RecordsControllerTest {
         when(identityProvider.getIfAvailable()).thenReturn(identity);
         when(recordProvider.getIfAvailable()).thenReturn(service);
         when(identity.authenticate("fixture-session")).thenReturn(USER);
+        when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN)).thenReturn(USER);
         mvc = MockMvcBuilders.standaloneSetup(new RecordsController(identityProvider, recordProvider)).build();
     }
 

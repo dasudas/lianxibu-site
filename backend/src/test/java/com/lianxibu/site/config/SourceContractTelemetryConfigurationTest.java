@@ -1,0 +1,11 @@
+package com.lianxibu.site.config;
+import static org.junit.jupiter.api.Assertions.*;import static org.mockito.Mockito.*;
+import com.lianxibu.site.controller.collector.SourceContractTelemetryController;import com.lianxibu.site.service.sources.SourceContractSnapshotService;import com.lianxibu.site.service.identity.NodeIdentityService;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;import org.junit.jupiter.api.Test;
+class SourceContractTelemetryConfigurationTest {
+ String[] flags(){return new String[]{"site.ops.source-contract.enabled=true","site.browser.enabled=true","site.collector.enabled=true","site.sources.enabled=true"};}
+ ApplicationContextRunner runner(){return new ApplicationContextRunner().withUserConfiguration(SourceContractTelemetryConfiguration.class,SourceContractTelemetryController.class);}
+ @Test void eachMissingFlagCreatesNoSubmissionServiceOrHttpConsumer(){for(int disabled=0;disabled<4;disabled++){var values=flags();values[disabled]=values[disabled].replace("true","false");runner().withPropertyValues(values).run(c->{assertNull(c.getStartupFailure());assertTrue(c.getBeansOfType(SourceContractSnapshotService.class).isEmpty());assertTrue(c.getBeansOfType(SourceContractTelemetryController.class).isEmpty());});}}
+ @Test void actualFactoryAndControllerConstructWithoutSqlOrNodeAuthorization(){runner().withPropertyValues(flags()).withBean(javax.sql.DataSource.class,()->mock(javax.sql.DataSource.class)).withBean(org.springframework.transaction.PlatformTransactionManager.class,()->mock(org.springframework.transaction.PlatformTransactionManager.class)).withBean(NodeIdentityService.class,()->mock(NodeIdentityService.class)).run(c->{assertNull(c.getStartupFailure());assertEquals(1,c.getBeansOfType(SourceContractSnapshotService.class).size());assertEquals(1,c.getBeansOfType(SourceContractTelemetryController.class).size());verifyNoInteractions(c.getBean(javax.sql.DataSource.class),c.getBean(NodeIdentityService.class));});}
+ @Test void enabledRuntimeWithoutCurrentNativeNodeIdentityFailsClosed(){runner().withPropertyValues(flags()).withBean(javax.sql.DataSource.class,()->mock(javax.sql.DataSource.class)).withBean(org.springframework.transaction.PlatformTransactionManager.class,()->mock(org.springframework.transaction.PlatformTransactionManager.class)).run(c->assertNotNull(c.getStartupFailure()));}
+}

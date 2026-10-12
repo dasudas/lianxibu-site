@@ -19,11 +19,14 @@ import org.springframework.transaction.TransactionSystemException;
 public class ResultJdbcStoreTest {
  DataSource source;JdbcTemplate jdbc;SharedWriteExecutor writes;FaultManager tx;
  GenerationJdbcStoreTest generation;WorkerAuthorizationService.Identity identity;ResultJdbcStore store;ResultApplicationService service;
- int handlerCalls,sends;boolean failDownstream;final Clock clock=Clock.fixed(Instant.parse("2026-01-01T21:00:00.123456Z"),ZoneOffset.UTC);
+ int handlerCalls,sends;boolean failDownstream;Clock clock=Clock.fixed(Instant.parse("2026-01-01T21:00:00.123456Z"),ZoneOffset.UTC);
  static final String ROOT="fictional-root",BODY="{\"title\":\"Fictional report\",\"sections\":[{\"heading\":\"Fictional section\",\"text\":\"Fictional text\",\"citation_ids\":[\"fictional-citation\"]}],\"citation_ids\":[\"fictional-citation\"],\"type\":\"daily\",\"period_start\":\"2025-12-31T16:00:00.000000Z\",\"period_end\":\"2026-01-01T16:00:00.000000Z\",\"timezone\":\"Asia/Shanghai\",\"learning_task\":null}";
  static final String CONTENT_DDL="CREATE TABLE contents(kind VARCHAR(16) NOT NULL,id VARCHAR(64) NOT NULL,natural_key VARCHAR(255) NOT NULL,title VARCHAR(512) NOT NULL,body_json CLOB NOT NULL,state VARCHAR(16) NOT NULL,revision BIGINT NOT NULL,body_revision BIGINT,published_at TIMESTAMP,input_job_id VARCHAR(64),entity_id VARCHAR(64),period_key_hash BINARY(32) UNIQUE,body_hash_v1 BINARY(32),review_hash BINARY(32),review_hash_v1 BINARY(32),review_dependency_stamp CLOB,review_stamp_hash BINARY(32),review_stamp_id VARCHAR(64),reviewed_input_hash BINARY(32),blocking_summary_json CLOB,content_key_json CLOB,updated_at TIMESTAMP NOT NULL,PRIMARY KEY(kind,id),UNIQUE(kind,natural_key))";
- @BeforeEach void fixture(){generation=new GenerationJdbcStoreTest();generation.fixture();source=generation.source;setup(false);}
- void setup(boolean mysql){
+ WorkerAuthorizationService worker;WorkerAuthorizationService.Permit permit;
+ @BeforeEach void fixture(){initialize(true);}
+ void initialize(boolean send){generation=new GenerationJdbcStoreTest();generation.fixture();source=generation.source;setup(false,send);}
+ void setup(boolean mysql){setup(mysql,true);}
+ void setup(boolean mysql,boolean send){
   jdbc=new JdbcTemplate(source);
   if(!mysql){jdbc.execute("CREATE ALIAS HEX FOR 'com.lianxibu.site.service.jobs.ResultJdbcStoreTest.hex'");jdbc.execute("CREATE ALIAS UNHEX FOR 'com.lianxibu.site.service.jobs.ResultJdbcStoreTest.unhex'");}
   alter("worker_lock","slot_state VARCHAR(16) DEFAULT 'free',slot_revision BIGINT DEFAULT 0,fencing_token BIGINT DEFAULT 0,job_id VARCHAR(64),holder VARCHAR(64),lease_until "+time(mysql)+",request_deadline "+time(mysql)+",occupied_since "+time(mysql));
@@ -34,8 +37,8 @@ public class ResultJdbcStoreTest {
   var old=generation.command(false);var ctx=FrozenApplicationContext.fromJson(CanonicalJson.parse(FrozenApplicationContextTest.context(Stage.DAILY_REPORT).replace("\"base_revision\":3","\"base_revision\":null")));
   var cmd=new Prepare(old.logicalKey(),old.generation(),old.stage(),old.businessDate(),old.sourceId(),old.dependencies(),old.evidence(),old.expectedDependencies(),old.explicitSupplement(),old.settingsHash(),ctx);
   var prepared=new GenerationJdbcStore(source,clock,"fictional-owner",ROOT,cmd);new GenerationFlowService(writes,prepared,(stage,snapshot,hash)->"{\"provider\":\"deepseek\",\"model\":\"deepseek-flash\",\"input_hash\":\""+hash+"\",\"messages\":[{\"role\":\"user\",\"content\":\"Fictional fixture\"}],\"response_format\":{\"type\":\"json_object\"},\"parameters\":{},\"schema_version\":\"1\",\"prompt_version\":\"1\"}",clock,()->true).prepare(cmd,action("fictional-prepare"));
-  var workerState=new JdbcWorkerState(source);var worker=new WorkerAuthorizationService(writes,new WorkerJdbcStore(workerState,new JdbcJobRecords(source),"fictional-epoch",()->false,id->true,clock),clock,()->true);
-  var claim=worker.claim(action("fictional-claim"));assertEquals(WorkerAuthorizationService.State.CLAIMED,claim.state());identity=claim.permit().identity();assertEquals(WorkerAuthorizationService.State.SENT,worker.dispatch(claim.permit(),request->{sends++;return "fictional response";}).state());
+  var workerState=new JdbcWorkerState(source);worker=new WorkerAuthorizationService(writes,new WorkerJdbcStore(workerState,new JdbcJobRecords(source),"fictional-epoch",()->false,id->true,clock),clock,()->true);
+  var claim=worker.claim(action("fictional-claim"));assertEquals(WorkerAuthorizationService.State.CLAIMED,claim.state());permit=claim.permit();identity=permit.identity();if(send)assertEquals(WorkerAuthorizationService.State.SENT,worker.dispatch(permit,request->{sends++;return "fictional response";}).state());
   restart();
  }
  void restart(){

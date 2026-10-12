@@ -22,6 +22,7 @@ import (
 
 type RepositoryCatalogAdapter struct {
 	category, version string
+	reviews           LicenseReviews
 	mu                sync.Mutex
 	pending           map[string]catalogPending
 }
@@ -31,6 +32,7 @@ type catalogCursor struct {
 	Config       uint64          `json:"config"`
 	Entry        string          `json:"entry"`
 	Step         int             `json:"step"`
+	ReleasePage  int             `json:"release_page,omitempty"`
 	RepositoryID int64           `json:"repository_id"`
 	Name         string          `json:"name"`
 	Description  string          `json:"description"`
@@ -117,6 +119,12 @@ func (a *RepositoryCatalogAdapter) state(c client.RunClaim, cursor string) (cata
 	if len(cursor) > maximum || checkedJSON([]byte(cursor)) != nil || d.Decode(&state) != nil || state.Run != c.Run.RunID || state.Source != c.Run.SourceID || state.Config != c.Run.ConfigVersion || state.Entry != entry || state.Step < 1 || state.Step > lastStep || state.RepositoryID <= 0 || state.RepositoryID > 9007199254740991 || !repoPart(state.Branch) || len(state.Name) > 2048 || len(state.Description) > 8192 || len(state.Tag) > 100 || state.Tag != "" && !repoPart(state.Tag) || len(state.Gaps) > 32 {
 		return catalogCursor{}, ErrSourceConfig
 	}
+	if state.ReleasePage < 0 || state.ReleasePage > 30 {
+		return catalogCursor{}, ErrSourceConfig
+	}
+	if state.Step == 1 && state.ReleasePage == 0 {
+		state.ReleasePage = 1
+	}
 	if a.category == "workflow" && state.Step >= 5 {
 		parsed, err := client.ParseStrict(state.Aggregate)
 		if err != nil {
@@ -199,7 +207,7 @@ func (a *RepositoryCatalogAdapter) Request(c client.RunClaim, cursor string) (fe
 	target := state.Entry
 	switch state.Step {
 	case 1:
-		target += "/releases?per_page=30&page=1"
+		target += "/releases?per_page=1&page=" + strconv.Itoa(state.ReleasePage)
 	case 2:
 		ref := state.Tag
 		if ref == "" {
@@ -256,6 +264,7 @@ func (a *RepositoryCatalogAdapter) Parse(c client.RunClaim, response fetcher.Res
 	}
 	state := pending.state
 	items := []scheduler.Item{}
+	advanceStep := true
 	if response.StatusCode != 200 && !(response.StatusCode == 404 && (state.Step == 1 || state.Step == 3 || state.Step == 4 || state.Step == 5 && a.category == "workflow")) {
 		return scheduler.Page{}, ErrSourceDocument
 	}
@@ -293,17 +302,20 @@ func (a *RepositoryCatalogAdapter) Parse(c client.RunClaim, response fetcher.Res
 				Tag        string `json:"tag_name"`
 				Published  string `json:"published_at"`
 			}
-			if json.Unmarshal(response.Body, &releases) != nil || releases == nil || len(releases) > 30 {
+			if json.Unmarshal(response.Body, &releases) != nil || releases == nil || len(releases) > 1 {
 				return scheduler.Page{}, ErrSourceDocument
-			}
-			if len(releases) == 30 {
-				state.Gaps = hnGap(state.Gaps, "release_scan_limit")
 			}
 			for _, release := range releases {
 				if release.Draft == nil || release.Prerelease == nil {
 					return scheduler.Page{}, ErrSourceDocument
 				}
 				if *release.Draft || *release.Prerelease {
+					if state.ReleasePage < 30 {
+						state.ReleasePage++
+						advanceStep = false
+					} else {
+						state.Gaps = hnGap(state.Gaps, "release_scan_limit")
+					}
 					continue
 				}
 				at, e := parseSourceTime(release.Published)
@@ -315,7 +327,7 @@ func (a *RepositoryCatalogAdapter) Parse(c client.RunClaim, response fetcher.Res
 				break
 			}
 		}
-		if state.Tag == "" {
+		if state.Tag == "" && advanceStep {
 			state.Gaps = hnGap(state.Gaps, "no_formal_release")
 		}
 	case 2:
@@ -347,7 +359,10 @@ func (a *RepositoryCatalogAdapter) Parse(c client.RunClaim, response fetcher.Res
 			sum := sha256.Sum256(data)
 			state.LicensePath = path
 			state.LicenseHash = hex.EncodeToString(sum[:])
-			if spdx == "" || spdx == "NOASSERTION" {
+			if a.reviews.containsRepository(repo) && !a.reviews.matches(repo, state.Commit, path, state.LicenseHash) {
+				return scheduler.Page{}, ErrSourceDocument
+			}
+			if (spdx == "" || spdx == "NOASSERTION") && !a.reviews.matches(repo, state.Commit, path, state.LicenseHash) {
 				state.Gaps = hnGap(state.Gaps, "missing_license")
 			}
 		}
@@ -442,7 +457,9 @@ func (a *RepositoryCatalogAdapter) Parse(c client.RunClaim, response fetcher.Res
 	default:
 		return scheduler.Page{}, ErrSourceConfig
 	}
-	state.Step++
+	if advanceStep {
+		state.Step++
+	}
 	maximum := 16384
 	if a.category == "workflow" {
 		maximum = 768 * 1024

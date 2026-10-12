@@ -10,6 +10,8 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -37,6 +39,10 @@ public final class WorkerAuthorizationService {
     public record Claim(State state, Permit permit, String reason, Instant nextEligibleAt) { }
     public record Dispatch<T>(State state, T outcome) { }
     public interface Store {
+        /** Called outside transactions. The returned scope must revalidate in every writer attempt. */
+        default Store captureClaim(ActionContext action,Instant now){return this;}
+        /** A separate outside capture for this exact send-authorization action. */
+        default Store captureAuthorization(Identity identity){return this;}
         Identity committedClaim(String actionKey);
         Authorization committedAuthorization(String actionKey);
         Boolean committedAbort(String actionKey);
@@ -95,16 +101,19 @@ public final class WorkerAuthorizationService {
     }
 
     public Claim claim(ActionContext action) {
-        Instant now = clock.instant();
+        // Lease identity must equal the original UTC microsecond receipt on immediate replay.
+        Instant now = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         if (!inWindow(now)) return new Claim(State.IDLE, null, "outside_window", nextWindow(now));
+        if(TransactionSynchronizationManager.isActualTransactionActive())throw new IllegalStateException("worker must own outer transaction");
+        Store capturedStore=Objects.requireNonNull(store.captureClaim(action,now));
         Identity identity = writes.execute(action, store::committedClaim, context -> {
-            if (!inWindow(clock.instant()) || store.paused() || !store.slotFree())
+            if (!inWindow(clock.instant()) || capturedStore.paused() || !capturedStore.slotFree())
                 return idleMarker();
             if (!dispatchAllowed.getAsBoolean()) return idleMarker();
-            List<Candidate> candidates = store.candidates(now).stream()
+            List<Candidate> candidates = capturedStore.candidates(now).stream()
                     .filter(item -> item != null && item.priority() >= 1 && item.priority() <= 14
                             && item.eligibleAt() != null && !item.eligibleAt().isAfter(now)
-                            && "queued".equals(item.rootState())
+                            && ("queued".equals(item.rootState()) || "waiting_retry".equals(item.rootState()))
                             && "prepared".equals(item.attemptState())
                             && item.dependenciesReady() && item.callCount() < item.maxAttempts()
                             && item.callCount() >= 0
@@ -119,7 +128,7 @@ public final class WorkerAuthorizationService {
                     .takeWhile(item -> item.priority() == best).toList();
             int index = tieChoice.applyAsInt(same.size());
             if (index < 0 || index >= same.size()) throw new IllegalStateException("tie choice invalid");
-            return store.reserve(same.get(index), UUID.randomUUID().toString(),
+            return capturedStore.reserve(same.get(index), UUID.randomUUID().toString(),
                     now.plus(Duration.ofSeconds(150)), now, context.actionKey());
         });
         if (identity == null || identity.attemptId() == null)
@@ -140,13 +149,15 @@ public final class WorkerAuthorizationService {
         if (permit.cancelled.get()) return abortNeverSent(identity, "cancelled_before_send");
         Authorization authorization;
         try {
+            if(TransactionSynchronizationManager.isActualTransactionActive())throw new IllegalStateException("worker must own outer transaction");
+            Store capturedStore=Objects.requireNonNull(store.captureAuthorization(identity));
             authorization = writes.execute(action(identity, "authorize"),
                     store::committedAuthorization, context -> {
                         Instant now = clock.instant();
-                        if (!inWindow(now) || store.paused())
+                        if (!inWindow(now) || capturedStore.paused())
                             return new Authorization(false, "window_or_pause");
                         if (!dispatchAllowed.getAsBoolean()) return new Authorization(false,"operational_guard");
-                        return store.authorize(identity, now, context.actionKey());
+                        return capturedStore.authorize(identity, now, context.actionKey());
                     });
         } catch (RuntimeException uncertain) {
             return new Dispatch(State.UNKNOWN, null);
@@ -193,7 +204,7 @@ public final class WorkerAuthorizationService {
         return new ActionContext(value.dispatchToken() + ":" + step,
                 value.attemptId(), value.inputHash());
     }
-    private static boolean completeRequest(String json, String inputHash) {
+    static boolean completeRequest(String json, String inputHash) {
         try {
             var request = CanonicalJson.parse(json);
             return request.isObject()

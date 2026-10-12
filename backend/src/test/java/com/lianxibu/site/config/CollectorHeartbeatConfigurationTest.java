@@ -1,0 +1,10 @@
+package com.lianxibu.site.config;
+import static org.junit.jupiter.api.Assertions.*;import static org.mockito.Mockito.*;
+import com.lianxibu.site.service.jobs.CollectorHeartbeatService;import com.lianxibu.site.service.identity.NodeIdentityService;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;import org.junit.jupiter.api.Test;
+class CollectorHeartbeatConfigurationTest {
+ ApplicationContextRunner runner(){return new ApplicationContextRunner().withUserConfiguration(CollectorHeartbeatConfiguration.class);}
+ @Test void absentOrFalseCollectorModeCreatesNoNativeHeartbeatProvider(){for(String value:new String[]{"false",""})runner().withPropertyValues("site.collector.enabled="+value).run(c->{assertNull(c.getStartupFailure());assertTrue(c.getBeansOfType(CollectorHeartbeatService.class).isEmpty());});}
+ @Test void actualFactoryConstructsOneNativeWriterWithZeroStartupSqlAuthorizationOrThreads(){runner().withPropertyValues("site.collector.enabled=true").withBean(javax.sql.DataSource.class,()->mock(javax.sql.DataSource.class)).withBean(org.springframework.transaction.PlatformTransactionManager.class,()->mock(org.springframework.transaction.PlatformTransactionManager.class)).withBean(NodeIdentityService.class,()->mock(NodeIdentityService.class)).run(c->{assertNull(c.getStartupFailure());assertEquals(1,c.getBeansOfType(CollectorHeartbeatService.class).size());verifyNoInteractions(c.getBean(javax.sql.DataSource.class),c.getBean(org.springframework.transaction.PlatformTransactionManager.class),c.getBean(NodeIdentityService.class));});}
+ @Test void enabledRuntimeCannotFallBackWhenNativeIdentityOrDatabaseIsMissing(){runner().withPropertyValues("site.collector.enabled=true").withBean(javax.sql.DataSource.class,()->mock(javax.sql.DataSource.class)).withBean(org.springframework.transaction.PlatformTransactionManager.class,()->mock(org.springframework.transaction.PlatformTransactionManager.class)).run(c->assertNotNull(c.getStartupFailure()));runner().withPropertyValues("site.collector.enabled=true").withBean(NodeIdentityService.class,()->mock(NodeIdentityService.class)).run(c->assertNotNull(c.getStartupFailure()));}
+}

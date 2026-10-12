@@ -1,0 +1,125 @@
+{
+  "fictional": true,
+  "valid": {
+    "native": {
+      "schema_version": "collector-host-memory-v1",
+      "capture_epoch": "00000000-0000-4000-8000-000000000001",
+      "process_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "capture_started_at": "2026-01-01T00:09:00.000000Z",
+      "sequence": 1,
+      "pid": 12,
+      "observed_at": "2026-01-01T00:10:00.000000Z",
+      "rss_bytes": 1048576,
+      "cgroup_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "maximum_bytes": 201326592,
+      "oom_events": 0,
+      "oom_kills": 0
+    },
+    "unlimited": {
+      "schema_version": "collector-host-memory-v1",
+      "capture_epoch": "00000000-0000-4000-8000-000000000001",
+      "process_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "capture_started_at": "2026-01-01T00:09:00.000000Z",
+      "sequence": 1,
+      "pid": 12,
+      "observed_at": "2026-01-01T00:10:00.000000Z",
+      "rss_bytes": 1048576,
+      "cgroup_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "maximum_bytes": null,
+      "oom_events": 0,
+      "oom_kills": 0
+    },
+    "independent_kernel_counts": {
+      "schema_version": "collector-host-memory-v1",
+      "capture_epoch": "00000000-0000-4000-8000-000000000001",
+      "process_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "capture_started_at": "2026-01-01T00:09:00.000000Z",
+      "sequence": 1,
+      "pid": 12,
+      "observed_at": "2026-01-01T00:10:00.000000Z",
+      "rss_bytes": 1048576,
+      "cgroup_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "maximum_bytes": 201326592,
+      "oom_events": 0,
+      "oom_kills": 2
+    }
+  },
+  "invalid": {
+    "unknown": {
+      "schema_version": "collector-host-memory-v1",
+      "capture_epoch": "00000000-0000-4000-8000-000000000001",
+      "process_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "capture_started_at": "2026-01-01T00:09:00.000000Z",
+      "sequence": 1,
+      "pid": 12,
+      "observed_at": "2026-01-01T00:10:00.000000Z",
+      "rss_bytes": 1048576,
+      "cgroup_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "maximum_bytes": 201326592,
+      "oom_events": 0,
+      "oom_kills": 0,
+      "healthy": true
+    },
+    "missing": {
+      "schema_version": "collector-host-memory-v1",
+      "capture_epoch": "00000000-0000-4000-8000-000000000001",
+      "process_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "capture_started_at": "2026-01-01T00:09:00.000000Z",
+      "sequence": 1,
+      "pid": 12,
+      "observed_at": "2026-01-01T00:10:00.000000Z",
+      "cgroup_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "maximum_bytes": 201326592,
+      "oom_events": 0,
+      "oom_kills": 0
+    },
+    "unsafe": {
+      "schema_version": "collector-host-memory-v1",
+      "capture_epoch": "00000000-0000-4000-8000-000000000001",
+      "process_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "capture_started_at": "2026-01-01T00:09:00.000000Z",
+      "sequence": 1,
+      "pid": 12,
+      "observed_at": "2026-01-01T00:10:00.000000Z",
+      "rss_bytes": 9007199254740992,
+      "cgroup_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "maximum_bytes": 201326592,
+      "oom_events": 0,
+      "oom_kills": 0
+    },
+    "zero_identity": {
+      "schema_version": "collector-host-memory-v1",
+      "capture_epoch": "00000000-0000-4000-8000-000000000001",
+      "process_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "capture_started_at": "2026-01-01T00:09:00.000000Z",
+      "sequence": 1,
+      "pid": 0,
+      "observed_at": "2026-01-01T00:10:00.000000Z",
+      "rss_bytes": 1048576,
+      "cgroup_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "maximum_bytes": 201326592,
+      "oom_events": 0,
+      "oom_kills": 0
+    },
+    "wrong_version": {
+      "schema_version": "collector-host-memory-v2",
+      "capture_epoch": "00000000-0000-4000-8000-000000000001",
+      "process_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "capture_started_at": "2026-01-01T00:09:00.000000Z",
+      "sequence": 1,
+      "pid": 12,
+      "observed_at": "2026-01-01T00:10:00.000000Z",
+      "rss_bytes": 1048576,
+      "cgroup_epoch": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "maximum_bytes": 201326592,
+      "oom_events": 0,
+      "oom_kills": 0
+    }
+  },
+  "ack": {
+    "capture_epoch": "00000000-0000-4000-8000-000000000001",
+    "sequence": 1,
+    "payload_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "received_at": "2026-01-01T00:10:01.000000Z"
+  }
+}

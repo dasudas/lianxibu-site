@@ -138,6 +138,56 @@ class WorkerJdbcMySqlTest {
    }
   }finally{var wave=pending.get();if(wave!=null)wave.release.countDown();server.stop(0);handlers.shutdownNow();}
  }
+ @Test void leaseRenewalSurvivesLostCommitAckAcrossWindowAndDoesNotChangeTheClaim() {
+  clock.now=Instant.parse("2026-01-01T22:59:50Z");var active=worker("fictional-epoch");var claim=active.claim(action("lease-claim"));var id=claim.permit().identity();
+  assertEquals(WorkerAuthorizationService.State.SENT,active.dispatch(claim.permit(),request->"fictional-response").state());
+  var original=state.slot();long rootRevision=records.byId(id.rootId()).revision();clock.now=clock.now.plusSeconds(20);paused=true;
+  var leases=new WorkerLeaseService(writes,new JdbcWorkerLease(db),clock,"fictional-epoch");manager.ackLost=true;
+  Instant renewed=leases.renew(id,action("lease-first"));assertEquals(clock.now.plusSeconds(150),renewed);
+  assertEquals(original.revision(),state.slot().revision());assertEquals(original.fencing(),state.slot().fencing());assertEquals(rootRevision,records.byId(id.rootId()).revision());assertEquals(1,records.byId(id.rootId()).callCount());
+  clock.now=clock.now.plusSeconds(20);assertEquals(renewed,new WorkerLeaseService(writes,new JdbcWorkerLease(db),clock,"fictional-epoch").renew(id,action("lease-first")));assertEquals(renewed,state.slot().lease());
+  assertEquals(renewed,new JdbcWorkerRecovery(db,state).attempt(id.attemptId()).lease());
+  clock.now=Instant.parse("2026-01-01T23:01:20Z");assertThrows(RuntimeException.class,()->leases.renew(id,action("lease-deadline")));assertEquals(renewed,state.slot().lease());
+  jdbc.update("UPDATE jobs SET action_payload=JSON_SET(action_payload,'$.schema_version','fictional-tamper') WHERE target_type='worker_heartbeat'");
+  assertThrows(RuntimeException.class,()->leases.renew(id,action("lease-first")));
+ }
+ @Test void recoverySweepLeavesLiveCallsAndRecoversUncertainPreSendCrashAtDeadline() {
+  var claim=worker("fictional-sweep").claim(action("sweep-claim"));var id=claim.permit().identity();
+  var query=new JdbcWorkerRecovery(db,state);var store=new UnknownCallJdbcStore(state,query,records,"fictional-recovery",epoch->false);
+  var sweep=new WorkerRecoverySweep(query,store,new UnknownCallRecoveryService(writes,store,clock),clock);
+  assertEquals(1,sweep.scan().pending());assertEquals("occupied",state.slot().state());
+  clock.now=clock.now.plusSeconds(90);manager.ackLost=true;var recovered=sweep.scan();
+  assertEquals(1,recovered.recovered());assertEquals(0,recovered.failed());assertEquals("free",state.slot().state());assertEquals(1,records.byId(id.rootId()).callCount());
+  assertEquals(0,sweep.scan().scanned());assertEquals("unknown_external",records.byId(id.attemptId()).state());
+ }
+ @Test void transportUnknownReleasesImmediatelyAndNeverReleasesNextHolderOnReplay() {
+  jdbc.execute("ALTER TABLE jobs ADD result_hash BINARY(32)");
+  var w=worker("fictional-transport");var claim=w.claim(action("transport-claim"));var id=claim.permit().identity();
+  w.dispatch(claim.permit(),request->"fictional-ended-wait");
+  var service=new TransportUnknownService(writes,new JdbcTransportUnknown(db),clock,"fictional-transport");
+  manager.ackLost=true;var result=service.release(id,TransportUnknownService.Cause.TRANSPORT_UNKNOWN,action("transport-end"));
+  assertTrue(result.slotReleased());assertEquals(1,result.callCount());assertEquals("unknown_external",records.byId(id.rootId()).state());
+  var next=worker("fictional-next").claim(action("transport-next"));assertEquals(WorkerAuthorizationService.State.CLAIMED,next.state());var slot=state.slot();
+  assertEquals(result,service.release(id,TransportUnknownService.Cause.TRANSPORT_UNKNOWN,action("transport-end")));assertEquals(slot,state.slot());
+  assertThrows(RuntimeException.class,()->service.release(id,TransportUnknownService.Cause.LOCAL_CANCELLED,action("transport-end")));
+  assertEquals(1,records.byId(id.rootId()).callCount());
+ }
+ @Test void knownFailuresPersistUsageAndRetryTheOriginalRequestAtMostTwice() {
+  jdbc.execute("ALTER TABLE jobs ADD result_hash BINARY(32), ADD retry_of_job_id VARCHAR(64)");jdbc.update("UPDATE jobs SET state='cancelled' WHERE id='root-second'");
+  var failures=new AttemptFailureService(writes,new JdbcAttemptFailure(db),clock,"fictional-epoch");var usage=new AttemptUsageService(writes,new JdbcAttemptUsage(db),clock,"fictional-epoch");String original=null;
+  for(int n=1;n<=3;n++) {
+   var active=worker("fictional-epoch");var claim=active.claim(action("failure-claim-"+n));assertEquals(WorkerAuthorizationService.State.CLAIMED,claim.state());var id=claim.permit().identity();
+   if(original==null)original=id.frozenRequestJson();else assertEquals(original,id.frozenRequestJson());
+   assertEquals(WorkerAuthorizationService.State.SENT,active.dispatch(claim.permit(),request->"fictional-invalid-result").state());
+   usage.record(id,new AttemptUsageService.Metadata("fictional-response-"+n,10L,2L,12L,null),action("failure-usage-"+n));
+   manager.ackLost=true;var result=failures.fail(id,AttemptFailureService.Failure.INVALID_RESULT,0,action("known-failure-"+n));assertEquals("free",state.slot().state());assertEquals(n,records.byId(id.rootId()).callCount());
+   assertEquals(result,failures.fail(id,AttemptFailureService.Failure.INVALID_RESULT,0,action("known-failure-"+n)));
+   if(n<3){assertEquals("waiting_retry",result.state());clock.now=result.eligibleAt();}else{assertEquals("failed",result.state());assertNull(result.nextAttemptId());}
+  }
+  assertEquals(3,jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE record_kind='ai_attempt' AND root_job_id='root-first'",Integer.class));
+  assertEquals(3,jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE target_type='attempt_usage'",Integer.class));
+  assertEquals(WorkerAuthorizationService.State.IDLE,worker("fictional-epoch").claim(action("failure-no-fourth")).state());
+ }
  private static final class HttpWave{final CountDownLatch received=new CountDownLatch(1),release=new CountDownLatch(1);}
  private static ActionContext action(String key){return new ActionContext(key,"receipt-"+key,null);}
  private static final class MutableClock extends Clock{volatile Instant now;public ZoneId getZone(){return ZoneId.of("UTC");}public Clock withZone(ZoneId zone){return this;}public Instant instant(){return now;}}

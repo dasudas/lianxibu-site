@@ -17,6 +17,45 @@ import (
 
 var skillSeeds = []string{"openai/skills/contents/skills/.curated/security-best-practices/SKILL.md", "anthropics/skills/contents/skills/skill-creator/SKILL.md", "vercel-labs/agent-skills/contents/skills/react-best-practices/SKILL.md"}
 
+func TestSkillV2ReadsLicenseAtExactSkillDirectory(t *testing.T) {
+	c := skillClaim(skillSeeds[0])
+	c.Config.Config.ParserVersion = "github-skill-v2"
+	a := Skills()
+	commit := strings.Repeat("a", 40)
+	p := skillPage(t, a, c, "", `{"id":42,"full_name":"openai/skills","default_branch":"main"}`, 200)
+	p = skillPage(t, a, c, p.NextCursor, fmt.Sprintf(`[{"sha":%q,"commit":{"committer":{"date":"2026-09-01T12:00:00Z"}}}]`, commit), 200)
+	req, err := a.Request(c, p.NextCursor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "https://api.github.com/repos/openai/skills/contents/skills/.curated/security-best-practices/LICENSE.txt?ref=" + commit
+	if req.URL != want {
+		t.Fatalf("license request not scoped to selected skill: %s", req.URL)
+	}
+	wrong := `{"type":"file","path":"LICENSE","encoding":"base64","content":"ZmljdGlvbmFs"}`
+	if _, err = a.Parse(c, fetcher.Result{StatusCode: 200, FinalURL: req.URL, Body: []byte(wrong)}); err == nil {
+		t.Fatal("unrelated license accepted")
+	}
+	license := "Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/\nFictional test text\nEND OF TERMS AND CONDITIONS"
+	licenseBody := fmt.Sprintf(`{"type":"file","path":"skills/.curated/security-best-practices/LICENSE.txt","encoding":"base64","content":%q}`, base64.StdEncoding.EncodeToString([]byte(license)))
+	p = skillPage(t, a, c, p.NextCursor, licenseBody, 200)
+	if strings.Contains(strings.Join(p.Gaps, " "), "missing_license") {
+		t.Fatal("directory license lost")
+	}
+	text := "---\nname: fictional\ndescription: Fictional skill\n---\n# Body"
+	p = skillPage(t, a, c, p.NextCursor, fmt.Sprintf(`{"type":"file","path":"skills/.curated/security-best-practices/SKILL.md","encoding":"base64","content":%q}`, base64.StdEncoding.EncodeToString([]byte(text))), 200)
+	if len(p.Items) != 1 {
+		t.Fatal("skill missing")
+	}
+	r, err := a.Freeze(c, p.Items[0], time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = client.DecodeObservation(r.Payload); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func skillClaim(seed string) client.RunClaim {
 	c := parserClaim()
 	c.Run.SourceID = "fictional-skill-source"

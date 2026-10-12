@@ -36,6 +36,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import tools.jackson.databind.JsonNode;
@@ -96,7 +98,7 @@ class JdbcCollectorGatewayTest {
                 new JdbcSourceAdmission(source), writes,
                 new RunLeaseTokenCodec(new SecretKeySpec(new byte[32], "AES"), "fixture", new SecureRandom()),
                 (bearer, permission, sourceId) -> NODE,
-                new JdbcSourceRunReceipts(source, clock), clock, ignored -> true);
+                new JdbcSourceRunReceipts(source, clock), clock, ignored -> true,com.lianxibu.site.service.sources.SourceDayClaimTestDouble.allow(source));
         var manifests = new RunManifestService(new JdbcRunManifestStore(source), writes,
                 (bearer, sourceId) -> NODE, clock);
         observationService = mock(ObservationIngressService.class);
@@ -212,6 +214,30 @@ class JdbcCollectorGatewayTest {
                         "probe-result-key", changed)));
         assertNotNull(jdbc.queryForObject("SELECT probe_trial_result_json FROM source_runs WHERE id=?",
                 String.class, "fixture-probe"));
+    }
+
+    @ParameterizedTest @ValueSource(strings={"Asia/Tokyo","America/Los_Angeles"})
+    void physicalUtcWindowsLeaseAndConfigDeadlineSurviveHostZone(String zone) {
+        var original=java.util.TimeZone.getDefault();
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone));
+            leases.scheduleDaily(SOURCE,new ActionContext("utc-schedule","utc-run","fixture"));
+            jdbc.update("UPDATE sources SET config_valid_until=TIMESTAMP '2026-01-02 16:10:01'");
+            assertEquals(1,gateway.execute(NODE,"fixture-bearer",Operation.CONFIG,request(null,null,null)).data().get("sources").size());
+            var run=gateway.execute(NODE,"fixture-bearer",Operation.RUN,request("utc-run",null,null)).data();
+            assertEquals("2026-01-02",run.get("business_date").asText());
+            assertEquals("2026-01-01T16:00:00.000000Z",run.get("window_start").asText());
+            assertEquals("2026-01-02T16:00:00.000000Z",run.get("window_end").asText());
+            var claim=leases.claimNext("fixture-bearer",false,new ActionContext("utc-claim","utc-claim-resource","fixture"));
+            var ack=CanonicalJson.parse("{\"business\":{\"run_id\":\"utc-run\",\"action\":\"ack\"},\"attempt\":{\"claim_token\":\""+claim.claimToken()+"\",\"expected_run_revision\":null}}");
+            var outcome=gateway.execute(NODE,"fixture-bearer",Operation.CLAIM_ACTION,new Request("utc-run",null,null,null,null,null,null,"utc-ack",ack)).data();
+            assertTrue(outcome.get("current_lease_valid").booleanValue());
+            assertEquals("2026-01-02T16:12:30.000000Z",outcome.get("lease_until").asText());
+            jdbc.update("UPDATE source_runs SET barrier_closed_at=TIMESTAMP '2026-01-02 16:10:00' WHERE id='utc-run'");
+            assertEquals("2026-01-02T16:10:00.000000Z",gateway.execute(NODE,"fixture-bearer",Operation.RUN,request("utc-run",null,null)).data().get("barrier_closed_at").asText());
+            jdbc.update("UPDATE sources SET config_valid_until=TIMESTAMP '2026-01-02 16:10:00'");
+            assertEquals(0,gateway.execute(NODE,"fixture-bearer",Operation.CONFIG,request(null,null,null)).data().get("sources").size());
+        } finally {java.util.TimeZone.setDefault(original);}
     }
 
     private static Request request(String runId, JsonNode body, String etag) {

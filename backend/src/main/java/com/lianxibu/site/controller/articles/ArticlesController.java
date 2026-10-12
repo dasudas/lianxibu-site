@@ -118,6 +118,10 @@ public final class ArticlesController {
             @RequestBody(required = false) byte[] raw) {
         Actor actor = authenticated(cookie, true);
         writeHeaders(csrf, origin, key);
+        IdentityService trusted = identity.getIfAvailable();
+        if (trusted == null) throw unavailable();
+        Actor authorized = trusted.authorizeWrite(cookie, csrf, origin);
+        if (!actor.equals(authorized)) throw new BoundaryFailure(403, "forbidden", "write authorization required");
         JsonNode body = object(raw, Set.of("expected_revision", "action", "reason", "assignments"));
         if (!"correct_assignments".equals(text(body.get("action"), 1, 32))) {
             throw validation("invalid entity action");

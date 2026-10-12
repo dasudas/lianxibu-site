@@ -26,6 +26,24 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class JobsControllerTest {
+    private String valueResolution(boolean v2,String version) {
+        var payload=tools.jackson.databind.json.JsonMapper.shared().createObjectNode().put("kind","value").put("summary","Fictional value evidence");
+        payload.putArray("selected_item_ids");var item=payload.putArray("items").addObject().put("item_id","fictional-item").put("category","agent").put("high_value",false).put("reason","Fictional evidence");
+        if(v2){payload.put("value_result_version",version);item.put("valuable",true);}
+        var command=tools.jackson.databind.json.JsonMapper.shared().createObjectNode().put("expected_revision",1).put("action","resolve_external").put("reason","Fictional verification").put("attempt_id","fictional-attempt").put("external_state","succeeded");command.putArray("evidence_refs").add("fictional-proof");command.putNull("usage");command.putObject("result").put("schema_version","1").put("input_hash","a".repeat(64)).put("result_hash","b".repeat(64)).set("payload",payload);return command.toString();
+    }
+    @Test void externalValueV2AndOriginalV1ReachTheAuthorizedServiceUnchanged() throws Exception {
+        when(service.action(any(),any(),any(),any(),any(),any())).thenReturn(ACTION);
+        mvc.perform(write(post("/admin/jobs/fictional-job/actions"),valueResolution(true,"2"))).andExpect(status().isOk());
+        var captor=org.mockito.ArgumentCaptor.forClass(JobsService.JobAction.class);verify(service).action(eq(OWNER),eq("fictional-job"),captor.capture(),any(),any(),any());
+        org.junit.jupiter.api.Assertions.assertEquals("2",captor.getValue().result().payload().get("value_result_version").asText());org.junit.jupiter.api.Assertions.assertTrue(captor.getValue().result().payload().get("items").get(0).get("valuable").booleanValue());
+        org.mockito.Mockito.clearInvocations(service);mvc.perform(write(post("/admin/jobs/fictional-job/actions"),valueResolution(false,null))).andExpect(status().isOk());verify(service).action(eq(OWNER),eq("fictional-job"),captor.capture(),any(),any(),any());org.junit.jupiter.api.Assertions.assertFalse(captor.getValue().result().payload().has("value_result_version"));
+    }
+    @Test void unknownNumericValueVersionsAndUnexpectedFieldsNeverReachService() throws Exception {
+        for(String body:new String[]{valueResolution(true,"3"),valueResolution(true,"2").replace("\"value_result_version\":\"2\"","\"value_result_version\":2")})mvc.perform(write(post("/admin/jobs/fictional-job/actions"),body)).andExpect(status().isUnprocessableEntity());
+        mvc.perform(write(post("/admin/jobs/fictional-job/actions"),valueResolution(true,"2").replace("\"value_result_version\":\"2\"","\"value_result_version\":\"2\",\"fictional_extra\":true"))).andExpect(status().isBadRequest());
+        verify(service,never()).action(any(),any(),any(),any(),any(),any());
+    }
     private static final Actor OWNER = new Actor("fixture-owner", "owner");
     private static final String ORIGIN = "https://site.example.invalid";
     private static final JobsService.Coverage COVERAGE = new JobsService.Coverage("complete",

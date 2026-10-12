@@ -19,12 +19,14 @@ import javax.crypto.spec.SecretKeySpec;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 class SourceRunLeaseServiceTest {
     private final MutableClock time = new MutableClock("2026-01-02T16:09:00Z");
-    private JdbcTemplate jdbc;
+    JdbcTemplate jdbc;
     private SourceRunLeaseService service;
     private JdbcSourceRunStore runs;
     private final TestAuthorizer nodes = new TestAuthorizer();
@@ -32,17 +34,22 @@ class SourceRunLeaseServiceTest {
     private boolean newRunAllowed = true;
     private SourceRunLeaseService unconfigured;
 
-    @BeforeEach void setup() {
+    javax.sql.DataSource source() {
         JdbcDataSource db = new JdbcDataSource();
-        db.setURL("jdbc:h2:mem:lease-" + System.nanoTime() + ";DB_CLOSE_DELAY=-1;MODE=MySQL");
+        db.setURL("jdbc:h2:mem:lease-" + System.nanoTime() + ";DB_CLOSE_DELAY=-1;MODE=MySQL");return db;
+    }
+    void ddl(String statement) { jdbc.execute(statement); }
+
+    @BeforeEach void setup() {
+        var db = source();
         jdbc = new JdbcTemplate(db);
-        jdbc.execute("CREATE TABLE worker_lock(id INT PRIMARY KEY)");
+        ddl("CREATE TABLE worker_lock(id INT PRIMARY KEY)");
         jdbc.update("INSERT INTO worker_lock VALUES(1)");
-        jdbc.execute("CREATE TABLE sources(id VARCHAR(80) PRIMARY KEY,source_kind VARCHAR(16),"
+        ddl("CREATE TABLE sources(id VARCHAR(80) PRIMARY KEY,source_kind VARCHAR(16),"
                 + "name VARCHAR(200),config_json CLOB,draft_config_json CLOB,effective_config_json CLOB,"
                 + "revision BIGINT,config_revision BIGINT,activation_stage VARCHAR(16),"
                 + "config_valid_until TIMESTAMP,category VARCHAR(16))");
-        jdbc.execute("CREATE TABLE source_runs(id VARCHAR(64) PRIMARY KEY,created_at TIMESTAMP,"
+        ddl("CREATE TABLE source_runs(id VARCHAR(64) PRIMARY KEY,created_at TIMESTAMP,"
                 + "revision BIGINT,source_id VARCHAR(80),run_kind VARCHAR(32),business_date DATE,"
                 + "generation BIGINT,window_start TIMESTAMP,window_end TIMESTAMP,base_run_id VARCHAR(64),"
                 + "config_version BIGINT,config_snapshot_json CLOB,activation_stage VARCHAR(16),"
@@ -53,7 +60,7 @@ class SourceRunLeaseServiceTest {
                 + "claim_key_id VARCHAR(64),lease_until TIMESTAMP,node_id VARCHAR(64),"
                 + "started_at TIMESTAMP,"
                 + "UNIQUE(source_id,run_kind,business_date,generation))");
-        jdbc.execute("CREATE TABLE request_receipts(principal VARCHAR(80),operation VARCHAR(32),"
+        ddl("CREATE TABLE request_receipts(principal VARCHAR(80),operation VARCHAR(32),"
                 + "request_key VARCHAR(128),request_hash BINARY(32),status_code INT,response_json CLOB,"
                 + "expires_at TIMESTAMP,id VARCHAR(64),receipt_kind VARCHAR(32),actor_id VARCHAR(64),"
                 + "scope VARCHAR(128),key_hash BINARY(32),run_id VARCHAR(64),"
@@ -71,9 +78,26 @@ class SourceRunLeaseServiceTest {
         var codec = new RunLeaseTokenCodec(new SecretKeySpec(new byte[32], "AES"),
                 "fixture-key", new SecureRandom());
         service = new SourceRunLeaseService(runs, new JdbcSourceAdmission(db), writes, codec,
-                nodes, new JdbcSourceRunReceipts(db, time), time, ignored -> newRunAllowed);
+                nodes, new JdbcSourceRunReceipts(db, time), time, ignored -> newRunAllowed,SourceDayClaimTestDouble.allow(db));
         unconfigured = new SourceRunLeaseService(runs, new JdbcSourceAdmission(db), writes, codec,
                 nodes, new JdbcSourceRunReceipts(db, time), time);
+    }
+
+    @ParameterizedTest @ValueSource(strings={"Asia/Tokyo","America/Los_Angeles"})
+    void originalScheduleAndClaimReceiptsKeepPhysicalUtcTime(String zone) {
+        var original=java.util.TimeZone.getDefault();
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone));
+            time.set("2026-01-02T16:10:00Z");
+            var schedule=service.scheduleDaily(sourceId,action("utc-schedule"));
+            assertEquals(schedule,service.scheduleDaily(sourceId,action("utc-schedule")));
+            var claim=service.claimNext("node-a-bearer",false,action("utc-claim"));
+            assertEquals(claim.claimToken(),service.claimNext("node-a-bearer",false,action("utc-claim")).claimToken());
+            var created=jdbc.query("SELECT created_at FROM request_receipts",(rs,index)->rs.getTimestamp(1,java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))).toInstant());
+            var expires=jdbc.query("SELECT expires_at FROM request_receipts",(rs,index)->rs.getTimestamp(1,java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))).toInstant());
+            assertEquals(List.of(time.instant(),time.instant()),created);
+            assertEquals(List.of(time.instant().plusSeconds(30L*24*3600),time.instant().plusSeconds(30L*24*3600)),expires);
+        } finally {java.util.TimeZone.setDefault(original);}
     }
 
     @Test void probeSchedulePreservesEightyScalarSourceIdentityAndRejectsInvalidIds() {

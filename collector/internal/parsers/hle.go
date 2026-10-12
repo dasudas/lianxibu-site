@@ -118,8 +118,10 @@ func (a *HLEAdapter) Request(c client.RunClaim, cursor string) (fetcher.Request,
 		return fetcher.Request{}, ErrSourceConfig
 	}
 	u := hleEntry
+	format := fetcher.JSON
 	if s.Revision != "" {
 		u = hleFile(s.Revision)
+		format = fetcher.Text // The fixed raw JSON file is served as text/plain; Parse still checks JSON strictly.
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -129,7 +131,7 @@ func (a *HLEAdapter) Request(c client.RunClaim, cursor string) (fetcher.Request,
 		}
 	}
 	a.pending[c.Run.RunID] = hlePending{s, u}
-	return fetcher.Request{SourceID: c.Run.SourceID, URL: u, AllowedHosts: append([]string(nil), c.Config.Config.AllowedHosts...), Format: fetcher.JSON, MinInterval: time.Second}, nil
+	return fetcher.Request{SourceID: c.Run.SourceID, URL: u, AllowedHosts: append([]string(nil), c.Config.Config.AllowedHosts...), Format: format, MinInterval: time.Second}, nil
 }
 func (a *HLEAdapter) Parse(c client.RunClaim, r fetcher.Result) (scheduler.Page, error) {
 	if hleConfig(c) != nil {

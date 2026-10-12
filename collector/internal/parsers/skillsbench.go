@@ -126,10 +126,12 @@ func (a *SkillsBenchAdapter) Request(c client.RunClaim, cursor string) (fetcher.
 		return fetcher.Request{}, ErrSourceConfig
 	}
 	link := skillsbenchEntry
+	format := fetcher.JSON
 	if s.Step >= 1 && s.Step <= 3 {
 		link = "https://api.github.com/repos/" + skillsbenchRepository(skillsbenchAgents[s.Step-1])
 	} else if s.Step == 4 {
 		link = skillsbenchFile(s.Revision)
+		format = fetcher.Text // Pinned raw JSON is text/plain; Parse performs strict structural validation.
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -139,7 +141,7 @@ func (a *SkillsBenchAdapter) Request(c client.RunClaim, cursor string) (fetcher.
 		}
 	}
 	a.pending[c.Run.RunID] = skillsbenchPending{s, link}
-	return fetcher.Request{SourceID: c.Run.SourceID, URL: link, AllowedHosts: append([]string(nil), c.Config.Config.AllowedHosts...), Format: fetcher.JSON, MinInterval: time.Second}, nil
+	return fetcher.Request{SourceID: c.Run.SourceID, URL: link, AllowedHosts: append([]string(nil), c.Config.Config.AllowedHosts...), Format: format, MinInterval: time.Second}, nil
 }
 func (a *SkillsBenchAdapter) Parse(c client.RunClaim, r fetcher.Result) (scheduler.Page, error) {
 	if skillsbenchConfig(c) != nil {

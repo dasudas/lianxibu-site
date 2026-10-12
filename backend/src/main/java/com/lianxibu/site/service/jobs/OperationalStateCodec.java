@@ -34,8 +34,8 @@ final class OperationalStateCodec {
         fields(in,FIELDS);JsonNode key=in.get("key");fields(key,Set.of("rule","component","resource"));
         Key identity=new Key(text(key.get("rule")),text(key.get("component")),text(key.get("resource")));
         var timers=new HashMap<String,Instant>();var counters=new HashMap<String,Long>();
-        for(var field:map(in.get("timers")).properties()) { name(field.getKey());Instant at=at(field.getValue());if(at==null)throw invalid();timers.put(field.getKey(),at); }
-        for(var field:map(in.get("counters")).properties()){name(field.getKey());counters.put(field.getKey(),number(field.getValue()));}
+        for(var field:map(in.get("timers"),16).properties()) { name(field.getKey());Instant at=at(field.getValue());if(at==null)throw invalid();timers.put(field.getKey(),at); }
+        for(var field:map(in.get("counters"),32).properties()){name(field.getKey());counters.put(field.getKey(),number(field.getValue()));}
         JsonNode list=in.get("guards");if(!list.isArray()||list.size()>Guard.values().length)throw invalid();
         Set<Guard> guards=new HashSet<>();for(JsonNode item:list)if(!guards.add(Guard.valueOf(text(item))))throw invalid();
         String level=nullable(in.get("level"));State result=new State(identity,number(in.get("revision")),number(in.get("configuration_revision")),
@@ -49,7 +49,7 @@ final class OperationalStateCodec {
         if(node==null||!node.isObject()||node.size()!=expected.size())throw invalid();
         for(var field:node.properties())if(!expected.contains(field.getKey()))throw invalid();
     }
-    private static JsonNode map(JsonNode node){if(node==null||!node.isObject()||node.size()>16)throw invalid();return node;}
+    private static JsonNode map(JsonNode node,int maximum){if(node==null||!node.isObject()||node.size()>maximum)throw invalid();return node;}
     private static void name(String value){if(!value.matches("[a-z][a-z0-9_]{0,63}"))throw invalid();}
     private static String text(JsonNode node){if(node==null||!node.isTextual())throw invalid();return node.asText();}
     private static String nullable(JsonNode node){if(node==null)throw invalid();return node.isNull()?null:text(node);}

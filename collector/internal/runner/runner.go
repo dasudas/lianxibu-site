@@ -19,14 +19,23 @@ type Monitor interface {
 	Tick(context.Context) (telemetry.State, error)
 	AllowNewInput() error
 }
+type sourceCompletion struct {
+	id            string
+	version       uint64
+	token         string
+	formatFailure bool
+}
+
 type Runner struct {
-	api           *client.Client
-	queue         *outbox.Store
-	delivery      *client.Delivery
-	fetch         scheduler.Fetcher
-	monitor       Monitor
-	now           func() time.Time
-	cleanupCursor string
+	pendingSourceCompletion *sourceCompletion
+	api                     *client.Client
+	queue                   *outbox.Store
+	delivery                *client.Delivery
+	fetch                   scheduler.Fetcher
+	monitor                 Monitor
+	now                     func() time.Time
+	cleanupCursor           string
+	licenseReviews          parsers.LicenseReviews
 }
 
 func New(api *client.Client, queue *outbox.Store, fetch scheduler.Fetcher, monitor Monitor, now func() time.Time) (*Runner, error) {
@@ -38,6 +47,17 @@ func New(api *client.Client, queue *outbox.Store, fetch scheduler.Fetcher, monit
 		return nil, err
 	}
 	return &Runner{api: api, queue: queue, delivery: delivery, fetch: fetch, monitor: monitor, now: now}, nil
+}
+
+// SetLicenseReviews must be called during startup, before Run or Tick.
+func (r *Runner) SetLicenseReviews(reviews parsers.LicenseReviews) { r.licenseReviews = reviews }
+
+func (r *Runner) reviewedAdapter(version string) (scheduler.Adapter, error) {
+	a, err := adapter(version)
+	if catalog, ok := a.(*parsers.RepositoryCatalogAdapter); ok {
+		catalog.SetLicenseReviews(r.licenseReviews)
+	}
+	return a, err
 }
 
 // Run uses a bounded delay between cycles. Errors are classified by the caller,
@@ -94,6 +114,9 @@ func (r *Runner) Tick(ctx context.Context) error {
 	if err := r.cleanup(ctx); err != nil {
 		return err
 	}
+	if err := r.flushSourceCompletion(ctx); err != nil {
+		return err
+	}
 	if sampleErr != nil {
 		return sampleErr
 	}
@@ -115,6 +138,9 @@ func (r *Runner) Tick(ctx context.Context) error {
 			if _, e := adapter(s.Config.ParserVersion); e == nil {
 				allowed[s.SourceID] = s
 				ids = append(ids, s.SourceID)
+				if err := r.queue.PublishSourceContractSnapshot(ctx, r.api, s.SourceID, s.ConfigVersion); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -172,7 +198,7 @@ func (r *Runner) Tick(ctx context.Context) error {
 			if err = r.monitor.AllowNewInput(); err != nil {
 				return err
 			}
-			a, err := adapter(c.Config.Config.ParserVersion)
+			a, err := r.reviewedAdapter(c.Config.Config.ParserVersion)
 			if err != nil {
 				return err
 			}
@@ -180,9 +206,17 @@ func (r *Runner) Tick(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+			workToken, e := r.queue.BeginSourceContractWork(ctx, c.Run.SourceID, c.Run.ConfigVersion)
+			if e != nil {
+				return e
+			}
 			runCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 			outcome, err := work.Run(runCtx, c)
 			cancel()
+			r.pendingSourceCompletion = &sourceCompletion{id: c.Run.SourceID, version: c.Run.ConfigVersion, token: workToken, formatFailure: errors.Is(err, scheduler.ErrUnusablePage)}
+			if captureErr := r.flushSourceCompletion(ctx); captureErr != nil {
+				return errors.Join(err, captureErr)
+			}
 			if err != nil {
 				// A failing source retains its checkpoint; independent claims still progress.
 				sourceFailures = append(sourceFailures, err)
@@ -235,7 +269,7 @@ func adapter(version string) (scheduler.Adapter, error) {
 		return parsers.Agents(), nil
 	case "github-workflow-v1":
 		return parsers.Workflows(), nil
-	case "github-skill-v1":
+	case "github-skill-v1", "github-skill-v2":
 		return parsers.Skills(), nil
 	case "skillsbench-v1":
 		return parsers.SkillsBench(), nil
@@ -246,4 +280,26 @@ func adapter(version string) (scheduler.Adapter, error) {
 	default:
 		return nil, errors.New("unsupported configured parser")
 	}
+}
+
+// AuditAdapter uses the identical parser factory without scheduling production work.
+func AuditAdapter(version string, reviews parsers.LicenseReviews) (scheduler.Adapter, error) {
+	a, err := adapter(version)
+	if catalog, ok := a.(*parsers.RepositoryCatalogAdapter); ok {
+		catalog.SetLicenseReviews(reviews)
+	}
+	return a, err
+}
+
+// Retry an unknown local completion before any later source claim or fetch.
+func (r *Runner) flushSourceCompletion(ctx context.Context) error {
+	pending := r.pendingSourceCompletion
+	if pending == nil {
+		return nil
+	}
+	if err := r.queue.CompleteSourceContractWork(ctx, pending.id, pending.version, pending.token, pending.formatFailure); err != nil {
+		return err
+	}
+	r.pendingSourceCompletion = nil
+	return nil
 }

@@ -72,11 +72,14 @@ class ObservationIngressServiceTest {
         jdbc.update("INSERT INTO source_runs(id,source_id,run_kind,business_date,generation,"
                 + "window_start,window_end,config_version,config_snapshot_json,activation_stage,"
                 + "revision,delivery_state) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-                "run-fixture", "fixture:feed", "daily", java.sql.Date.valueOf("2026-01-02"),
-                1, java.sql.Timestamp.from(Instant.parse("2026-01-01T16:00:00Z")),
-                java.sql.Timestamp.from(Instant.parse("2026-01-02T16:00:00Z")),
-                1, "{\"parser_version\":\"fixture-parser\",\"valid_until\":\"2027-01-01T00:00:00Z\"}",
-                "production", 0, "receiving");
+                statement -> {
+                    statement.setString(1,"run-fixture");statement.setString(2,"fixture:feed");statement.setString(3,"daily");
+                    statement.setString(4,"2026-01-02");statement.setLong(5,1);
+                    statement.setTimestamp(6,java.sql.Timestamp.from(Instant.parse("2026-01-01T16:00:00Z")),java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")));
+                    statement.setTimestamp(7,java.sql.Timestamp.from(Instant.parse("2026-01-02T16:00:00Z")),java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")));
+                    statement.setLong(8,1);statement.setString(9,"{\"parser_version\":\"fixture-parser\",\"valid_until\":\"2027-01-01T00:00:00Z\"}");
+                    statement.setString(10,"production");statement.setLong(11,0);statement.setString(12,"receiving");
+                });
         jdbc.execute("CREATE TABLE request_receipts(principal VARCHAR(80),operation VARCHAR(191),"
                 + "request_key VARCHAR(128),request_hash BINARY(32),status_code INT,response_json CLOB,"
                 + "expires_at TIMESTAMP,id VARCHAR(64),receipt_kind VARCHAR(32),actor_id VARCHAR(64),"
@@ -160,9 +163,24 @@ class ObservationIngressServiceTest {
         assertEquals(1L,count("article_revisions"));
     }
 
+    @Test void originalNativeSubmissionWindowAndBoundaryAreStableAcrossDefaultTimeZones() {
+        var previous=java.util.TimeZone.getDefault();
+        try {
+            for(String zone:List.of("UTC","Asia/Tokyo","America/Los_Angeles")) {
+                java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone));
+                setup();var original=runs.byId("run-fixture");
+                assertEquals(java.time.LocalDate.of(2026,1,2),original.businessDate());
+                assertEquals(Instant.parse("2026-01-01T16:00:00Z"),original.windowStart());
+                assertEquals(Instant.parse("2026-01-02T16:00:00Z"),original.windowEnd());
+                submissionWindowIsHalfOpenAndInvalidCombinationHasNoMember();
+            }
+        } finally {java.util.TimeZone.setDefault(previous);}
+    }
+
     @Test void submissionWindowIsHalfOpenAndInvalidCombinationHasNoMember() {
         jdbc.update("UPDATE source_runs SET source_id='global-hn' WHERE id='run-fixture'");
         for(String[] sample:List.of(new String[]{"start","2026-01-01T16:00:00.000000Z","pending"},
+                new String[]{"last","2026-01-02T15:59:59.999999Z","pending"},
                 new String[]{"end","2026-01-02T16:00:00.000000Z","excluded"},
                 new String[]{"before","2026-01-01T15:59:59.999999Z","excluded"})) {
             String id="hn-"+sample[0];
@@ -177,7 +195,7 @@ class ObservationIngressServiceTest {
         ((ObjectNode)bad.get("payload")).put("published_at","2026-01-02T00:00:00.000000Z");
         bad.remove("payload_hash");bad.put("payload_hash",CanonicalJson.hash(Domain.OBSERVATION,bad));
         assertEquals("rejected",service.accept("node-fixture",CanonicalJson.bytes(bad),action("hn-invalid")).status());
-        assertEquals(3L,count("source_run_items"));
+        assertEquals(4L,count("source_run_items"));
     }
 
     @Test void unknownTimeRemainsEvidenceButCannotActivateAnalysis() {

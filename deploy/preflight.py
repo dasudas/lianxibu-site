@@ -5,6 +5,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
+import release_config
 
 COMPONENTS = {"backend", "collector", "frontend"}
 
@@ -53,7 +54,7 @@ def bounds(manifest, prefix, actual):
         return "incompatible_" + prefix
     return None
 
-def check(current_paths, candidate_path, facts):
+def check(current_paths, candidate_path, facts, backend_env_path=None):
     current = [load_manifest(path) for path in current_paths]
     if len(current) != 3 or {item["component"] for item in current} != COMPONENTS:
         raise ValueError("three_unique_current_components_required")
@@ -86,8 +87,12 @@ def check(current_paths, candidate_path, facts):
                 errors.append(item["component"] + "_required_feature_missing")
     gates = facts.get("release_gates", {})
     missing = [key for key in ("V03", "V05", "V07", "V08", "V09") if gates.get(key) is not True]
+    compatible = not errors
+    runtime = release_config.verify(backend_env_path)
+    errors.extend(runtime["errors"])
     return {"component": candidate["component"], "artifact_sha256": candidate["artifact_sha256"],
-            "compatibility_verified": not errors, "errors": sorted(set(errors)),
+            "compatibility_verified": compatible, "runtime_configuration_verified": runtime["verified"],
+            "backend_environment_sha256": runtime["sha256"], "errors": sorted(set(errors)),
             "missing_release_gates": missing, "release_ready": not errors and not missing,
             "action": "read_only_preflight"}
 
@@ -96,9 +101,10 @@ def main():
     parser.add_argument("--current", nargs=3, type=Path, required=True, metavar="MANIFEST")
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--facts", type=Path, required=True, help="Controlled observed compatibility/gate evidence; never commit live facts")
+    parser.add_argument("--backend-env", type=Path, required=True, help="Controlled private backend EnvironmentFile; values are never printed")
     args = parser.parse_args()
     try:
-        result = check(args.current, args.candidate, json.loads(args.facts.read_text(encoding="utf-8")))
+        result = check(args.current, args.candidate, json.loads(args.facts.read_text(encoding="utf-8")), args.backend_env)
     except (ValueError, OSError, TypeError, KeyError, AttributeError):
         # Do not echo private paths, content, or connection details from malformed runtime input.
         result = {"release_ready": False, "errors": ["invalid_or_unreadable_preflight_input"], "action": "read_only_preflight"}

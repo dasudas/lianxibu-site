@@ -1,12 +1,11 @@
 package com.lianxibu.site.service.jobs;
-import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
 
 /** The superclass validates the exact fictional loopback endpoint before calling this factory. */
 final class PooledResultJdbcMySqlFixture extends ResultJdbcMySqlTest implements AutoCloseable {
- private HikariDataSource pool;
- @Override DataSource dataSource(String url){pool=new HikariDataSource();pool.setJdbcUrl(url);pool.setUsername("root");pool.setPassword("");pool.setMaximumPoolSize(5);pool.setMinimumIdle(1);pool.setConnectionTimeout(5000);return pool;}
- @Override public void close(){if(pool!=null)pool.close();}
+ @Override DataSource dataSource(String url){return ResultJdbcMySqlTest.isolatedSource(url);}
+ // The JVM fixture owns the shared bounded pool; closing a borrow cannot end its lifetime.
+ @Override public void close(){ }
 }
 final class PooledValidityMySqlFixture extends VersionValidityJdbcMySqlTest implements AutoCloseable {
  private PooledResultJdbcMySqlFixture pooled;

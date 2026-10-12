@@ -18,6 +18,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class PublicReadControllerTest {
+    @Test @SuppressWarnings("unchecked")
+    void FormalConfiguredGraphIsPublicMetadataWithoutChangingTheFrozenProtocol() throws Exception {
+        ObjectProvider<PublicReadService> reads=mock(ObjectProvider.class);
+        ObjectProvider<com.lianxibu.site.service.jobs.RuntimeCapabilities> features=mock(ObjectProvider.class);
+        when(features.getIfAvailable()).thenReturn(new com.lianxibu.site.service.jobs.RuntimeCapabilities());
+        var mvc=MockMvcBuilders.standaloneSetup(new PublicReadController(reads,features)).build();
+        mvc.perform(get("/capabilities")).andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store"))
+            .andExpect(jsonPath("$.data.protocol_revision").value("0.12"))
+            .andExpect(jsonPath("$.data.contract_version").value("0.15"))
+            .andExpect(jsonPath("$.data.supported_features[0]").value("formal-business-v1"));
+        org.mockito.Mockito.verifyNoInteractions(reads);
+    }
     @Test
     void capabilitiesDeclareOnlyCurrentProtocolAndNoUnimplementedFeatures() throws Exception {
         MockMvc mvc = mvc(null);

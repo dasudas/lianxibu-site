@@ -3,6 +3,7 @@ package com.lianxibu.site.service.jobs;
 import com.lianxibu.site.domain.protocol.CanonicalJson;
 import com.lianxibu.site.domain.protocol.CanonicalJson.Domain;
 import com.lianxibu.site.service.jobs.SharedWriteExecutor.ActionContext;
+import com.lianxibu.site.service.content.FrozenPublicMetadata;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
@@ -43,7 +44,24 @@ public final class GenerationFlowService {
     public record Prepare(String logicalKey, long generation, Stage stage, LocalDate businessDate,
                           String sourceId, List<Dependency> dependencies, List<Evidence> evidence,
                           List<String> expectedDependencies, boolean explicitSupplement,
-                          String settingsHash, FrozenApplicationContext applicationContext) {
+                          String settingsHash, FrozenApplicationContext applicationContext,
+                          List<CollectionHandoffProofService.Proof> collectionProofs,long stagePart) {
+        public Prepare {
+            if(collectionProofs!=null)collectionProofs=List.copyOf(collectionProofs);
+        }
+        public Prepare(String logicalKey,long generation,Stage stage,LocalDate businessDate,String sourceId,
+                       List<Dependency> dependencies,List<Evidence> evidence,List<String> expectedDependencies,
+                       boolean explicitSupplement,String settingsHash,FrozenApplicationContext applicationContext,
+                       List<CollectionHandoffProofService.Proof> collectionProofs) {
+            this(logicalKey,generation,stage,businessDate,sourceId,dependencies,evidence,expectedDependencies,
+                 explicitSupplement,settingsHash,applicationContext,collectionProofs,0);
+        }
+        public Prepare(String logicalKey,long generation,Stage stage,LocalDate businessDate,String sourceId,
+                       List<Dependency> dependencies,List<Evidence> evidence,List<String> expectedDependencies,
+                       boolean explicitSupplement,String settingsHash,FrozenApplicationContext applicationContext) {
+            this(logicalKey,generation,stage,businessDate,sourceId,dependencies,evidence,expectedDependencies,
+                 explicitSupplement,settingsHash,applicationContext,List.of());
+        }
         public Prepare(String logicalKey,long generation,Stage stage,LocalDate businessDate,String sourceId,
                        List<Dependency> dependencies,List<Evidence> evidence,List<String> expectedDependencies,
                        boolean explicitSupplement,String settingsHash) {
@@ -58,6 +76,18 @@ public final class GenerationFlowService {
     public interface RequestBuilder {
         /** Returns full provider/model/messages/parameters/schema/prompt version, without a secret. */
         String build(Stage stage, String snapshotJson, String inputHash);
+    }
+    public interface InputEnricher {
+        /** Database-only lookup in this writer transaction. Return only the required closed extension. */
+        JsonNode fields(String rootId,Prepare command,Instant cutoff,JsonNode snapshot);
+    }
+    public interface SettingsSnapshotSource {
+        /** Already mapped preferences, read once inside the shared writer transaction. */
+        FrozenGenerationSettings freeze();
+    }
+    @FunctionalInterface public interface CollectionProofSource {
+        /** Read the real collector handoff inside the original shared writer. */
+        CollectionHandoffProofService.Proof read(String runId);
     }
     public interface FrozenStore {
         Frozen committed(String actionKey);
@@ -79,6 +109,9 @@ public final class GenerationFlowService {
     private final Clock clock;
     private final java.util.function.BooleanSupplier preparationAllowed;
     private final ReportInputSnapshotService reportInputs;
+    private final InputEnricher enricher;
+    private final SettingsSnapshotSource settings;
+    private final CollectionProofSource collections;
 
     public GenerationFlowService(SharedWriteExecutor writes, FrozenStore store,
                                  RequestBuilder requests, Clock clock) {
@@ -87,7 +120,7 @@ public final class GenerationFlowService {
     public GenerationFlowService(SharedWriteExecutor writes, FrozenStore store,
                                  RequestBuilder requests, Clock clock,
                                  java.util.function.BooleanSupplier preparationAllowed) {
-        this(writes,store,requests,clock,(ReportInputSnapshotService)null,preparationAllowed);
+        this(writes,store,requests,clock,(ReportInputSnapshotService)null,preparationAllowed,null);
     }
 
     /** New report runtime composition must install this provider. The older constructors
@@ -97,12 +130,40 @@ public final class GenerationFlowService {
                                  java.util.function.BooleanSupplier preparationAllowed,
                                  ReportInputSnapshotService reportInputs) {
         this(writes,store,requests,clock,java.util.Objects.requireNonNull(reportInputs,
-                "complete report input provider required"),preparationAllowed);
+                "complete report input provider required"),preparationAllowed,null);
+    }
+    public GenerationFlowService(SharedWriteExecutor writes,FrozenStore store,RequestBuilder requests,Clock clock,
+                                 java.util.function.BooleanSupplier preparationAllowed,ReportInputSnapshotService reportInputs,InputEnricher enricher) {
+        this(writes,store,requests,clock,reportInputs,preparationAllowed,java.util.Objects.requireNonNull(enricher));
     }
     private GenerationFlowService(SharedWriteExecutor writes, FrozenStore store,
                                   RequestBuilder requests, Clock clock,
                                   ReportInputSnapshotService reportInputs,
-                                  java.util.function.BooleanSupplier preparationAllowed) {
+                                  java.util.function.BooleanSupplier preparationAllowed,InputEnricher enricher) {
+        this(writes,store,requests,clock,reportInputs,preparationAllowed,enricher,null);
+    }
+    /** Production input preparation captures real settings before hashing or request building. */
+    public GenerationFlowService(SharedWriteExecutor writes,FrozenStore store,RequestBuilder requests,Clock clock,
+                                 java.util.function.BooleanSupplier preparationAllowed,ReportInputSnapshotService reportInputs,
+                                 InputEnricher enricher,SettingsSnapshotSource settings) {
+        this(writes,store,requests,clock,reportInputs,preparationAllowed,
+                java.util.Objects.requireNonNull(enricher),java.util.Objects.requireNonNull(settings));
+    }
+    private GenerationFlowService(SharedWriteExecutor writes,FrozenStore store,RequestBuilder requests,Clock clock,
+                                  ReportInputSnapshotService reportInputs,java.util.function.BooleanSupplier preparationAllowed,
+                                  InputEnricher enricher,SettingsSnapshotSource settings) {
+        this(writes,store,requests,clock,reportInputs,preparationAllowed,enricher,settings,null);
+    }
+    /** Production dedup must install source-owned collection proof reads. */
+    public GenerationFlowService(SharedWriteExecutor writes,FrozenStore store,RequestBuilder requests,Clock clock,
+                                 java.util.function.BooleanSupplier preparationAllowed,ReportInputSnapshotService reportInputs,
+                                 InputEnricher enricher,SettingsSnapshotSource settings,CollectionProofSource collections) {
+        this(writes,store,requests,clock,reportInputs,preparationAllowed,java.util.Objects.requireNonNull(enricher),
+                java.util.Objects.requireNonNull(settings),java.util.Objects.requireNonNull(collections));
+    }
+    private GenerationFlowService(SharedWriteExecutor writes,FrozenStore store,RequestBuilder requests,Clock clock,
+                                  ReportInputSnapshotService reportInputs,java.util.function.BooleanSupplier preparationAllowed,
+                                  InputEnricher enricher,SettingsSnapshotSource settings,CollectionProofSource collections) {
         if (writes == null || store == null || requests == null || clock == null || preparationAllowed == null)
             throw new IllegalArgumentException("generation dependencies required");
         this.writes = writes;
@@ -111,14 +172,20 @@ public final class GenerationFlowService {
         this.clock = clock;
         this.preparationAllowed = preparationAllowed;
         this.reportInputs = reportInputs;
+        this.enricher = enricher;
+        this.settings = settings;
+        this.collections = collections;
     }
 
     public Frozen prepare(Prepare command, ActionContext action) {
         validate(command);
+        if(enricher!=null&&command.stage().report()&&reportInputs==null)throw new InputRejected();
+        if(enricher!=null&&command.stage().dedup()&&collections==null)throw new InputRejected();
         Instant now = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         Instant cutoff = cutoff(command, now);
         return writes.execute(action, store::committed, context -> {
             if (!preparationAllowed.getAsBoolean()) throw new CapacityGuarded();
+            CollectionInputProofs.verify(command,collections,enricher!=null&&command.stage().dedup());
             if (!ready(command, now)) {
                 Frozen waiting = new Frozen(context.preallocatedResourceId(), command.logicalKey(),
                         command.generation(), command.stage(), cutoff, "pending", List.of(),
@@ -130,6 +197,10 @@ public final class GenerationFlowService {
                 // Source lookup, selection, full request and persistence share this exact
                 // transaction. No command-evidence fallback can bypass missing proof.
                 var input = withApplicationContext(reportInputs.freeze(command, cutoff), command);
+                if(enricher!=null) {
+                    String snapshot=enrich(input.snapshotJson(),command,context.preallocatedResourceId(),cutoff);
+                    input=new ReportInputSnapshotService.FrozenInput(snapshot,CanonicalJson.hash(Domain.INPUT,CanonicalJson.parse(snapshot)),input.coverageState(),input.missing(),input.hasContent(),input.state());
+                }
                 String request = null;
                 if (input.hasContent()) {
                     request = requests.build(command.stage(), input.snapshotJson(), input.inputHash());
@@ -147,7 +218,7 @@ public final class GenerationFlowService {
             List<String> missing = missing(command, cutoff, selected);
             String coverage = missing.isEmpty() ? "complete" : "partial";
             boolean hasContent = selected.stream().anyMatch(item -> !"no_updates".equals(item.kind()));
-            if (!hasContent && selected.isEmpty()) {
+            if (!hasContent && selected.isEmpty() && command.collectionProofs().isEmpty()) {
                 String state = command.stage().report() ? "no_input" : "no_updates";
                 Frozen empty = new Frozen(context.preallocatedResourceId(), command.logicalKey(),
                         command.generation(), command.stage(), cutoff, coverage, missing,
@@ -155,13 +226,14 @@ public final class GenerationFlowService {
                 store.save(empty, context.actionKey());
                 return empty;
             }
-            String snapshot = snapshot(command, cutoff, selected, missing, coverage);
+            String snapshot = enrich(snapshot(command, cutoff, selected, missing, coverage),command,context.preallocatedResourceId(),cutoff);
             String inputHash = CanonicalJson.hash(Domain.INPUT, CanonicalJson.parse(snapshot));
             if (!hasContent) {
+                String emptyState=selected.isEmpty()&&!command.collectionProofs().isEmpty()&&missing.isEmpty()?"no_updates":"coverage_only";
                 Frozen coverageOnly = new Frozen(context.preallocatedResourceId(),
                         command.logicalKey(), command.generation(), command.stage(), cutoff,
                         coverage, missing, snapshot, inputHash, null,
-                        command.stage().priority(), nextEligible(now), "coverage_only");
+                        command.stage().priority(), nextEligible(now), emptyState);
                 store.save(coverageOnly, context.actionKey());
                 return coverageOnly;
             }
@@ -177,11 +249,47 @@ public final class GenerationFlowService {
         });
     }
 
-    private static boolean ready(Prepare value, Instant now) {
+    private String enrich(String snapshot,Prepare command,String owner,Instant cutoff) {
+        if(enricher==null)return snapshot;
+        try {
+            var root=(ObjectNode)CanonicalJson.parse(snapshot);
+            // A proved zero-accepted collection has no result applicability or member bindings.
+            // Freeze its terminal evidence and settings without inventing a dummy member.
+            boolean emptyCollection=command.stage().dedup()&&command.applicationContext()==null
+                &&root.path("members").isArray()&&root.path("members").isEmpty()&&!command.collectionProofs().isEmpty()
+                &&command.collectionProofs().stream().allMatch(p->p.facts().accepted()==0);
+            if(!emptyCollection) {
+                var context=FrozenApplicationContext.fromJson(root.get(FrozenApplicationContext.FIELD));
+                if(!context.referencesComplete())throw new InputRejected();
+                String field=command.stage().dedup()||command.stage()==Stage.NEWS_VALUE?FrozenMemberBindings.FIELD:
+                    command.stage().analysis()||command.stage().report()?FrozenPublicMetadata.FIELD:null;
+                Set<String> expected=field==null?Set.of():Set.of(field);
+                // Provider sees a separate tree; it cannot mutate the original selected input.
+                var fields=enricher.fields(owner,command,cutoff,CanonicalJson.parse(snapshot));
+                com.lianxibu.site.domain.protocol.WireValues.object(fields,expected,expected);
+                if(field!=null) {
+                    if(root.has(field))throw new InputRejected();
+                    root.set(field,fields.get(field));
+                    if(field.equals(FrozenPublicMetadata.FIELD))FrozenPublicMetadata.read(root.get(field),context);
+                    else FrozenMemberBindings.read(root,context.input(owner,"input-preparation",CanonicalJson.hash(Domain.INPUT,root),0));
+                }
+            }
+            if(settings!=null) {
+                FrozenGenerationSettings captured=settings.freeze();
+                if(captured==null||root.has(FrozenGenerationSettings.FIELD)
+                        ||!command.settingsHash().equals(captured.semanticHash()))throw new InputRejected();
+                root.set(FrozenGenerationSettings.FIELD,captured.toJson());
+            }
+            return new String(CanonicalJson.bytes(root),StandardCharsets.UTF_8);
+        }catch(RuntimeException invalid){throw new InputRejected();}
+    }
+
+    static boolean ready(Prepare value, Instant now) {
         Stage stage = value.stage();
         if (stage.report() && !value.explicitSupplement()
                 && now.isBefore(plannedCutoff(value.businessDate()))) return false;
         if (stage == Stage.NEWS_VALUE || stage.analysis()) return barrierClosed(value, now);
+        if (stage.dedup()&&!value.collectionProofs().isEmpty())return true;
         if (stage.dedup()) return value.dependencies().stream()
                 .anyMatch(dep -> FINISHED.contains(dep.state()) || terminalFailure(dep.state()));
         return true;
@@ -233,6 +341,8 @@ public final class GenerationFlowService {
                     && !dep.completedAt().isAfter(cutoff)) present.add(dep.id());
         }
         List<String> missing = new ArrayList<>();
+        for(var proof:value.collectionProofs())if(Set.of("partial","no_usable_input").contains(proof.facts().deliveryState()))
+            missing.add("collection:"+proof.facts().runId());
         for (String id : value.expectedDependencies()) if (!present.contains(id)) missing.add(id);
         Set<String> included = new HashSet<>();
         for (Evidence item : selected) included.add(item.id());
@@ -283,6 +393,7 @@ public final class GenerationFlowService {
         value.put("schema_version", "1");
         value.put("logical_key", command.logicalKey());
         value.put("generation", command.generation());
+        if(command.stagePart()!=0)value.put("stage_part",command.stagePart());
         value.put("stage", command.stage().name().toLowerCase());
         value.put("business_date", command.businessDate().toString());
         value.put("cutoff", cutoff.toString());
@@ -302,16 +413,19 @@ public final class GenerationFlowService {
             ArrayNode refs = member.putArray("references");
             for (String ref : item.references()) refs.add(ref);
         }
+        value.set(FrozenDependencyManifest.FIELD,FrozenDependencyManifest.create(command.dependencies(),command.expectedDependencies()));
+        if(!command.collectionProofs().isEmpty())value.set(FrozenCollectionManifest.FIELD,FrozenCollectionManifest.create(command.collectionProofs()));
         if(command.applicationContext()!=null)value.set(FrozenApplicationContext.FIELD,command.applicationContext().toJson());
         return new String(CanonicalJson.bytes(value), StandardCharsets.UTF_8);
     }
     private static ReportInputSnapshotService.FrozenInput withApplicationContext(ReportInputSnapshotService.FrozenInput input,Prepare command) {
-        if(command.applicationContext()==null)return input;
-        var value=(ObjectNode)CanonicalJson.parse(input.snapshotJson());value.set(FrozenApplicationContext.FIELD,command.applicationContext().toJson());
+        var value=(ObjectNode)CanonicalJson.parse(input.snapshotJson());
+        value.set(FrozenDependencyManifest.FIELD,FrozenDependencyManifest.create(command.dependencies(),command.expectedDependencies()));
+        if(command.applicationContext()!=null)value.set(FrozenApplicationContext.FIELD,command.applicationContext().toJson());
         return new ReportInputSnapshotService.FrozenInput(new String(CanonicalJson.bytes(value),StandardCharsets.UTF_8),
             CanonicalJson.hash(Domain.INPUT,value),input.coverageState(),input.missing(),input.hasContent(),input.state());
     }
-    private static Instant nextEligible(Instant now) {
+    static Instant nextEligible(Instant now) {
         LocalDateTime local = LocalDateTime.ofInstant(now, SHANGHAI);
         if (!local.toLocalTime().isBefore(LocalTime.of(1, 0))
                 && local.toLocalTime().isBefore(LocalTime.of(7, 0))) return now;
@@ -352,6 +466,8 @@ public final class GenerationFlowService {
         if (value == null || value.stage() == null || value.businessDate() == null
                 || value.logicalKey() == null || value.logicalKey().isBlank()
                 || value.generation() < 0 || value.generation() > CanonicalJson.MAX_SAFE_INTEGER
+                || value.stagePart()<0||value.stagePart()>=10000
+                || value.stagePart()!=0&&!(value.stage().dedup()||value.stage()==Stage.NEWS_VALUE)
                 || value.stage() == Stage.WEEKLY_REPORT
                     && value.businessDate().getDayOfWeek() != java.time.DayOfWeek.SUNDAY
                 || value.stage() == Stage.MONTHLY_REPORT
@@ -372,6 +488,7 @@ public final class GenerationFlowService {
                 || value.evidence().stream().map(Evidence::id).distinct().count()
                     != value.evidence().size()) throw new InputRejected();
         var context=value.applicationContext();
+        CollectionInputProofs.validate(value);
         if(context!=null&&(context.stage()!=value.stage()||context.generation()!=value.generation()))throw new InputRejected();
         if(context!=null&&value.stage().report()) {
             LocalDate end=Instant.parse(context.periodEnd()).atZone(SHANGHAI).toLocalDate();

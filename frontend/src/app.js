@@ -1,3 +1,5 @@
+import { createCapabilityClient } from './api/capabilities.js';
+import {createAdHocQuestionApi} from './api/job-ad-hoc.js';
 import {createSourceItemActionsApi} from './api/source-item-actions.js';
 import {createSourceActionsApi} from './api/source-actions.js';
 import {createPreferencesApi} from './api/preferences.js';
@@ -49,12 +51,20 @@ import { mountInterpretation } from './pages/catalog/detail.js';
 import { mountAdminCatalog } from './pages/admin/content-list.js';
 
 export function createApplication({ root, browser, client = createApiClient(), notice = null, confirmDiscard = () => false }) {
+  const capabilityClient = createCapabilityClient(client,{onStatus:state=>{
+    if(stopped)return;
+    notice?.setAttribute('role','status');notice?.setAttribute('aria-live','polite');notice?.setAttribute('aria-busy',String(state==='loading'));
+    if(state==='loading')notify('正在检查网站服务…');
+    else if(state==='ready')notify('');
+    else notify(state==='unsupported'?'网站服务尚未完成升级，请稍后重新检查。':'暂时无法检查网站服务，请检查网络后重试。',()=>browser.location.reload(),'重新检查服务');
+  }});
+  client = capabilityClient;
   const session = createSessionState(client), home = createHomeApi(client), identityApi = createIdentityApi(client);
   const reports = createReportsApi(client), learningReference = createLearningReferenceApi(client), interpretations = createInterpretationsApi(client);
   const adminContent = createAdminContentApi(client), ownerAnswers = createOwnerAnswersApi(client), ownerPackages = createOwnerPackagesApi(client), learningImport = createLearningImportApi(client);
   const generationIntents = createGenerationIntentsApi(client), sources = createSourcesApi(client), sourceActions = createSourceActionsApi(client), sourceRuns = createSourceRunsApi(client), sourceItemActions=createSourceItemActionsApi(client);
   const preferences = createPreferencesApi(client);
-  const jobs = createJobsApi(client), jobActions = createJobActionsApi(client), jobSchedule = createJobScheduleApi(client);
+  const jobs = createJobsApi(client), jobActions = createJobActionsApi(client), jobSchedule = createJobScheduleApi(client), adHocQuestions = createAdHocQuestionApi(client);
   const learning = createLearningApi(client);
   const resultComparisons = createJobResultComparisonApi(client), resultActions = createJobResultActionsApi(client);
   const operationAffected = createOperationAffectedApi(client), inputSummaries = createReportInputSummaryApi(client);
@@ -62,12 +72,12 @@ export function createApplication({ root, browser, client = createApiClient(), n
   const leaveDialog = notice ? createLeaveDialog(notice) : null;
   const unsubscribeDialog = session.subscribe(() => leaveDialog?.clear());
   let logoutPending = false, stopped = false;
-  function notify(message, retry = null) {
+  function notify(message, retry = null, retryLabel = '重试退出') {
     if (!notice || stopped) return;
     notice.replaceChildren();
     notice.textContent = message;
     if (retry) {
-      const button = notice.ownerDocument.createElement('button'); button.type = 'button'; button.textContent = '重试退出';
+      const button = notice.ownerDocument.createElement('button'); button.type = 'button'; button.textContent = retryLabel;
       button.addEventListener('click', retry, { once: true }); notice.append(button);
     }
   }
@@ -105,7 +115,7 @@ export function createApplication({ root, browser, client = createApiClient(), n
     if (route?.id === 'UI-09') return mountInterpretation(main, { scope, api: interpretations, url });
     if (route?.id === 'UI-10') return mountAdminCatalog(main, { scope, api: adminContent, impactApi: operationAffected, intentApi: generationIntents, comparisonApi: resultComparisons, resultActionsApi: resultActions, inputSummaryApi: inputSummaries, ownerAnswersApi: ownerAnswers, ownerPackagesApi: ownerPackages, learningImportApi: learningImport, url, identity, session, navigate, confirmDiscard });
     if (route?.id === 'UI-11') return mountSources(main, {scope,api:sources,actionsApi:sourceActions,runApi:sourceRuns,itemActionsApi:sourceItemActions,url,identity,session,navigate,confirmDiscard});
-    if (route?.id === 'UI-12') return mountJobs(main,{scope,api:jobs,actionsApi:jobActions,comparisonApi:resultComparisons,scheduleApi:jobSchedule,impactApi:operationAffected,url,identity,session,navigate,confirmDiscard});
+    if (route?.id === 'UI-12') return mountJobs(main,{scope,api:jobs,actionsApi:jobActions,comparisonApi:resultComparisons,scheduleApi:jobSchedule,questionApi:adHocQuestions,impactApi:operationAffected,url,identity,session,navigate,confirmDiscard});
     if (route?.id === 'UI-13') return mountPreferences(main,{scope,api:preferences,identity,session,confirmDiscard});
     if (route?.id === 'UI-14') return mountRoadmaps(main,{scope,api:learning,homeApi:home,url,navigate});
     if (route?.id === 'UI-15') return mountRoute(main,{scope,api:learning,records,url,identity,navigate});
@@ -122,9 +132,9 @@ export function createApplication({ root, browser, client = createApiClient(), n
     else if (url.pathname.startsWith('/admin/') && identity.user?.role !== 'owner') status.show('error', { message: '无权访问此页面。' });
     else status.show('error', { message: '此页面正在接入服务，请稍后再试。' });
   }, onLeaveBlocked: action => leaveDialog?.request(() => { action(); root.querySelector('#main')?.focus({ preventScroll: true }); }), onError: () => notify('页面暂时无法显示，请刷新重试。') });
-  router.start(); session.refresh();
+  session.refresh(); router.start();
   return Object.freeze({ session, router, dispose() {
-    if (stopped) return; stopped = true; leaveDialog?.dispose();unsubscribeDialog();router.dispose(); session.dispose(); notice?.replaceChildren();
+    if (stopped) return; stopped = true; capabilityClient.dispose(); leaveDialog?.dispose();unsubscribeDialog();router.dispose(); session.dispose(); notice?.replaceChildren();
   } });
 }
 

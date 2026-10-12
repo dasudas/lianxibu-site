@@ -16,6 +16,8 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Calendar;
+import java.util.TimeZone;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import tools.jackson.databind.JsonNode;
@@ -100,7 +102,7 @@ public final class ProbeResultService {
             coverage.putArray("missing_dates");
             coverage.putArray("no_update_dates");
             Instant now = clock.instant();
-            int changed = jdbc.update("UPDATE source_runs SET probe_trial_result_json=?,delivery_state=?,"
+            int changed = mutate("UPDATE source_runs SET probe_trial_result_json=?,delivery_state=?,"
                             + "fetch_state=?,coverage_json=?,finished_at=?,barrier_closed_at=?,revision=revision+1"
                             + " WHERE id=? AND revision=? AND run_kind='probe' AND probe_trial_result_json IS NULL",
                     new String(CanonicalJson.bytes(business), StandardCharsets.UTF_8), state, fetch,
@@ -109,7 +111,7 @@ public final class ProbeResultService {
             if (changed != 1) throw new ProbeRejected();
             long revision = current.revision() + 1;
             String receiptId = UUID.randomUUID().toString();
-            jdbc.update("INSERT INTO request_receipts(principal,operation,request_key,request_hash,"
+            mutate("INSERT INTO request_receipts(principal,operation,request_key,request_hash,"
                             + "status_code,response_json,expires_at,id,receipt_kind,actor_id,scope,key_hash,"
                             + "run_id,original_status,current_status,ack_json,created_at,revision,request_key_raw,"
                             + "business_hash,control_operation) VALUES(?,?,?, ?,200,NULL,NULL,?,'collector_control',"
@@ -129,7 +131,7 @@ public final class ProbeResultService {
                         + " FROM source_runs WHERE id=?" + (lock ? " FOR UPDATE" : ""),
                 (rs, ignored) -> new Run(rs.getString(1), rs.getString(2), rs.getString(3), rs.getLong(4),
                         rs.getString(5), rs.getString(6), rs.getBytes(7),
-                        rs.getTimestamp(8) == null ? null : rs.getTimestamp(8).toInstant(),
+                        rs.getTimestamp(8,utc()) == null ? null : rs.getTimestamp(8,utc()).toInstant(),
                         rs.getLong(9), rs.getString(10), rs.getString(11)), probeId);
         if (rows.size() != 1) throw new ProbeRejected();
         return rows.getFirst();
@@ -201,5 +203,15 @@ public final class ProbeResultService {
     private static byte[] digest(String value) {
         try { return MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)); }
         catch (NoSuchAlgorithmException impossible) { throw new IllegalStateException("SHA-256 unavailable", impossible); }
+    }
+
+    private static Calendar utc() { return Calendar.getInstance(TimeZone.getTimeZone("UTC")); }
+    private int mutate(String sql,Object...args) {
+        return jdbc.update(sql,ps->{
+            for(int i=0;i<args.length;i++) {
+                if(args[i] instanceof Timestamp time) ps.setTimestamp(i+1,time,utc());
+                else ps.setObject(i+1,args[i]);
+            }
+        });
     }
 }

@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -32,7 +33,29 @@ public final class ResultApplicationService {
                         Set<String> eligibleHighValueItems,
                         Set<String> allowedCitationIds,
                         Set<String> versionEligibleItems,
-                        String targetEntityId, String periodStart, String periodEnd) { }
+                        String targetEntityId, String periodStart, String periodEnd,
+                        String valueResultVersion,String dedupResultVersion,
+                        Map<String,FrozenCatalogVersionQualifications.Qualification> catalogVersionQualifications) {
+        public Input {catalogVersionQualifications=Map.copyOf(Objects.requireNonNull(catalogVersionQualifications));}
+        public Input(String rootId,String attemptId,Stage stage,long generation,String inputHash,
+                     long expectedRootRevision,Long expectedContentRevision,Set<String> itemIds,
+                     Map<String,Set<String>> candidatesByItem,Set<String> eligibleHighValueItems,
+                     Set<String> allowedCitationIds,Set<String> versionEligibleItems,
+                     String targetEntityId,String periodStart,String periodEnd,String valueResultVersion) {
+            this(rootId,attemptId,stage,generation,inputHash,expectedRootRevision,
+                    expectedContentRevision,itemIds,candidatesByItem,eligibleHighValueItems,
+                    allowedCitationIds,versionEligibleItems,targetEntityId,periodStart,periodEnd,valueResultVersion,"1",Map.of());
+        }
+        public Input(String rootId,String attemptId,Stage stage,long generation,String inputHash,
+                     long expectedRootRevision,Long expectedContentRevision,Set<String> itemIds,
+                     Map<String,Set<String>> candidatesByItem,Set<String> eligibleHighValueItems,
+                     Set<String> allowedCitationIds,Set<String> versionEligibleItems,
+                     String targetEntityId,String periodStart,String periodEnd) {
+            this(rootId,attemptId,stage,generation,inputHash,expectedRootRevision,
+                    expectedContentRevision,itemIds,candidatesByItem,eligibleHighValueItems,
+                    allowedCitationIds,versionEligibleItems,targetEntityId,periodStart,periodEnd,"1");
+        }
+    }
     public record Validated(String kind, String payloadJson, String resultHash,
                             String inputHash) { }
     public record Current(long generation, String inputHash, long rootRevision,
@@ -43,6 +66,8 @@ public final class ResultApplicationService {
     public interface Store {
         /** Persistent providers reject inputs which differ from the original frozen context. */
         default void verifyInput(Input input) { }
+        /** Explicit native capability; retaining an original response grants no application permission. */
+        default boolean retainAfterAutomaticFailure(Input input){return false;}
         Result committed(String actionKey, String actionHash);
         Current current(String rootId);
         void retain(String rootId, String attemptId, Validated result);
@@ -54,12 +79,23 @@ public final class ResultApplicationService {
         Validated retained(String rootId);
     }
     public interface Handler {
+        /** Pure result preparation after durable receipt lookup, outside the short writer.
+         * Returned handlers must recheck native permissions on every writer invocation. */
+        default Handler prepare(Input input,Validated result){return this;}
+        /** Runs after original manual receipt lookup, outside every transaction. */
+        default Handler prepareManual(Input input){return this;}
         /** Joins B04 transaction; CAS before other writes. Null means CAS lost with no writes. */
         Applied apply(Input input, Validated result, Current current, boolean manual);
     }
     public record Applied(String contentId, Long contentRevision) { }
-    public static final class Rejected extends RuntimeException {
+    public static class Rejected extends RuntimeException {
         public Rejected() { super("AI result failed contract or frozen input validation"); }
+    }
+    public enum ManualRefusal { REVISION_CONFLICT, RUN_FROZEN, SUPERSEDED, INVALID_EVIDENCE, IDENTITY_CONFLICT }
+    public static final class ManualRejected extends Rejected {
+        private final ManualRefusal refusal;
+        public ManualRejected(ManualRefusal refusal){this.refusal=java.util.Objects.requireNonNull(refusal);}
+        public ManualRefusal refusal(){return refusal;}
     }
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final Set<String> CATEGORIES = Set.of("news_tech", "agent", "skill",
@@ -84,7 +120,10 @@ public final class ResultApplicationService {
         if (action == null) throw new Rejected();
         String actionHash = digest("automatic", input.rootId(), input.attemptId(),
                 result.resultHash());
-        return writes.execute(action, key -> { store.verifyInput(input); return store.committed(key, actionHash); }, context -> {
+        try {return writes.executePrepared(action, key -> { store.verifyInput(input); return store.committed(key, actionHash); }, () -> {
+            Handler prepared=handlers.get(result.kind()).prepare(input,result);
+            if(prepared==null)throw new Rejected();
+            return context -> {
             Current current = required(input);
             if (!input.attemptId().equals(current.activeAttemptId())
                     || !current.ownershipValid()) throw new Rejected();
@@ -100,7 +139,7 @@ public final class ResultApplicationService {
                         context.actionKey(), actionHash);
                 return new Result(blocked, result.resultHash(), null, current.contentRevision());
             }
-            Applied applied = handlers.get(result.kind()).apply(input, result, current, false);
+            Applied applied = prepared.apply(input, result, current, false);
             if (applied == null) {
                 store.defer(input.rootId(), Status.CONTENT_REVISION_CONFLICT,
                         result.resultHash(), context.actionKey(), actionHash);
@@ -111,7 +150,24 @@ public final class ResultApplicationService {
                     applied.contentRevision(), context.actionKey(), actionHash);
             return new Result(Status.APPLIED, result.resultHash(), applied.contentId(),
                     applied.contentRevision());
-        });
+            };
+        });}catch(RuntimeException failure){
+            retainAutomaticFailure(input,result,failure);throw failure;
+        }
+    }
+    private void retainAutomaticFailure(Input input,Validated result,RuntimeException originalFailure){
+        if(!store.retainAfterAutomaticFailure(input))return;
+        try{
+            var retention=new ActionContext("result-failure-retain:"+digest("retain",input.rootId(),input.attemptId(),result.resultHash()),input.rootId(),input.inputHash());
+            writes.execute(retention,key->{
+                store.verifyInput(input);var previous=store.retained(input.rootId());if(previous==null)return null;
+                if(!result.equals(previous))throw new Rejected();return Boolean.TRUE;
+            },context->{
+                store.verifyInput(input);var current=required(input);
+                if(!input.attemptId().equals(current.activeAttemptId())||!current.ownershipValid())throw new Rejected();
+                store.retain(input.rootId(),input.attemptId(),result);return Boolean.TRUE;
+            });
+        }catch(RuntimeException retentionFailure){if(retentionFailure!=originalFailure)originalFailure.addSuppressed(retentionFailure);}
     }
 
     public Result applyManual(Input input, String confirmedResultHash,
@@ -122,28 +178,48 @@ public final class ResultApplicationService {
         String actionHash = digest("manual", input.rootId(), confirmedResultHash,
                 Long.toString(expectedRootRevision), String.valueOf(expectedContentRevision),
                 reason);
-        return writes.execute(action, key -> { store.verifyInput(input); return store.committed(key, actionHash); }, context -> {
+        return writes.executePrepared(action, key -> { store.verifyInput(input); return store.committed(key, actionHash); }, () -> {
+            Handler prepared=handlers.get(expectedKind(input.stage())).prepareManual(input);if(prepared==null)throw new Rejected();
+            return context -> {
             Validated result = store.retained(input.rootId());
-            if (result == null || !confirmedResultHash.equals(result.resultHash()))
-                throw new Rejected();
+            if (result == null)throw new ManualRejected(ManualRefusal.RUN_FROZEN);
+            if(!confirmedResultHash.equals(result.resultHash()))throw new ManualRejected(ManualRefusal.IDENTITY_CONFLICT);
             verifyRetained(input, result);
             Current current = required(input);
-            if (current.appliedResultHash() != null || current.discarded()) throw new Rejected();
-            if (!Status.CONTENT_REVISION_CONFLICT.name().equals(current.applicationState()))
-                throw new Rejected();
+            if (current.appliedResultHash() != null || current.discarded()) throw new ManualRejected(ManualRefusal.RUN_FROZEN);
+            if (!Set.of(Status.CONTENT_REVISION_CONFLICT.name(),"EXTERNAL_RESULT_CONFIRMED").contains(current.applicationState()==null?"":current.applicationState()))
+                throw new ManualRejected(ManualRefusal.RUN_FROZEN);
             if (current.rootRevision() != expectedRootRevision
                     || !java.util.Objects.equals(current.contentRevision(), expectedContentRevision))
-                throw new Rejected();
-            if (current.generation() != input.generation()
-                    || !current.inputHash().equals(input.inputHash())
-                    || !current.dependenciesValid()) throw new Rejected();
-            Applied applied = handlers.get(result.kind()).apply(input, result, current, true);
-            if (applied == null) throw new Rejected();
+                throw new ManualRejected(ManualRefusal.REVISION_CONFLICT);
+            if(!current.inputHash().equals(input.inputHash()))throw new Rejected();
+            if(current.generation()!=input.generation())throw new ManualRejected(ManualRefusal.SUPERSEDED);
+            if(!current.dependenciesValid())throw new ManualRejected(ManualRefusal.INVALID_EVIDENCE);
+            Applied applied = prepared.apply(input, result, current, true);
+            if (applied == null) throw new ManualRejected(ManualRefusal.REVISION_CONFLICT);
             store.markApplied(input.rootId(), result.resultHash(), applied.contentId(),
                     applied.contentRevision(), context.actionKey(), actionHash);
             return new Result(Status.APPLIED, result.resultHash(), applied.contentId(),
                     applied.contentRevision());
+            };
         });
+    }
+
+    /** Local envelope for an authorized provider response. The model supplies only the payload. */
+    public static String providerEnvelope(Input input, String payloadJson) {
+        requireInput(input);
+        try {
+            if (payloadJson == null || payloadJson.getBytes(StandardCharsets.UTF_8).length > 256 * 1024)
+                throw new Rejected();
+            ObjectNode core = JSON.createObjectNode();
+            core.put("schema_version", "1");
+            core.put("input_hash", input.inputHash());
+            core.set("payload", CanonicalJson.parse(payloadJson));
+            core.put("result_hash", hashResult(core));
+            String envelope = new String(CanonicalJson.bytes(core), StandardCharsets.UTF_8);
+            validate(input, envelope);
+            return envelope;
+        } catch (RuntimeException invalid) { throw new Rejected(); }
     }
 
     public static Validated validate(Input input, String raw) {
@@ -179,13 +255,16 @@ public final class ResultApplicationService {
     }
 
     private static void dedup(Input input, JsonNode payload) {
-        keys(payload, "kind", "items", "summary");
+        boolean v2="2".equals(input.dedupResultVersion());
+        if(v2){keys(payload,"kind","dedup_result_version","items","summary");if(!payload.path("dedup_result_version").isTextual()||!"2".equals(payload.path("dedup_result_version").asText()))throw new Rejected();}
+        else keys(payload, "kind", "items", "summary");
         text(payload, "summary", 0, 16384);
         JsonNode items = array(payload, "items", 1, 100);
         Set<String> seen = new HashSet<>();
         String expectedCategory = category(input.stage());
         for (JsonNode item : items) {
-            keys(item, "item_id", "category", "decision", "candidate_entity_id",
+            if(v2)keys(item,"item_id","category","decision","candidate_entity_id","reason","confidence","suggested_title","suggested_summary","reanalyze_recommended","version_changed","previous_evidence_ref","new_evidence_ref");
+            else keys(item, "item_id", "category", "decision", "candidate_entity_id",
                     "reason", "confidence", "suggested_title", "suggested_summary",
                     "reanalyze_recommended");
             String id = identifier(item, "item_id");
@@ -209,20 +288,46 @@ public final class ResultApplicationService {
             if (!item.path("reanalyze_recommended").isBoolean()) throw new Rejected();
             if (item.path("reanalyze_recommended").booleanValue()
                     && !input.versionEligibleItems().contains(id)) throw new Rejected();
+            if(v2)catalogVersion(input,item,id,decision,candidate);
         }
         if (!seen.equals(input.itemIds())) throw new Rejected();
     }
+    private static void catalogVersion(Input input,JsonNode item,String id,String decision,JsonNode candidate){
+        var qualification=input.catalogVersionQualifications().get(id);
+        boolean bound="existing".equals(decision)&&qualification!=null&&qualification.entityId().equals(candidate.asText());
+        var changed=item.get("version_changed");boolean recommended=item.get("reanalyze_recommended").booleanValue();
+        if(!bound){
+            if(!changed.isNull()||!item.get("previous_evidence_ref").isNull()||!item.get("new_evidence_ref").isNull()||recommended)throw new Rejected();
+            return;
+        }
+        if(!changed.isBoolean()||changed.booleanValue()!=qualification.versionChanged()||recommended&&!qualification.versionChanged())throw new Rejected();
+        catalogVersionReference(item.get("previous_evidence_ref"),qualification.previousProofHash());
+        catalogVersionReference(item.get("new_evidence_ref"),qualification.newProofHash());
+    }
+    private static void catalogVersionReference(JsonNode ref,String expectedHash){
+        keys(ref,"kind","proof_hash");if(!ref.get("kind").isTextual()||!"catalog_version_evidence".equals(ref.get("kind").asText())||!ref.get("proof_hash").isTextual()||!expectedHash.equals(ref.get("proof_hash").asText()))throw new Rejected();
+    }
     private static void value(Input input, JsonNode payload) {
-        keys(payload, "kind", "items", "selected_item_ids", "summary");
+        boolean v2="2".equals(input.valueResultVersion());
+        if(v2) {
+            keys(payload,"kind","items","selected_item_ids","summary","value_result_version");
+            if(!payload.path("value_result_version").isTextual()||!"2".equals(payload.path("value_result_version").asText()))throw new Rejected();
+        }else keys(payload, "kind", "items", "selected_item_ids", "summary");
         text(payload, "summary", 0, 16384);
         JsonNode items = array(payload, "items", 1, 100);
         Map<String, Boolean> high = new HashMap<>();
         for (JsonNode item : items) {
-            keys(item, "item_id", "category", "high_value", "reason");
+            if(v2) {
+                keys(item,"item_id","category","high_value","reason","valuable");
+                if(!item.path("valuable").isBoolean()
+                        ||item.path("high_value").booleanValue()&&!item.path("valuable").booleanValue())throw new Rejected();
+            }else keys(item, "item_id", "category", "high_value", "reason");
             String id = identifier(item, "item_id");
             if (high.putIfAbsent(id, item.path("high_value").booleanValue()) != null
                     || !item.path("high_value").isBoolean()
                     || !CATEGORIES.contains(item.path("category").asText())) throw new Rejected();
+            if (item.path("high_value").booleanValue()
+                    && !input.eligibleHighValueItems().contains(id)) throw new Rejected();
             text(item, "reason", 1, 2048);
         }
         if (!high.keySet().equals(input.itemIds())) throw new Rejected();
@@ -396,10 +501,23 @@ public final class ResultApplicationService {
                 || input.itemIds() == null || input.candidatesByItem() == null
                 || input.eligibleHighValueItems() == null || input.allowedCitationIds() == null
                 || input.versionEligibleItems() == null
+                || !Set.of("1","2").contains(input.dedupResultVersion()==null?"":input.dedupResultVersion())
+                || !"1".equals(input.dedupResultVersion())&&!Set.of(Stage.AGENT_DEDUP,Stage.SKILL_DEDUP,Stage.WORKFLOW_DEDUP,Stage.MODEL_DEDUP).contains(input.stage())
+                || "1".equals(input.dedupResultVersion())&&!input.catalogVersionQualifications().isEmpty()
+                || !Set.of("1","2").contains(input.valueResultVersion()==null?"":input.valueResultVersion())
+                || input.stage()!=Stage.NEWS_VALUE&&!"1".equals(input.valueResultVersion())
                 || input.stage().analysis() && input.targetEntityId() == null
                 || input.stage().report()
                     && (input.periodStart() == null || input.periodEnd() == null))
             throw new Rejected();
+        if("2".equals(input.dedupResultVersion())){
+            var changed=new HashSet<String>();
+            for(var entry:input.catalogVersionQualifications().entrySet()){
+                var q=entry.getValue();if(!entry.getKey().equals(q.itemId())||!input.itemIds().contains(q.itemId())||!input.candidatesByItem().getOrDefault(q.itemId(),Set.of()).contains(q.entityId()))throw new Rejected();
+                if(q.versionChanged())changed.add(q.itemId());
+            }
+            if(!changed.equals(input.versionEligibleItems()))throw new Rejected();
+        }
     }
     private Current required(Input input) {
         store.verifyInput(input);

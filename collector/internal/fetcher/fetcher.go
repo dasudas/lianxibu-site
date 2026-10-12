@@ -78,6 +78,7 @@ type Fetcher struct {
 	global   chan struct{}
 	mu       sync.Mutex
 	sources  map[string]*sourceLimit
+	budget   *hostBudget
 }
 
 func New() *Fetcher {
@@ -113,13 +114,37 @@ func (f *Fetcher) Fetch(parent context.Context, input Request) (Result, error) {
 		if err != nil {
 			return Result{}, err
 		}
+		releaseHost := func() {}
+		if f.budget != nil {
+			releaseHost, err = f.budget.acquire(ctx, host)
+			// Resume this validated redirect target after a short host interval.
+			// Returning here would make callers repeatedly fetch the original URL.
+			for redirects > 0 && errors.Is(err, ErrHostDeferred) {
+				wait, short := ShortBudgetDelay(err, f.budget.now())
+				if !short {
+					break
+				}
+				timer := time.NewTimer(wait)
+				select {
+				case <-ctx.Done():
+					timer.Stop()
+					return Result{}, ctx.Err()
+				case <-timer.C:
+				}
+				releaseHost, err = f.budget.acquire(ctx, host)
+			}
+			if err != nil {
+				return Result{}, err
+			}
+		}
 		transport := f.transport(host, addresses)
 		request, err := http.NewRequestWithContext(ctx, http.MethodGet, current.String(), nil)
 		if err != nil {
+			releaseHost()
 			return Result{}, errors.New("invalid source URL")
 		}
 		request.Header.Set("Accept", accept(input.Format))
-		request.Header.Set("User-Agent", "lianxibu-collector/1")
+		request.Header.Set("User-Agent", "lianxibu-collector/1 (AI-assisted source analysis)")
 		if input.Authorization != "" && host == initialHost {
 			request.Header.Set("Authorization", input.Authorization)
 		}
@@ -132,12 +157,22 @@ func (f *Fetcher) Fetch(parent context.Context, input Request) (Result, error) {
 		response, err := transport.RoundTrip(request)
 		if err != nil {
 			transport.CloseIdleConnections()
+			releaseHost()
 			return Result{}, fmt.Errorf("source HTTPS request failed: %w", err)
+		}
+		if f.budget != nil {
+			if err := f.budget.observe(host, response); err != nil {
+				response.Body.Close()
+				transport.CloseIdleConnections()
+				releaseHost()
+				return Result{}, err
+			}
 		}
 		if isRedirect(response.StatusCode) {
 			location := response.Header.Get("Location")
 			response.Body.Close()
 			transport.CloseIdleConnections()
+			releaseHost()
 			if redirects == maxRedirects {
 				return Result{}, errors.New("redirect limit exceeded")
 			}
@@ -154,9 +189,27 @@ func (f *Fetcher) Fetch(parent context.Context, input Request) (Result, error) {
 		result, err := readResponse(response, current.String(), input.Format, input.AllowNotFound)
 		response.Body.Close()
 		transport.CloseIdleConnections()
+		releaseHost()
 		return result, err
 	}
 	return Result{}, errors.New("redirect limit exceeded")
+}
+
+// ShortBudgetDelay only schedules another acquisition; it never grants a permit.
+// A just-elapsed deadline may pass while its error travels to the caller.
+func ShortBudgetDelay(err error, now time.Time) (time.Duration, bool) {
+	var deferred *HostDeferredError
+	if !errors.As(err, &deferred) {
+		return 0, false
+	}
+	wait := deferred.RetryAt.Sub(now)
+	if wait < -5*time.Second || wait > 5*time.Second {
+		return 0, false
+	}
+	if wait <= 0 {
+		wait = time.Millisecond
+	}
+	return wait, true
 }
 
 func (f *Fetcher) acquire(ctx context.Context, source string, interval time.Duration) (func(), error) {

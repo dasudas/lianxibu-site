@@ -125,7 +125,7 @@ public final class LearningController {
             @RequestHeader(name = "Origin", required = false) String origin,
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
-        Actor actor = owner(cookie); writeHeaders(csrf, origin, key);
+        Actor actor = owner(cookie); writeHeaders(actor, cookie, csrf, origin, key);
         var command = packageCommand(parse(raw), false);
         return success(project(service().createPackage(actor, command, key, csrf, origin), LearningDtos::importResult));
     }
@@ -138,7 +138,7 @@ public final class LearningController {
             @RequestHeader(name = "Origin", required = false) String origin,
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
-        Actor actor = owner(cookie); writeHeaders(csrf, origin, key);
+        Actor actor = owner(cookie); writeHeaders(actor, cookie, csrf, origin, key);
         var command = packageCommand(parse(raw), true);
         return success(project(service().writePackage(actor, id(packageId), command, key, csrf, origin),
                 LearningDtos::importResult));
@@ -152,7 +152,7 @@ public final class LearningController {
             @RequestHeader(name = "Origin", required = false) String origin,
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
-        Actor actor = owner(cookie); writeHeaders(csrf, origin, key);
+        Actor actor = owner(cookie); writeHeaders(actor, cookie, csrf, origin, key);
         var command = answerAction(parse(raw));
         return success(project(service().packageAction(actor, id(packageId), command, key, csrf, origin),
                 LearningDtos::action));
@@ -166,7 +166,7 @@ public final class LearningController {
             @RequestHeader(name = "Origin", required = false) String origin,
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
-        Actor actor = owner(cookie); writeHeaders(csrf, origin, key);
+        Actor actor = owner(cookie); writeHeaders(actor, cookie, csrf, origin, key);
         JsonNode value = parse(raw);
         fields(value, Set.of("expected_revision", "answer"));
         var command = new LearningService.AnswerWrite(number(value.get("expected_revision")),
@@ -183,7 +183,7 @@ public final class LearningController {
             @RequestHeader(name = "Origin", required = false) String origin,
             @RequestHeader(name = "Idempotency-Key", required = false) String key,
             @RequestBody(required = false) byte[] raw) {
-        Actor actor = owner(cookie); writeHeaders(csrf, origin, key);
+        Actor actor = owner(cookie); writeHeaders(actor, cookie, csrf, origin, key);
         var command = answerAction(parse(raw));
         return success(project(service().answerAction(actor, id(packageId), id(questionId), command,
                 key, csrf, origin), LearningDtos::action));
@@ -246,6 +246,30 @@ public final class LearningController {
         }
         return response.body(new LearningDtos.ErrorEnvelope(new LearningDtos.ErrorDetail(code, code),
                 new LearningDtos.Meta(requestId())));
+    }
+
+    @ExceptionHandler({com.lianxibu.site.service.learning.AnswerLifecycleService.Rejected.class,
+            com.lianxibu.site.service.learning.PackageLifecycleService.Rejected.class,
+            com.lianxibu.site.service.learning.LearningImportService.Rejected.class})
+    public ResponseEntity<LearningDtos.ErrorEnvelope> businessRejected(RuntimeException error) {
+        String code = error.getMessage();
+        if (Set.of("not_found", "question_missing").contains(code)) return failure(new BoundaryFailure(404,"not_found","learning object not found"));
+        if (Set.of("revision_conflict", "identity_conflict", "active_import_conflict", "review_required", "invalid_answer_state", "invalid_package_state").contains(code))
+            return failure(new BoundaryFailure(409,code,"learning action conflicts with current state"));
+        return failure(new BoundaryFailure(422,"validation","learning action validation failed"));
+    }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<LearningDtos.ErrorEnvelope> invalidCommand(IllegalArgumentException error) {
+        String message = error.getMessage();
+        if (Set.of("answer command conflict", "package command conflict", "import command conflict").contains(message==null?"":message))
+            return failure(new BoundaryFailure(409,"identity_conflict","idempotency key conflicts with a previous command"));
+        if (Set.of("answer revision conflict", "package revision conflict", "learning item revision conflict").contains(message==null?"":message))
+            return failure(new BoundaryFailure(409,"revision_conflict","learning revision changed"));
+        return failure(new BoundaryFailure(422,"validation","invalid learning command"));
+    }
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<LearningDtos.ErrorEnvelope> persistenceUnavailable(RuntimeException ignored) {
+        return failure(unavailable());
     }
 
     private Actor owner(String cookie) {
@@ -466,10 +490,14 @@ public final class LearningController {
         for (JsonNode item : node) result.add(text(item, itemMin, itemMax));
         return List.copyOf(result);
     }
-    private static void writeHeaders(String csrf, String origin, String key) {
+    private void writeHeaders(Actor actor, String cookie, String csrf, String origin, String key) {
         if (csrf == null || csrf.isBlank() || origin == null || origin.isBlank()) {
             throw new BoundaryFailure(403, "forbidden", "CSRF token and Origin required");
         }
+        IdentityService trusted = identity.getIfAvailable();
+        if (trusted == null) throw unavailable();
+        Actor authorized = trusted.authorizeWrite(cookie, csrf, origin);
+        if (!actor.equals(authorized)) throw new BoundaryFailure(403, "forbidden", "write authorization required");
         if (key == null || !key.matches("[!-~]{1,128}")) throw validation("valid Idempotency-Key required");
     }
     private static <T> LearningDtos.Page<Map<String, Object>> page(

@@ -1,0 +1,5 @@
+package com.lianxibu.site.service.jobs;
+@org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named="B45_MYSQL",matches="true")
+class CollectorNodeFactsNativeMySqlTest extends CollectorNodeFactsNativeTest {
+ @Override javax.sql.DataSource source(){String url=System.getenv("B45_MYSQL_URL");if(url==null)throw new IllegalStateException("fictional database required");var uri=java.net.URI.create(url.substring(5));if(!"mysql".equals(uri.getScheme())||!"127.0.0.1".equals(uri.getHost())||uri.getPort()!=13336||!"/fictional_b45_inputs".equals(uri.getPath()))throw new IllegalStateException("dedicated loopback database required");new org.springframework.jdbc.core.JdbcTemplate(new org.springframework.jdbc.datasource.DriverManagerDataSource(url,"root","")).execute("CREATE DATABASE IF NOT EXISTS fictional_node_facts_ri697 CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");return new org.springframework.jdbc.datasource.DriverManagerDataSource(url.replace("/fictional_b45_inputs","/fictional_node_facts_ri697"),"root","");}
+}

@@ -45,15 +45,21 @@ public final class RunManifestService {
     private final SharedWriteExecutor writes;
     private final NodeAuthorizer nodes;
     private final Clock clock;
+    private final java.util.function.Consumer<String> terminal;
 
     public RunManifestService(JdbcRunManifestStore store, SharedWriteExecutor writes,
                               NodeAuthorizer nodes, Clock clock) {
+        this(store, writes, nodes, clock, ignored -> { });
+    }
+    public RunManifestService(JdbcRunManifestStore store, SharedWriteExecutor writes,
+                              NodeAuthorizer nodes, Clock clock, java.util.function.Consumer<String> terminal) {
         if (store == null || writes == null || nodes == null || clock == null)
             throw new IllegalArgumentException("manifest dependencies required");
         this.store = store;
         this.writes = writes;
         this.nodes = nodes;
         this.clock = clock;
+        this.terminal = java.util.Objects.requireNonNull(terminal);
     }
     public RunManifestService(JdbcRunManifestStore store, SharedWriteExecutor writes,
                               NodeIdentityService nodes, Clock clock) {
@@ -188,7 +194,8 @@ public final class RunManifestService {
 
     private void recompute(String runId) {
         Run run = requiredLocked(runId);
-        if (run.resultJson() == null || FINAL.contains(run.deliveryState())) return;
+        if (run.resultJson() == null) return;
+        if (FINAL.contains(run.deliveryState())) { terminal.accept(runId); return; }
         JsonNode result = CanonicalJson.parse(run.resultJson());
         long parts = result.get("part_count").longValue();
         long expected = result.get("expected_count").longValue();
@@ -228,6 +235,7 @@ public final class RunManifestService {
         }
         store.updateCounts(runId, state, counts.accepted(), counts.excluded(), pending,
                 FINAL.contains(state) ? clock.instant() : null);
+        if (FINAL.contains(state)) terminal.accept(runId);
     }
 
     public static String partHash(String runId, long partNo, List<Member> members) {

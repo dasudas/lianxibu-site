@@ -16,6 +16,12 @@ public final class ContentReviewWriteService {
     public ReviewContentState reviewSnapshot(String kind,String id){return ReviewContentState.fromRow(lock(kind,id));}
     public void approve(ReviewContentState expected,ReviewPublicationService.Stamp stamp,String stampId,byte[] inputHash){approve(expected.row(),stamp,stampId,inputHash);}
     public void publish(ReviewContentState expected){publish(expected.row());}
+    public void reject(ReviewContentState expected){store.reject(expected.row(),now());}
+    public void withdraw(ReviewContentState expected,String disposition,boolean displayOnly){
+        if(disposition!=null)WireValues.id(disposition,false);
+        var summary=tools.jackson.databind.json.JsonMapper.shared().createObjectNode();summary.put("reason",displayOnly?"display_adjustment":"invalid_dependency");summary.put("disposition_id",disposition);
+        if(!store.close(expected.row(),"withdrawn",new String(CanonicalJson.bytes(summary),java.nio.charset.StandardCharsets.UTF_8),now()))throw new ReviewPublicationService.Conflict("revision_conflict");
+    }
     public boolean closeIfCurrent(ContentVersionKey target,Long managementRevision,String reviewStamp,String dispositionId,boolean displayOnly){
         Objects.requireNonNull(target);if(target.inputJobId()==null)throw new IllegalArgumentException("input owner required");
         if(dispositionId!=null)WireValues.id(dispositionId,false);

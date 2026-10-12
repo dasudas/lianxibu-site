@@ -30,7 +30,7 @@ public final class PrivateRecordWriteService implements RecordsService {
                         boolean read, boolean favorite, boolean ignored, Instant updatedAt) { }
     public record Progress(long completed, long eligible, String rate) { }
     public interface Store {
-        Record committed(String actionKey, String commandHash);
+        Record committed(String userId, String actionKey, String commandHash);
         Current currentForUpdate(Key key);
         /** Null for missing, hidden or disabled object; must bind full package/kind/id. */
         Long visibleBodyRevision(String packageId, String kind, String objectId);
@@ -102,12 +102,12 @@ public final class PrivateRecordWriteService implements RecordsService {
             throw new IllegalArgumentException("unexpected response");
         }
         String hash = commandHash(key, command, note, response);
-        Record prior = store.committed(actionKey, hash);
+        Record prior = store.committed(userId, actionKey, hash);
         if (prior != null) return prior;
         final String finalResponse = response;
         try {
             return tx.execute(status -> {
-                Record duplicate = store.committed(actionKey, hash);
+                Record duplicate = store.committed(userId, actionKey, hash);
                 if (duplicate != null) return duplicate;
                 Long bodyRevision = store.visibleBodyRevision(key.packageId(), kind, id);
                 if (bodyRevision == null) throw new Rejected("object_missing");
@@ -124,7 +124,7 @@ public final class PrivateRecordWriteService implements RecordsService {
                 return project(key, command.expectedRevision() + 1, value);
             });
         } catch (TransactionException uncertain) {
-            Record committed = store.committed(actionKey, hash);
+            Record committed = store.committed(userId, actionKey, hash);
             if (committed != null) return committed;
             throw uncertain;
         }

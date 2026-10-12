@@ -59,14 +59,11 @@ public final class JdbcEntityDedup {
     }
     public void insertEntity(String id, String category, String identityKey, String title,
                              String summary, LocalDate businessDate, Instant now) {
-        jdbc.update("INSERT INTO analyzed_entities(id,created_at,revision,category,identity_key,"
-                        + "identity_hash,title,summary,first_recorded_at,last_seen_at,"
-                        + "first_seen_business_date,occurrence_count,repeat_count,analysis_state,"
-                        + "analysis_generation,aliases_json,legacy_flag)"
-                        + " VALUES(?,?,0,?,?,?,?,?,?,?,?,0,0,'pending',0,'[]',0)",
-                id, Timestamp.from(now), category, identityKey, identityHash(category, identityKey),
-                title, summary, Timestamp.from(now), Timestamp.from(now),
-                java.sql.Date.valueOf(businessDate));
+        Instant recorded=now.truncatedTo(java.time.temporal.ChronoUnit.MICROS);java.util.Calendar utc=java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        jdbc.update(connection->{
+            var statement=connection.prepareStatement("INSERT INTO analyzed_entities(id,created_at,revision,category,identity_key,identity_hash,title,summary,first_recorded_at,last_seen_at,first_seen_business_date,occurrence_count,repeat_count,analysis_state,analysis_generation,aliases_json,legacy_flag) VALUES(?,?,0,?,?,?,?,?,?,?,?,0,0,'pending',0,'[]',0)");
+            statement.setString(1,id);statement.setTimestamp(2,Timestamp.from(recorded),utc);statement.setString(3,category);statement.setString(4,identityKey);statement.setBytes(5,identityHash(category,identityKey));statement.setString(6,title);statement.setString(7,summary);statement.setTimestamp(8,Timestamp.from(recorded),utc);statement.setTimestamp(9,Timestamp.from(recorded),utc);statement.setObject(10,businessDate);return statement;
+        });
     }
     public void setReview(Member member) {
         if (jdbc.update("UPDATE source_run_items SET state='needs_review',revision=revision+1"

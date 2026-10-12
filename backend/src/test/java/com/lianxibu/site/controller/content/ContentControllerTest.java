@@ -67,6 +67,7 @@ class ContentControllerTest {
         when(identityProvider.getIfAvailable()).thenReturn(identity);
         when(contentProvider.getIfAvailable()).thenReturn(service);
         when(identity.authenticate("fixture-session")).thenReturn(OWNER);
+        when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN)).thenReturn(OWNER);
         mvc = MockMvcBuilders.standaloneSetup(new ContentController(identityProvider, contentProvider)).build();
     }
 
@@ -127,8 +128,8 @@ class ContentControllerTest {
         when(service.generationIntent(eq(OWNER), any(), eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN)))
                 .thenReturn(JOB);
         mvc.perform(write(post("/admin/reports/generation-intents"),
-                        "{\"kind\":\"daily\",\"period_start\":\"2026-09-27T00:00:00.000000Z\","
-                        + "\"period_end\":\"2026-09-28T00:00:00.000000Z\","
+                        "{\"kind\":\"daily\",\"period_start\":\"2026-09-26T16:00:00.000000Z\","
+                        + "\"period_end\":\"2026-09-27T16:00:00.000000Z\","
                         + "\"timezone\":\"Asia/Shanghai\",\"mode\":\"initial\",\"reason\":\"fixture\"}"))
                 .andExpect(status().isAccepted()).andExpect(header().string("Cache-Control", "no-store"))
                 .andExpect(jsonPath("$.data.record_kind").value("generation_intent"));
@@ -184,13 +185,13 @@ class ContentControllerTest {
         when(service.generationIntent(eq(OWNER), any(), eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN)))
                 .thenReturn(JOB);
         mvc.perform(write(post("/admin/reports/generation-intents"),
-                        "{\"kind\":\"daily\",\"period_start\":\"2026-09-27T00:00:00.000000Z\","
-                        + "\"period_end\":\"2026-09-28T00:00:00.000000Z\","
+                        "{\"kind\":\"daily\",\"period_start\":\"2026-09-26T16:00:00.000000Z\","
+                        + "\"period_end\":\"2026-09-27T16:00:00.000000Z\","
                         + "\"timezone\":\"Asia/Shanghai\",\"mode\":\"supplement\","
                         + "\"intent_revision\":2,\"reason\":\"fixture\"}"))
                 .andExpect(status().isAccepted()).andExpect(header().string("Cache-Control", "no-store"));
         verify(service).generationIntent(eq(OWNER), eq(new ContentService.GenerationIntentWrite(
-                "daily", START, END, "Asia/Shanghai", "supplement", 2L, "fixture")),
+                "daily", Instant.parse("2026-09-26T16:00:00.000000Z"), Instant.parse("2026-09-27T16:00:00.000000Z"), "Asia/Shanghai", "supplement", 2L, "fixture")),
                 eq("fixture-key"), eq("fixture-csrf"), eq(ORIGIN));
     }
 
@@ -290,5 +291,23 @@ class ContentControllerTest {
     private static MockHttpServletRequestBuilder write(MockHttpServletRequestBuilder request, String body) {
         return auth(request).contentType(MediaType.APPLICATION_JSON).header("X-CSRF-Token", "fixture-csrf")
                 .header("Origin", ORIGIN).header("Idempotency-Key", "fixture-key").content(body);
+    }
+
+    @Test
+    void everyWriteRejectsInvalidCsrfAndChangedActorBeforeBusinessCall() throws Exception {
+        for (boolean changedActor : new boolean[]{false, true}) {
+            if (changedActor) when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN))
+                    .thenReturn(new Actor("another-fixture-owner", "owner"));
+            else when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN))
+                    .thenThrow(new IdentityService.Rejected(IdentityService.Refusal.FORBIDDEN, null));
+            mvc.perform(write(put("/admin/content/report/fixture"), "{}")).andExpect(status().isForbidden());
+            mvc.perform(write(post("/admin/content/report/fixture/actions"), "{}")).andExpect(status().isForbidden());
+            mvc.perform(write(post("/admin/evidence/article/fixture/actions"), "{}")).andExpect(status().isForbidden());
+            mvc.perform(write(post("/admin/content/report/fixture/version-actions"), "{}")).andExpect(status().isForbidden());
+            mvc.perform(write(post("/admin/reports/generation-intents"), "{}")).andExpect(status().isForbidden());
+            org.mockito.Mockito.verifyNoInteractions(service);
+            org.mockito.Mockito.reset(identity);
+            when(identity.authenticate("fixture-session")).thenReturn(OWNER);
+        }
     }
 }

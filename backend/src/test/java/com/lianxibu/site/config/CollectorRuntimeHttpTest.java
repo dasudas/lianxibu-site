@@ -63,13 +63,13 @@ class CollectorRuntimeHttpTest {
                 + "\"identity_rule\":\"guid\",\"window_rule\":\"daily\",\"parser_version\":\"fixture-1\","
                 + "\"max_items\":10,\"max_response_bytes\":1024,\"allowed_hosts\":[\"example.invalid\"],"
                 + "\"valid_until\":\"2027-01-01T00:00:00.000000Z\",\"auth_secret_ref\":null}";
-        jdbc.update("INSERT INTO sources VALUES(?,?,?,?,?,?,?,?,?,?,?)", "fixture:feed", "rss", "Fixture",
+        utcUpdate("INSERT INTO sources VALUES(?,?,?,?,?,?,?,?,?,?,?)", "fixture:feed", "rss", "Fixture",
                 config, config, config, 1, 1, "production", Timestamp.from(Instant.parse("2027-01-01T00:00:00Z")),
                 "news_tech");
-        jdbc.update("INSERT INTO sources VALUES(?,?,?,?,?,?,?,?,?,?,?)", "fixture:go", "rss", "Go Fixture",
+        utcUpdate("INSERT INTO sources VALUES(?,?,?,?,?,?,?,?,?,?,?)", "fixture:go", "rss", "Go Fixture",
                 config, config, config, 1, 1, "production", Timestamp.from(Instant.parse("2027-01-01T00:00:00Z")),
                 "news_tech");
-        jdbc.update("INSERT INTO collector_nodes VALUES(?,?,?,?,?,?,?,?)", "fixture-node", "Fixture",
+        utcUpdate("INSERT INTO collector_nodes VALUES(?,?,?,?,?,?,?,?)", "fixture-node", "Fixture",
                 NodeTokens.digest(TOKEN), "[\"fixture:feed\",\"fixture:go\"]", 1, null, 1,
                 "[\"config:read\",\"run:claim\",\"run:read\",\"run:write\",\"observation:write\","
                         + "\"probe:claim\",\"probe:write\"]");
@@ -128,6 +128,15 @@ class CollectorRuntimeHttpTest {
                     + "\"missing_inputs\":[],\"missing_dates\":[],\"no_update_dates\":[]}},"
                     + "\"attempt\":{\"claim_token\":\"" + claimToken + "\",\"expected_run_revision\":"
                     + runRevision + "}}";
+            jdbc.execute("ALTER TABLE jobs ADD CONSTRAINT fictional_handoff_failure CHECK(record_kind<>'disposition')");
+            var rejectedHandoff = client.send(HttpRequest.newBuilder(URI.create(root + "/runs/fixture-http-run/result"))
+                    .header("Authorization", "Bearer " + TOKEN).header("Idempotency-Key", "http-result")
+                    .header("Content-Type", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(resultBody)).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(503, rejectedHandoff.statusCode());
+            assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM jobs", Integer.class));
+            assertEquals(runRevision, jdbc.queryForObject("SELECT revision FROM source_runs WHERE id='fixture-http-run'", Long.class));
+            jdbc.execute("ALTER TABLE jobs DROP " + (isolatedMySql == null ? "CONSTRAINT" : "CHECK") + " fictional_handoff_failure");
             var result = client.send(HttpRequest.newBuilder(URI.create(root + "/runs/fixture-http-run/result"))
                     .header("Authorization", "Bearer " + TOKEN).header("Idempotency-Key", "http-result")
                     .header("Content-Type", "application/json")
@@ -137,7 +146,9 @@ class CollectorRuntimeHttpTest {
                     .get("delivery_state").asText());
             assertEquals("empty_success", jdbc.queryForObject("SELECT delivery_state FROM source_runs WHERE id=?",
                     String.class, "fixture-http-run"));
-            jdbc.update("INSERT INTO source_runs(id,source_id,run_kind,business_date,generation,window_start,"
+            assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE record_kind='generation_intent' AND task_type='news_dedup' AND state='waiting_input'", Integer.class));
+            assertEquals(1, CanonicalJson.parse(jdbc.queryForObject("SELECT job_refs_json FROM source_runs WHERE id='fixture-http-run'", String.class)).size());
+            utcUpdate("INSERT INTO source_runs(id,source_id,run_kind,business_date,generation,window_start,"
                             + "window_end,config_version,config_snapshot_json,activation_stage,revision,"
                             + "delivery_state,fetch_mode,collection_reason,fetch_state,analysis_state,accepted_count,"
                             + "excluded_count,pending_count,coverage_json,job_refs_json)"
@@ -190,10 +201,10 @@ class CollectorRuntimeHttpTest {
                 byte[] originalClaimHash = jdbc.queryForObject(
                         "SELECT claim_token_hash FROM source_runs WHERE id=?", byte[].class, "fixture-go-run");
                 assertNotNull(originalClaimHash);
-                jdbc.update("UPDATE source_runs SET claim_token_hash=? WHERE id=?",
+                utcUpdate("UPDATE source_runs SET claim_token_hash=? WHERE id=?",
                         NodeTokens.digest("C".repeat(43)), "fixture-go-run");
                 goInterop("stale");
-                jdbc.update("UPDATE source_runs SET claim_token_hash=? WHERE id=?",
+                utcUpdate("UPDATE source_runs SET claim_token_hash=? WHERE id=?",
                         originalClaimHash, "fixture-go-run");
                 goInterop("finalize");
                 assertEquals("complete", jdbc.queryForObject(
@@ -205,14 +216,14 @@ class CollectorRuntimeHttpTest {
                         Long.class, "fixture-go-run"));
                 goInterop("negative");
                 assertEquals(3L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
-                assertEquals(1, jdbc.update("UPDATE request_receipts SET created_at=? WHERE observation_id=?",
+                assertEquals(1, utcUpdate("UPDATE request_receipts SET created_at=? WHERE observation_id=?",
                         Timestamp.from(Instant.now().minusSeconds(91L * 24 * 3600)),
                         "go-metric-observation"));
                 goInterop("replay");
                 assertEquals(3L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
                 for (String fixture : List.of("partial", "pending", "excluded", "empty", "takeover")) {
                     String id = fixture.equals("takeover") ? "go-takeover" : "go-matrix-" + fixture;
-                    jdbc.update("INSERT INTO source_runs(id,source_id,run_kind,business_date,generation,window_start,"
+                    utcUpdate("INSERT INTO source_runs(id,source_id,run_kind,business_date,generation,window_start,"
                                     + "window_end,config_version,config_snapshot_json,activation_stage,revision,"
                                     + "delivery_state,fetch_mode,collection_reason,fetch_state,analysis_state,accepted_count,"
                                     + "excluded_count,pending_count,coverage_json,job_refs_json,claim_node_id,claim_token_hash,lease_until)"
@@ -227,8 +238,8 @@ class CollectorRuntimeHttpTest {
                 assertEquals(15L, jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
                 assertEquals(0L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts WHERE observation_id LIKE 'negative-%'", Long.class));
                 goInterop("takeover-prepare");
-                jdbc.update("UPDATE source_runs SET lease_until=? WHERE id='go-takeover'",
-                        Timestamp.from(Instant.now().minusSeconds(1)));
+                utcUpdate("UPDATE source_runs SET lease_until=? WHERE id='go-takeover'",
+                        Timestamp.from(v3Clock.instant().minusSeconds(1)));
                 goInterop("takeover");
                 assertEquals("empty_success", jdbc.queryForObject("SELECT delivery_state FROM source_runs WHERE id='go-takeover'", String.class));
                 assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts WHERE run_id='go-takeover' AND control_operation IN ('manifest','result')", Long.class));
@@ -264,7 +275,7 @@ class CollectorRuntimeHttpTest {
                     jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items", Long.class));
             assertEquals(0L, jdbc.queryForObject("SELECT COUNT(*) FROM request_receipts WHERE observation_id=?",
                     Long.class, "unreviewed-article"));
-            jdbc.update("UPDATE sources SET activation_stage='disabled',config_revision=2 WHERE id=?",
+            utcUpdate("UPDATE sources SET activation_stage='disabled',config_revision=2 WHERE id=?",
                     "fixture:feed");
             leases.scheduleProbe("fixture:feed", new ActionContext("schedule-probe-http",
                     "fixture-http-probe", "fixture"));
@@ -302,7 +313,7 @@ class CollectorRuntimeHttpTest {
                 for (String id : List.of("v04-renew", "v04-release")) {
                     String date=id.equals("v04-renew")?"2026-09-28":"2026-09-29";
                     java.time.LocalDate day=java.time.LocalDate.parse(date);
-                    jdbc.update("INSERT INTO source_runs(id,source_id,run_kind,business_date,generation,"
+                    utcUpdate("INSERT INTO source_runs(id,source_id,run_kind,business_date,generation,"
                             +"window_start,window_end,config_version,config_snapshot_json,activation_stage,revision,"
                             +"delivery_state,fetch_mode,collection_reason,fetch_state,analysis_state,accepted_count,excluded_count,pending_count,coverage_json,job_refs_json)"
                             +" VALUES(?,?,'daily',?,1,?,?,1,?,'production',0,'pending','daily_delta','daily','queued','waiting_input',0,0,0,'{}','[]')",
@@ -316,11 +327,11 @@ class CollectorRuntimeHttpTest {
                 assertEquals(1L,jdbc.queryForObject("SELECT count(*) FROM request_receipts WHERE observation_id='v04-observation'",Long.class));
                 v3Clock.freeze(base.plusSeconds(20));goSQLiteInterop("lost-b");
                 assertEquals(2L,jdbc.queryForObject("SELECT count(*) FROM request_receipts WHERE run_id='v04-renew' AND control_operation='renew'",Long.class));
-                Timestamp bUntil=jdbc.queryForObject("SELECT lease_until FROM source_runs WHERE id='v04-renew'",Timestamp.class);
+                Timestamp bUntil=utcTimestamp("SELECT lease_until FROM source_runs WHERE id='v04-renew'");
                 assertEquals(base.plusSeconds(170),bUntil.toInstant());
                 v3Clock.freeze(base.plusSeconds(240));goSQLiteInterop("takeover");
                 for(String id:List.of("v04-renew","v04-release")) {
-                    assertEquals(base.plusSeconds(390),jdbc.queryForObject("SELECT lease_until FROM source_runs WHERE id=?",Timestamp.class,id).toInstant());
+                    assertEquals(base.plusSeconds(390),utcTimestamp("SELECT lease_until FROM source_runs WHERE id=?",id).toInstant());
                     assertEquals("receiving",jdbc.queryForObject("SELECT delivery_state FROM source_runs WHERE id=?",String.class,id));
                 }
                 assertEquals(2L,jdbc.queryForObject("SELECT count(*) FROM request_receipts WHERE run_id='v04-renew' AND control_operation='renew'",Long.class));
@@ -328,15 +339,15 @@ class CollectorRuntimeHttpTest {
                 assertEquals(1L,jdbc.queryForObject("SELECT count(*) FROM source_run_items WHERE run_id='v04-renew'",Long.class));
                 assertEquals(1L,jdbc.queryForObject("SELECT count(*) FROM request_receipts WHERE observation_id='v04-observation'",Long.class));
             }
-            jdbc.update("UPDATE collector_nodes SET token_hash=? WHERE id=?",
+            utcUpdate("UPDATE collector_nodes SET token_hash=? WHERE id=?",
                     NodeTokens.digest("B".repeat(43)), "fixture-node");
             goInterop("revoked");
             assertEquals(403, client.send(HttpRequest.newBuilder(URI.create(root + "/runs/fixture-http-run"))
                     .header("Authorization", "Bearer " + TOKEN).GET().build(),
                     HttpResponse.BodyHandlers.discarding()).statusCode());
-            jdbc.update("UPDATE collector_nodes SET token_hash=? WHERE id=?",
+            utcUpdate("UPDATE collector_nodes SET token_hash=? WHERE id=?",
                     NodeTokens.digest(TOKEN), "fixture-node");
-            jdbc.update("UPDATE collector_nodes SET enabled=0 WHERE id=?", "fixture-node");
+            utcUpdate("UPDATE collector_nodes SET enabled=0 WHERE id=?", "fixture-node");
             assertEquals(403, client.send(HttpRequest.newBuilder(URI.create(root + "/runs/fixture-http-run"))
                     .header("Authorization", "Bearer " + TOKEN).GET().build(),
                     HttpResponse.BodyHandlers.discarding()).statusCode());
@@ -348,8 +359,9 @@ class CollectorRuntimeHttpTest {
     }
 
     private void schema() {
+        CollectionHandoffFixture.jobs(jdbc, System.getenv("B26_TEST_DB_URL") != null);
         ddl("CREATE TABLE worker_lock(id INT PRIMARY KEY)");
-        jdbc.update("INSERT INTO worker_lock VALUES(1)");
+        utcUpdate("INSERT INTO worker_lock VALUES(1)");
         ddl("CREATE TABLE collector_nodes(id VARCHAR(64) PRIMARY KEY,name VARCHAR(100),"
                 + "token_hash BINARY(32),allowed_source_ids CLOB,enabled INT,last_seen_at TIMESTAMP,"
                 + "config_revision BIGINT,permissions_json CLOB)");
@@ -399,6 +411,20 @@ class CollectorRuntimeHttpTest {
             statement = statement.replace("CLOB", "LONGTEXT");
         }
         jdbc.execute(statement);
+    }
+
+    // Fixture SQL uses the same physical UTC timestamp convention as the runtime.
+    private int utcUpdate(String sql,Object...args) {
+        return jdbc.update(sql,ps->{
+            for(int i=0;i<args.length;i++) {
+                if(args[i] instanceof Timestamp value) ps.setTimestamp(i+1,value,java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")));
+                else if(args[i] instanceof java.sql.Date value) ps.setString(i+1,value.toLocalDate().toString());
+                else ps.setObject(i+1,args[i]);
+            }
+        });
+    }
+    private Timestamp utcTimestamp(String sql,Object...args) {
+        return jdbc.queryForObject(sql,(rs,index)->rs.getTimestamp(1,java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))),args);
     }
 
     private void goSQLiteInterop(String mode) throws Exception {

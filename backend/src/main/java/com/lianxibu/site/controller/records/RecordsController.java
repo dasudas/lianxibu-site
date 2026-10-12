@@ -77,6 +77,8 @@ public final class RecordsController {
         if (csrf == null || csrf.isBlank() || origin == null || origin.isBlank()) {
             throw new BoundaryFailure(403, "forbidden", "CSRF token and Origin required");
         }
+        Actor authorized=identity.getIfAvailable().authorizeWrite(cookie,csrf,origin);
+        if(!actor.equals(authorized))throw new BoundaryFailure(403,"forbidden","write authorization required");
         if (key == null || !key.matches("[!-~]{1,128}")) throw validation("valid Idempotency-Key required");
         if (!KINDS.contains(kind)) throw validation("invalid record kind");
         String id = id(objectId);

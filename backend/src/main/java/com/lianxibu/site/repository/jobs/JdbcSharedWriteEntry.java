@@ -11,18 +11,28 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /** Acquires the sole shared writer entry row without changing AI slot state. */
 public final class JdbcSharedWriteEntry {
     private final DataSource source;
+    private final ThreadLocal<JdbcBacklogMutationWitness.Scope> mutation = new ThreadLocal<>();
     private final JdbcTemplate jdbc;
+    private final java.util.function.LongSupplier monotonic;
+    private final java.util.function.LongConsumer observer;
 
     public JdbcSharedWriteEntry(DataSource source) {
-        if (source == null) throw new IllegalArgumentException("shared entry data source required");
+        this(source, System::nanoTime, nanos -> ProcessApiRuntimeTelemetry.nativeProcess().completedLockWait(nanos));
+    }
+
+    public JdbcSharedWriteEntry(DataSource source, java.util.function.LongSupplier monotonic, java.util.function.LongConsumer observer) {
+        if (source == null || monotonic == null || observer == null) throw new IllegalArgumentException("shared entry dependencies required");
         this.source = source;
         jdbc = new JdbcTemplate(source);
+        this.monotonic = monotonic;
+        this.observer = observer;
     }
 
     public void lock() {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("shared entry requires an active transaction");
         }
+        mutation.set(JdbcBacklogMutationWitness.capture(source));
         Connection connection = DataSourceUtils.getConnection(source);
         try {
             if (connection.getMetaData().getDatabaseProductName().contains("MySQL")) {
@@ -34,6 +44,9 @@ public final class JdbcSharedWriteEntry {
             throw new IllegalStateException("shared entry connection unavailable", error);
         }
     }
+
+    public void recordMutation(String action, String allocated) { var scope = mutation.get(); if (scope != null) scope.record(action, allocated); }
+    public void releaseMutation() { mutation.remove(); }
 
     private void lockMySql() {
         Integer previous = jdbc.queryForObject("SELECT @@SESSION.innodb_lock_wait_timeout", Integer.class);
@@ -48,10 +61,16 @@ public final class JdbcSharedWriteEntry {
     }
 
     private void lockRow() {
-        List<Integer> rows = jdbc.query("SELECT id FROM worker_lock FOR UPDATE",
-                (rs, ignored) -> rs.getInt(1));
-        if (rows.size() != 1) {
-            throw new IllegalStateException("shared entry row is not unique");
+        long began;
+        boolean started;
+        try { began = monotonic.getAsLong(); started = true; } catch (RuntimeException unavailable) { began = 0; started = false; }
+        try {
+            List<Integer> rows = jdbc.query("SELECT id FROM worker_lock FOR UPDATE", (rs, ignored) -> rs.getInt(1));
+            if (rows.size() != 1) throw new IllegalStateException("shared entry row is not unique");
+        } finally {
+            long elapsed;
+            try { elapsed = started ? Math.subtractExact(monotonic.getAsLong(), began) : -1; } catch (RuntimeException unavailable) { elapsed = -1; }
+            try { observer.accept(elapsed); } catch (RuntimeException unavailable) { /* Observation does not change the original transaction outcome. */ }
         }
     }
 }

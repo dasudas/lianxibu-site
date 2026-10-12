@@ -1,0 +1,37 @@
+package com.lianxibu.site.service.jobs;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import com.lianxibu.site.domain.protocol.CanonicalJson;
+import com.lianxibu.site.repository.jobs.*;
+import java.time.Clock;
+import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.*;
+
+/** Actual partial proofs and atomic final projection with explicitly fictional source rows. */
+class SourceValuePartialFinalizationTest {
+    SourceValuePartialFinalProofTest q;SourceValuePartialResolutionTest f;SourceValueFinalizationTest x;SourceValuePartialCommitPermitService permits;SourceValueFinalizationService service;
+    GenerationJdbcStoreTest database(){return new GenerationJdbcStoreTest();}
+    void setup(boolean mixed)throws Exception{
+        q=new SourceValuePartialFinalProofTest(){@Override GenerationJdbcStoreTest database(){return SourceValuePartialFinalizationTest.this.database();}};q.setup(mixed);f=q.f;q.q.q.service.seal(f.ref);x=new SourceValueFinalizationTest();x.f=new SourceValueStageProofTest();x.f.f=f.db;x.f.plan=f.f.plan;x.f.original=f.outcomes.original;x.f.ref=f.ref;x.f.clock=f.f.f.clock;x.f.plans=f.f.f.plans;x.f.universes=f.original.p1.universes;x.f.service=q.q.service;x.install();
+        permits=new SourceValuePartialCommitPermitService(q.q.q.service,f.service,new JdbcSourceValuePartialBlocks(f.db.source),q.q.q.store,new JdbcSourceStageRoots(f.db.source),f.authority.service,new DataSourceTransactionManager(f.db.source));service=provider(f.db.writes,permits);
+    }
+    SourceValueFinalizationService provider(SharedWriteExecutor writes,SourceValuePartialCommitPermitService permit){return new SourceValueFinalizationService(x.proofs,x.archives,x.f.plans,x.f.universes,x.receipts,x.summaries,writes,new DataSourceTransactionManager(f.db.source),x.f.clock,permit);}
+    SourceValueFinalizationService.Committed read(){return f.original.read(()->service.readCommitted(f.ref));}
+    @Test void FailedDedupZeroValueCommitsPartialInsteadOfPretendingNoInput()throws Exception{
+        setup(false);assertThrows(RuntimeException.class,()->x.service.finish(f.ref));assertEquals(0,x.seals());assertNull(x.sourceText("analysis_summary"));var stored=service.finish(f.ref);var committed=read();assertEquals(stored.json(),committed.receipt().json());assertEquals("succeeded",x.intentState());assertEquals("partial",x.sourceText("analysis_state"));assertTrue(x.sourceText("analysis_summary").contains("原始去重证明"));assertTrue(x.sourceText("dedup_summary").contains("去重覆盖不完整"));assertTrue(x.sourceText("dedup_summary").contains("原计划包含 1 条"));assertEquals("partial",stored.coverageState());assertEquals(0,f.db.count("record_kind='logical_task' AND task_type='news_value'"));assertEquals(3,f.db.jdbc.queryForObject("SELECT revision FROM source_runs",Long.class));assertEquals("{\"fictional_collector\":true}",JdbcFrozenInputs.canonical(CanonicalJson.parse(x.sourceText("result_json"))));assertEquals("{}",JdbcFrozenInputs.canonical(CanonicalJson.parse(x.sourceText("coverage_json"))));int rows=f.db.count("1=1");assertEquals(stored.json(),service.finish(f.ref).json());assertEquals(rows,f.db.count("1=1"));assertEquals(1,x.seals());
+    }
+    @Test void EveryFailedValueKeepsOriginalPlanCountsInTheActualSourceProjection()throws Exception{
+        setup(true);int calls=f.db.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class);var receipt=service.finish(f.ref);var actual=read();assertEquals(receipt.json(),actual.receipt().json());assertEquals(200,CanonicalJson.parse(actual.result().json()).get("unapplied_member_count").asInt());assertTrue(x.sourceText("analysis_summary").contains("原计划包含 200 条"));assertEquals("partial",x.sourceText("analysis_state"));assertEquals("succeeded",x.intentState());assertTrue(x.sourceText("dedup_summary").contains("去重覆盖不完整"));assertEquals(calls,f.db.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));f.db.jdbc.execute("DROP TABLE source_run_items");f.db.jdbc.execute("DROP TABLE analyzed_entities");assertEquals(receipt.json(),read().receipt().json());
+    }
+    @Test void FinalReceiptFailureRollsBackProjectionAndIntentWhileStagedBlocksRemain()throws Exception{
+        setup(false);f.db.jdbc.execute("ALTER TABLE jobs ADD CONSTRAINT fictional_partial_final_failure CHECK(target_type IS NULL OR target_type<>'source_value_final_result')");assertThrows(RuntimeException.class,()->service.finish(f.ref));assertEquals(0,x.seals());assertNull(x.sourceText("analysis_summary"));assertNull(x.sourceText("dedup_summary"));assertEquals("waiting_input",x.intentState());assertEquals(2,f.db.jdbc.queryForObject("SELECT revision FROM source_runs",Long.class));assertNull(read());f.db.jdbc.execute(f.db.source instanceof org.h2.jdbcx.JdbcDataSource?"ALTER TABLE jobs DROP CONSTRAINT fictional_partial_final_failure":"ALTER TABLE jobs DROP CHECK fictional_partial_final_failure");assertNotNull(service.finish(f.ref));assertEquals(1,x.seals());
+    }
+    @Test void ActualLostFinalCommitAckRecoversOnlyOnePartialProjection()throws Exception{
+        setup(false);var fault=new DataSourceTransactionManager(f.db.source){boolean lost;@Override protected void doCommit(DefaultTransactionStatus status){super.doCommit(status);if(!lost&&!TransactionSynchronizationManager.isCurrentTransactionReadOnly()){lost=true;throw new org.springframework.transaction.TransactionSystemException("fictional partial final ACK lost");}}};var writes=new SharedWriteExecutor(new JdbcSharedWriteEntry(f.db.source),fault,()->25,n->{});service=provider(writes,permits);var receipt=service.finish(f.ref);assertEquals(receipt.json(),read().receipt().json());service=provider(f.db.writes,permits);assertEquals(receipt.json(),service.finish(f.ref).json());assertEquals(3,f.db.jdbc.queryForObject("SELECT revision FROM source_runs",Long.class));assertEquals(1,x.seals());
+    }
+    @Test void OriginalValueAndDedupChangesInsideTheWriterRejectAndRollbackTheProjection()throws Exception{
+        setup(true);String originalState=x.intentState();assertThrows(RuntimeException.class,()->f.original.p1.tx(()->service.finish(f.ref)));assertThrows(RuntimeException.class,()->f.original.read(()->service.finish(f.ref)));var changed=spy(permits);doAnswer(call->{f.db.jdbc.update("UPDATE jobs SET revision=revision+1 WHERE id=?",f.f.plan.chunks().getFirst().rootId());return call.callRealMethod();}).when(changed).verify(any());service=provider(f.db.writes,changed);assertThrows(RuntimeException.class,()->service.finish(f.ref));assertEquals(0,x.seals());assertNull(x.sourceText("analysis_summary"));assertEquals(originalState,x.intentState());changed=spy(permits);doAnswer(call->{f.db.jdbc.update("UPDATE jobs SET revision=revision+1 WHERE id=?",f.authority.f.plan.chunks().getLast().rootId());return call.callRealMethod();}).when(changed).verify(any());service=provider(f.db.writes,changed);assertThrows(RuntimeException.class,()->service.finish(f.ref));assertEquals(0,x.seals());assertNull(x.sourceText("analysis_summary"));changed=spy(permits);doThrow(new GenerationFlowService.CapacityGuarded()).when(changed).verify(any());service=provider(f.db.writes,changed);assertThrows(GenerationFlowService.CapacityGuarded.class,()->service.finish(f.ref));service=provider(f.db.writes,permits);assertNotNull(service.finish(f.ref));assertEquals(1,x.seals());
+    }
+}

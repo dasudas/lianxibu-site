@@ -1,0 +1,24 @@
+package com.lianxibu.site.service.jobs;
+import static org.junit.jupiter.api.Assertions.*;
+import com.lianxibu.site.domain.protocol.CanonicalJson;
+import com.lianxibu.site.repository.jobs.*;
+import com.lianxibu.site.service.jobs.JobsService.*;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
+/** Actual partial P1 permission and complete original frozen value INPUT, no model transport. */
+class ValuePartialManualFactoryTest extends ValuePartialResultFactoryTest {
+    final com.lianxibu.site.service.identity.IdentityService.Actor owner=new com.lianxibu.site.service.identity.IdentityService.Actor("fictional-owner","owner");
+    long revision(){return new JdbcResultState(f.db.source).root(identity.rootId()).revision();}
+    void confirmed() throws Exception {
+        setup();var existingColumns=new java.util.HashSet<String>();try(var connection=f.db.source.getConnection();var columns=connection.getMetaData().getColumns(connection.getCatalog(),null,"%",null)){while(columns.next())if("jobs".equalsIgnoreCase(columns.getString("TABLE_NAME")))existingColumns.add(columns.getString("COLUMN_NAME").toLowerCase(java.util.Locale.ROOT));}for(String column:List.of("report_mode VARCHAR(32)","validity_revision BIGINT","reverses_disposition_id VARCHAR(64)","error_code VARCHAR(64)"))if(!existingColumns.contains(column.split(" ")[0]))f.db.jdbc.execute("ALTER TABLE jobs ADD "+column);
+        if(f.db.source instanceof org.h2.jdbcx.JdbcDataSource){f.db.jdbc.execute("CREATE ALIAS IF NOT EXISTS JSON_EXTRACT FOR 'com.lianxibu.site.service.jobs.TransportUnknownServiceTest.extract'");f.db.jdbc.execute("CREATE ALIAS IF NOT EXISTS JSON_UNQUOTE FOR 'com.lianxibu.site.service.jobs.TransportUnknownServiceTest.unquote'");}
+        var original=factory.forAttempt(identity).input();
+        // Explicit UTC native header binding, matching the owned MySQL UTC connection.
+        if(f.db.source instanceof org.h2.jdbcx.JdbcDataSource){var cutoff=com.lianxibu.site.domain.protocol.WireValues.utcMicroseconds(CanonicalJson.parse(new JdbcFrozenInputs(f.db.source).read(identity.rootId(),identity.inputHash())).get("cutoff"));f.db.jdbc.update(connection->{var statement=connection.prepareStatement("UPDATE jobs SET input_cutoff_at=? WHERE id=?");statement.setTimestamp(1,java.sql.Timestamp.from(cutoff),java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")));statement.setString(2,identity.rootId());return statement;});}
+        String raw=ResultApplicationService.providerEnvelope(original,JdbcFrozenInputs.canonical(new SourceValueStageResultTest().payload(part)));var envelope=CanonicalJson.parse(raw);new TransportUnknownService(f.db.writes,new JdbcTransportUnknown(f.db.source),f.q.clock,"fictional-partial-result-worker").release(identity,TransportUnknownService.Cause.TRANSPORT_UNKNOWN,new SharedWriteExecutor.ActionContext("fictional-partial-manual-unknown",identity.rootId(),identity.inputHash()));var action=new JobAction(revision(),"resolve_external","Fictional complete original value verification",identity.attemptId(),null,null,"succeeded",List.of("fictional-evidence"),new ValidatedResult("1",identity.inputHash(),envelope.get("payload"),envelope.get("result_hash").textValue()),null);assertTrue(new OwnerJobResolveExternalService(f.db.source,tx,f.db.writes,f.q.clock).resolve(owner,identity.rootId(),action,"fictional-partial-manual-confirm").rootResultRetained());
+    }
+    ResultApplicationService.Result manual(String key,long expected){var app=factory.forManual(identity,owner);return app.service().applyManual(app.input(),new JdbcResultState(f.db.source).root(identity.rootId()).resultHash(),expected,null,"Fictional explicit value application",true,new SharedWriteExecutor.ActionContext(key,identity.rootId(),identity.inputHash()));}
+    @Test void ActualPartialManualPermissionCommitsOriginalMembersAndNullReceiptOnce() throws Exception {confirmed();long before=revision();var slot=new JdbcWorkerState(f.db.source).slot();var result=manual("fictional-partial-manual-apply",before);assertEquals(ResultApplicationService.Status.APPLIED,result.status());assertNull(result.contentId());assertNull(result.contentRevision());applied();assertEquals(before+1,revision());assertEquals(slot,new JdbcWorkerState(f.db.source).slot());assertEquals(result,manual("fictional-partial-manual-apply",before));assertEquals(1,sends);}
+    @Test void ActualPartialPermissionRejectsChangedP1BeforeAnyMemberApplication() throws Exception {confirmed();long before=revision();f.db.jdbc.update("UPDATE jobs SET action_payload_hash=? WHERE target_type='source_stage_availability'",new byte[32]);assertThrows(RuntimeException.class,()->manual("fictional-partial-manual-invalid",before));assertEquals(before,revision());assertEquals(0,f.db.jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items WHERE value_json IS NOT NULL",Integer.class));assertEquals(1,sends);}
+}

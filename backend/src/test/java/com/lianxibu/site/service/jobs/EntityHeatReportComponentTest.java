@@ -1,0 +1,25 @@
+package com.lianxibu.site.service.jobs;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import com.lianxibu.site.repository.jobs.*;
+import java.time.*;
+import java.util.*;
+import org.junit.jupiter.api.*;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.*;
+import org.springframework.transaction.support.*;
+
+/** Actual native count producer, event, first and headers; source-day fault ports explicitly have no original proof. */
+class EntityHeatReportComponentTest {
+    EntityHeatSourceOriginTest h;EntityHeatEventAvailabilityService first;EntityHeatCutoffProofService counts;EntityHeatReportComponentService service;final Instant cutoff=Instant.parse("2026-01-02T21:00:00Z");
+    GenerationJdbcStoreTest fixture(){return new GenerationJdbcStoreTest();}
+    @BeforeEach void setup(){h=new EntityHeatSourceOriginTest(){@Override GenerationJdbcStoreTest fixture(){return EntityHeatReportComponentTest.this.fixture();}};h.setup();var tx=new DataSourceTransactionManager(h.h.f.source);var events=new JdbcEntityHeatEvents(h.h.f.source,Set.of("fictional-owner"));first=new EntityHeatEventAvailabilityService(h.events,new JdbcEntityHeatAvailability(h.h.f.source,events),h.h.f.writes,tx,Clock.fixed(cutoff.minusSeconds(1),ZoneOffset.UTC));counts=new EntityHeatCutoffProofService(new JdbcEntityHeatCutoffUniverse(h.h.f.source),h.events,first,tx);service=create(EntityHeatCutoffProofService.MAX_ORIGINAL_BYTES);}
+    EntityHeatReportComponentService create(int budget){return new EntityHeatReportComponentService(counts,h.service,h.headers,new DataSourceTransactionManager(h.h.f.source),budget);}
+    <T>T rr(java.util.function.Supplier<T> work){var tx=new TransactionTemplate(new DataSourceTransactionManager(h.h.f.source));tx.setReadOnly(true);tx.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);return tx.execute(s->work.get());}
+    @Test void KnownNativeCountWithoutActualOriginalSourceProofIsAnExplicitGap(){first.capture(h.id);var value=service.capture(cutoff);assertTrue(value.candidates().isEmpty());assertTrue(value.missing().stream().anyMatch(m->"count_source_origin_unproven".equals(m.reason())));assertTrue(value.dependencies().isEmpty());assertTrue(value.referenceTargetsByEvidence().isEmpty());assertSame(value,rr(()->service.verifyObserved(value)));assertThrows(UnsupportedOperationException.class,()->value.missing().clear());assertFalse(value.toString().contains("fictional"));}
+    @Test void MissingNativeCountFirstDoesNotBecomeCurrentCountOrZero(){var value=service.capture(cutoff);assertTrue(value.candidates().isEmpty());assertTrue(value.missing().stream().anyMatch(m->"count_unobserved_at_cutoff".equals(m.reason())));verifyNoInteractions(h.days);}
+    @Test void NativeWholeUniverseAndHeaderChangesRejectPreviousCombinedCapture(){first.capture(h.id);var value=service.capture(cutoff);h.h.f.jdbc.update("UPDATE source_run_items SET revision=revision+1 WHERE id='fictional-one'");assertThrows(RuntimeException.class,()->rr(()->service.verifyObserved(value)));var fresh=service.capture(cutoff);assertSame(fresh,rr(()->service.verifyObserved(fresh)));h.h.f.jdbc.update("UPDATE analyzed_entities SET occurrence_count=99 WHERE id=?",h.events.find(h.id).snapshots().getFirst().entityId());assertThrows(RuntimeException.class,()->rr(()->service.verifyObserved(fresh)));assertEquals(1,counts.capture(cutoff).counts().values().iterator().next().snapshot().occurrenceCount());}
+    @Test void ActualZeroUniverseIsEmptyAndBudgetNeverTruncatesUnknownEntities(){h.h.f.jdbc.update("DELETE FROM jobs");h.h.f.jdbc.update("DELETE FROM analyzed_entities");var empty=service.capture(cutoff);assertTrue(empty.candidates().isEmpty());assertTrue(empty.missing().isEmpty());assertSame(empty,rr(()->service.verifyObserved(empty)));setup();first.capture(h.id);assertThrows(RuntimeException.class,()->create(1024).capture(cutoff));}
+    @Test void ExplicitRrIssuerAndColdMandatoryProvidersAreRequired(){first.capture(h.id);var value=service.capture(cutoff);assertThrows(RuntimeException.class,()->service.verifyObserved(value));assertThrows(RuntimeException.class,()->rr(()->service.capture(cutoff)));assertThrows(RuntimeException.class,()->rr(()->create(EntityHeatCutoffProofService.MAX_ORIGINAL_BYTES).verifyObserved(value)));var tx=new TransactionTemplate(new DataSourceTransactionManager(h.h.f.source));tx.setReadOnly(true);tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);assertThrows(RuntimeException.class,()->tx.execute(s->service.verifyObserved(value)));var source=mock(javax.sql.DataSource.class);var manager=mock(PlatformTransactionManager.class);var count=mock(EntityHeatCutoffProofService.class);var origins=mock(EntityHeatSourceOriginService.class);new EntityHeatReportComponentService(count,origins,new JdbcEntityHeatOriginHeaders(source),manager);verifyNoInteractions(source,manager,count,origins);assertThrows(NullPointerException.class,()->new EntityHeatReportComponentService(null,origins,h.headers,manager));}
+}

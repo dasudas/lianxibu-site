@@ -26,6 +26,11 @@ public final class JdbcReviewPublication {
         one(jdbc.update("UPDATE contents SET state='published',revision=revision+1,published_at=?,updated_at=? WHERE kind=? AND id=? AND revision=? AND state='approved' AND body_revision=? AND body_hash_v1=? AND input_job_id=? AND review_stamp_hash=? AND review_stamp_id=?",Timestamp.from(now),Timestamp.from(now),expected.kind(),expected.id(),expected.revision(),expected.bodyRevision(),expected.bodyHashV1(),expected.inputJobId(),expected.reviewStampHash(),expected.reviewStampId()));
     }
     /** Qualification update is conditional on the original management/body/input/stamp identity. */
+    public void reject(JdbcContentReads.Row expected,Instant now){
+        requireTx();requireCurrent(expected);
+        one(jdbc.update("UPDATE contents SET state='draft',revision=revision+1,review_hash_v1=NULL,review_dependency_stamp=NULL,review_stamp_hash=NULL,review_stamp_id=NULL,reviewed_input_hash=NULL,blocking_summary_json=NULL,published_at=NULL,updated_at=? WHERE kind=? AND id=? AND revision=? AND body_revision=? AND body_hash_v1=? AND input_job_id=?",Timestamp.from(now),expected.kind(),expected.id(),expected.revision(),expected.bodyRevision(),expected.bodyHashV1(),expected.inputJobId()));
+    }
+    /** Qualification update is conditional on the original management/body/input/stamp identity. */
     public boolean close(JdbcContentReads.Row expected,String state,String summary,Instant now){
         requireTx();requireCurrent(expected);if(!state.equals("withdrawn")||!CanonicalJson.parse(summary).isObject())throw conflict();
         String stamp=expected.reviewStampHash()==null?"review_stamp_hash IS NULL":"review_stamp_hash=?";

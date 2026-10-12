@@ -71,6 +71,13 @@ public final class JdbcSourceAdmission {
                 Timestamp.from(now), old.id(), old.revision()) == 1;
     }
 
+    public boolean setManualProduction(Row old, Instant validUntil, Instant now) {
+        return jdbc.update("UPDATE sources SET activation_stage='production',effective_config_json=draft_config_json,"
+                        + "config_valid_until=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?"
+                        + " AND config_revision=? AND activation_stage='disabled' AND draft_config_json IS NOT NULL",
+                Timestamp.from(validUntil),Timestamp.from(now),old.id(),old.revision(),old.configRevision())==1;
+    }
+
     public boolean disable(Row old, Instant now) {
         return jdbc.update("UPDATE sources SET activation_stage='disabled',"
                         + "revision=revision+1,updated_at=? WHERE id=? AND revision=?",

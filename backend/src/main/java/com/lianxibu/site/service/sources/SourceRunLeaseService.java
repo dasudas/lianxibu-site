@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /** Creates frozen source windows and fences each node claim/control action. */
 public final class SourceRunLeaseService {
@@ -61,6 +62,7 @@ public final class SourceRunLeaseService {
     private final Store receipts;
     private final Clock clock;
     private final java.util.function.Predicate<String> newRunAllowed;
+    private final SourceDayRunClaimAdmissionService dayAdmission;
 
     public SourceRunLeaseService(JdbcSourceRunStore runs, JdbcSourceAdmission sources,
                                  SharedWriteExecutor writes, RunLeaseTokenCodec tokens,
@@ -72,6 +74,14 @@ public final class SourceRunLeaseService {
                                  SharedWriteExecutor writes, RunLeaseTokenCodec tokens,
                                  NodeAuthorizer nodes, Store receipts, Clock clock,
                                  java.util.function.Predicate<String> newRunAllowed) {
+        this(runs,sources,writes,tokens,nodes,receipts,clock,newRunAllowed,null);
+    }
+
+    public SourceRunLeaseService(JdbcSourceRunStore runs, JdbcSourceAdmission sources,
+                                 SharedWriteExecutor writes, RunLeaseTokenCodec tokens,
+                                 NodeAuthorizer nodes, Store receipts, Clock clock,
+                                 java.util.function.Predicate<String> newRunAllowed,
+                                 SourceDayRunClaimAdmissionService dayAdmission) {
         if (runs == null || sources == null || writes == null || tokens == null
                 || nodes == null || receipts == null || clock == null || newRunAllowed == null) {
             throw new IllegalArgumentException("source run dependencies required");
@@ -84,6 +94,7 @@ public final class SourceRunLeaseService {
         this.receipts = receipts;
         this.clock = clock;
         this.newRunAllowed = newRunAllowed;
+        this.dayAdmission = dayAdmission;
     }
 
     public SourceRunLeaseService(JdbcSourceRunStore runs, JdbcSourceAdmission sources,
@@ -237,8 +248,10 @@ public final class SourceRunLeaseService {
 
     private Claim claimNext(String bearer, boolean probe, List<String> requestedSources,
                             String requestScope, ActionContext action, Principal initial) {
+        if(TransactionSynchronizationManager.isActualTransactionActive())throw new IllegalStateException("collector claim service owns its transactions");
+        if(action==null)throw new LeaseRejected();
         String permission = probe ? "probe:claim" : "run:claim";
-        return writes.execute(action, key -> {
+        SharedWriteExecutor.CommittedResult<Claim> committed = key -> {
             RunActionReceipt receipt = receipts.find(key);
             if (receipt == null) return null;
             if (!"claim".equals(receipt.operation()) || !requestScope.equals(receipt.requestScope())
@@ -250,12 +263,22 @@ public final class SourceRunLeaseService {
             nodes.authorize(bearer, permission, row.sourceId());
             if (!requestedSources.contains(row.sourceId())) throw new LeaseRejected();
             return claimReplay(row, receipt);
-        }, context -> {
+        };
+        Claim original=committed.find(action.actionKey());if(original!=null)return original;
+        SourceDayRunClaimAdmissionService.Prepared prepared=null;
+        if(!probe&&dayAdmission!=null){
+            try{prepared=dayAdmission.prepare(runs.dailyClaimDays(requestedSources,clock.instant()),Set.copyOf(requestedSources));}
+            catch(JdbcSourceRunStore.CapacityGuarded capacity){throw new CapacityGuarded();}
+        }
+        final var facts=prepared;var allowedIds=facts==null?List.<String>of():facts.runIds();
+        return writes.execute(action, committed, context -> {
             Principal node = nodes.authorize(bearer, permission, null);
             if (!node.sourceIds().containsAll(requestedSources)) throw new LeaseRejected();
-            Row row = runs.claimable(requestedSources, probe ? "probe" : "run", clock.instant());
+            Row row = runs.claimable(requestedSources, probe ? "probe" : "run", clock.instant(),allowedIds);
             if (row == null) return new Claim(null, null, null, null, 0,
                     null, null, null, null, null, false, 0);
+            if(row.configSnapshotJson()==null)throw new CapacityGuarded();
+            if("daily".equals(row.runKind())&&(dayAdmission==null||facts==null||!dayAdmission.allows(facts,row.id())))throw new LeaseRejected();
             nodes.authorize(bearer, permission, row.sourceId());
             RunLeaseTokenCodec.Issued issued = tokens.issue(row.id(), node.nodeId());
             Instant leaseUntil = clock.instant().plusSeconds(150);

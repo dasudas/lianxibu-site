@@ -20,6 +20,8 @@ import java.util.List;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -30,6 +32,7 @@ class RunManifestServiceTest {
     private TransactionTemplate tx;
     private final String token = "A".repeat(43);
     private boolean revoked;
+    private java.util.function.Consumer<String> terminal = ignored -> { };
 
     @BeforeEach void setup() {
         JdbcDataSource source = new JdbcDataSource();
@@ -72,7 +75,19 @@ class RunManifestServiceTest {
                     if (revoked || !"bearer-a".equals(bearer) || !"source-a".equals(sourceId))
                         throw new SecurityException("revoked");
                     return new Principal("node-a", List.of("source-a"), List.of("run:write"), 1);
-                }, Clock.fixed(Instant.parse("2026-10-01T00:00:00Z"), ZoneOffset.UTC));
+                }, Clock.fixed(Instant.parse("2026-10-01T00:00:00Z"), ZoneOffset.UTC), id -> terminal.accept(id));
+    }
+
+    @Test void terminalHandoffFailureRollsBackResultAndReceiptThenRetriesOnce() {
+        terminal = id -> { throw new IllegalStateException("fictional handoff failure"); };
+        Result empty = result(List.of(), 0);
+        assertThrows(IllegalStateException.class, () -> service.submitResult("bearer-a", empty, token, 0, action("empty")));
+        assertEquals("claimed", jdbc.queryForObject("SELECT delivery_state FROM source_runs", String.class));
+        assertEquals(0, count("request_receipts"));
+        var calls = new ArrayList<String>(); terminal = calls::add;
+        assertEquals("empty_success",service.submitResult("bearer-a",empty,token,0,action("empty")).deliveryState());
+        assertEquals("empty_success",service.submitResult("bearer-a",empty,token,0,action("empty")).deliveryState());
+        assertEquals(List.of("run-a"),calls);
     }
 
     @Test void resultFirstThenPendingThenNineAcceptedOneExcludedIsPartial() {
@@ -144,6 +159,43 @@ class RunManifestServiceTest {
         assertEquals("waiting_items", service.putPart("bearer-a", first, token,
                 action("first-second")).deliveryState());
         assertEquals(2L, count("source_run_items"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings={"Asia/Tokyo","America/Los_Angeles"})
+    void physicalUtcLeaseAndNewManifestTimesSurviveHostZone(String zone) {
+        var original=java.util.TimeZone.getDefault();
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone));
+            jdbc.update("UPDATE source_runs SET lease_until=TIMESTAMP '2026-10-01 00:03:00'");
+            var part=part(0,members(1));
+            service.putPart("bearer-a",part,token,action("utc-part"));
+            assertEquals(Instant.parse("2026-10-01T00:00:00Z"),utcColumn("SELECT created_at FROM source_run_items"));
+            assertEquals(Instant.parse("2026-10-01T00:00:00Z"),utcColumn("SELECT created_at FROM request_receipts"));
+            jdbc.update("UPDATE source_run_items SET terminal_state='accepted',receipt_ref='utc-original'");
+            service.submitResult("bearer-a",result(List.of(part),1),token,runRevision(),action("utc-result"));
+            assertEquals("complete",jdbc.queryForObject("SELECT delivery_state FROM source_runs",String.class));
+            assertEquals(Instant.parse("2026-10-01T00:00:00Z"),utcColumn("SELECT finished_at FROM source_runs"));
+            assertEquals(Instant.parse("2026-10-01T00:03:00Z"),utcColumn("SELECT lease_until FROM source_runs"));
+        } finally { java.util.TimeZone.setDefault(original); }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings={"Asia/Tokyo","America/Los_Angeles"})
+    void physicalUtcExpiredLeaseCannotWriteManifest(String zone) {
+        var original=java.util.TimeZone.getDefault();
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone));
+            jdbc.update("UPDATE source_runs SET lease_until=TIMESTAMP '2026-09-30 23:59:59'");
+            assertThrows(RunFrozen.class,()->service.putPart("bearer-a",part(0,members(1)),token,action("expired-utc")));
+            assertEquals(0,count("source_run_items"));
+            assertEquals(0,count("request_receipts"));
+        } finally { java.util.TimeZone.setDefault(original); }
+    }
+
+    private Instant utcColumn(String query) {
+        return jdbc.queryForObject(query,(rs,index)->rs.getTimestamp(1,
+                java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))).toInstant());
     }
 
     private Part part(long number, List<Member> members) {

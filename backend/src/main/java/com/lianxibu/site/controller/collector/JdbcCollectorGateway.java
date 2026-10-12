@@ -4,6 +4,7 @@ import com.lianxibu.site.domain.protocol.CanonicalJson;
 import com.lianxibu.site.domain.protocol.CanonicalJson.Domain;
 import com.lianxibu.site.domain.protocol.ManifestControl;
 import com.lianxibu.site.service.identity.NodeIdentityService;
+import com.lianxibu.site.service.jobs.CollectorHeartbeatService;
 import com.lianxibu.site.service.identity.NodeIdentityService.Principal;
 import com.lianxibu.site.service.jobs.SharedWriteExecutor.ActionContext;
 import com.lianxibu.site.service.sources.SourceRunLeaseService;
@@ -28,6 +29,8 @@ import java.util.List;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Calendar;
+import java.util.TimeZone;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import tools.jackson.databind.JsonNode;
@@ -46,10 +49,18 @@ public final class JdbcCollectorGateway implements CollectorGateway {
     private final ObservationIngressService observations;
     private final ProbeResultService probes;
     private final Clock clock;
+    private final CollectorHeartbeatService heartbeats;
 
     public JdbcCollectorGateway(DataSource source, NodeIdentityService nodes,
                                 SourceRunLeaseService leases, RunManifestService manifests,
                                 ObservationIngressService observations, ProbeResultService probes, Clock clock) {
+        this(source,nodes,leases,manifests,observations,probes,clock,null);
+    }
+
+    public JdbcCollectorGateway(DataSource source, NodeIdentityService nodes,
+                                SourceRunLeaseService leases, RunManifestService manifests,
+                                ObservationIngressService observations, ProbeResultService probes, Clock clock,
+                                CollectorHeartbeatService heartbeats) {
         if (source == null || nodes == null || leases == null || manifests == null
                 || observations == null || probes == null || clock == null)
             throw new IllegalArgumentException("collector runtime dependencies required");
@@ -60,6 +71,7 @@ public final class JdbcCollectorGateway implements CollectorGateway {
         this.observations = observations;
         this.probes = probes;
         this.clock = clock;
+        this.heartbeats = heartbeats;
     }
 
     @Override public Result execute(Principal principal, String bearer, Operation operation, Request request) {
@@ -77,7 +89,7 @@ public final class JdbcCollectorGateway implements CollectorGateway {
                 case RUN_RESULT -> runResult(principal, bearer, request);
                 case MEMBER_SEAL -> memberSeal(principal, bearer, request);
                 case OBSERVATIONS -> observations(principal, bearer, request);
-                case HEARTBEAT -> heartbeat(principal, bearer);
+                case HEARTBEAT -> heartbeat(bearer, request);
                 case PROBE_CLAIMS -> claimRuns(principal, bearer, request, true);
                 case PROBE_RESULT -> probeResult(bearer, request);
                 default -> throw new Refused(503, "temporarily_unavailable");
@@ -228,13 +240,13 @@ public final class JdbcCollectorGateway implements CollectorGateway {
         List<Boolean> values = jdbc.query("SELECT claim_node_id,claim_token_hash,lease_until FROM source_runs WHERE id=?",
                 (rs, ignored) -> principal.nodeId().equals(rs.getString(1)) && rs.getBytes(2) != null
                         && MessageDigest.isEqual(rs.getBytes(2), RunLeaseTokenCodec.digest(claimToken))
-                        && rs.getTimestamp(3) != null && rs.getTimestamp(3).toInstant().isAfter(clock.instant()), runId);
+                        && rs.getTimestamp(3,utc()) != null && rs.getTimestamp(3,utc()).toInstant().isAfter(clock.instant()), runId);
         return values.size() == 1 && values.getFirst();
     }
 
     private Instant leaseUntil(String runId) {
         List<Instant> values = jdbc.query("SELECT lease_until FROM source_runs WHERE id=?",
-                (rs, ignored) -> rs.getTimestamp(1) == null ? null : rs.getTimestamp(1).toInstant(), runId);
+                (rs, ignored) -> rs.getTimestamp(1,utc()) == null ? null : rs.getTimestamp(1,utc()).toInstant(), runId);
         return values.size() == 1 ? values.getFirst() : null;
     }
 
@@ -256,11 +268,16 @@ public final class JdbcCollectorGateway implements CollectorGateway {
             List<ObjectNode> page = jdbc.query("SELECT id,config_revision,activation_stage,effective_config_json,"
                             + "config_valid_until FROM sources WHERE id IN (" + placeholders + ") AND id>?"
                             + " AND activation_stage IN ('trial','production') AND config_valid_until>?"
-                            + " ORDER BY id LIMIT 101", (rs, ignored) -> {
+                            + " ORDER BY id LIMIT 101", ps -> {
+                        for(int i=0;i<parameters.size();i++) {
+                            if(parameters.get(i) instanceof Timestamp value) ps.setTimestamp(i+1,value,utc());
+                            else ps.setObject(i+1,parameters.get(i));
+                        }
+                    }, (rs, ignored) -> {
                         nodes.authorizeBearer(bearer, "config:read", rs.getString("id"));
                         return frozen(rs.getString("id"), rs.getLong("config_revision"),
                                 rs.getString("activation_stage"), rs.getString("effective_config_json"));
-                    }, parameters.toArray());
+                    });
             int count = Math.min(page.size(), 100);
             for (int index = 0; index < count; index++) {
                 ObjectNode item = page.get(index);
@@ -379,10 +396,10 @@ public final class JdbcCollectorGateway implements CollectorGateway {
         run.put("run_id", rs.getString("id"));
         run.put("source_id", source);
         run.put("run_kind", rs.getString("run_kind"));
-        run.put("business_date", rs.getDate("business_date").toLocalDate().toString());
+        run.put("business_date", java.time.LocalDate.parse(rs.getString("business_date")).toString());
         run.put("generation", rs.getLong("generation"));
-        run.put("window_start", time(rs.getTimestamp("window_start").toInstant()));
-        run.put("window_end", time(rs.getTimestamp("window_end").toInstant()));
+        run.put("window_start", time(rs.getTimestamp("window_start",utc()).toInstant()));
+        run.put("window_end", time(rs.getTimestamp("window_end",utc()).toInstant()));
         run.put("fetch_mode", rs.getString("fetch_mode"));
         run.put("collection_reason", rs.getString("collection_reason"));
         run.put("config_version", rs.getLong("config_version"));
@@ -405,7 +422,7 @@ public final class JdbcCollectorGateway implements CollectorGateway {
         run.put("accepted_count", rs.getLong("accepted_count"));
         run.put("excluded_count", rs.getLong("excluded_count"));
         run.put("pending_count", rs.getLong("pending_count"));
-        Timestamp closed = rs.getTimestamp("barrier_closed_at");
+        Timestamp closed = rs.getTimestamp("barrier_closed_at",utc());
         nullable(run, "barrier_closed_at", closed == null ? null : time(closed.toInstant()));
         run.put("late_results_available", false);
         String result = rs.getString("result_json");
@@ -415,11 +432,16 @@ public final class JdbcCollectorGateway implements CollectorGateway {
         return run;
     }
 
-    private Result heartbeat(Principal principal, String bearer) {
-        nodes.authorizeBearer(bearer, "heartbeat:write", null);
-        ObjectNode data = JSON.createObjectNode();
-        data.put("received_at", time(clock.instant()));
-        return new Result(200, data, null);
+    private static Calendar utc() { return Calendar.getInstance(TimeZone.getTimeZone("UTC")); }
+
+    private Result heartbeat(String bearer, Request request) {
+        if (heartbeats == null) throw new Refused(503, "temporarily_unavailable");
+        try {
+            var original = heartbeats.submit(bearer, request.rawBody());
+            ObjectNode data = JSON.createObjectNode();
+            data.put("received_at", time(original.receivedAt()));
+            return new Result(200, data, null);
+        } catch (IllegalArgumentException invalid) { throw new Refused(422, "validation"); }
     }
 
     private long runConfigVersion(String runId) {

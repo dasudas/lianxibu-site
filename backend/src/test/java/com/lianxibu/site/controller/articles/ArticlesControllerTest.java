@@ -56,6 +56,7 @@ class ArticlesControllerTest {
         when(identityProvider.getIfAvailable()).thenReturn(identity);
         when(articleProvider.getIfAvailable()).thenReturn(service);
         when(identity.authenticate("fixture-session")).thenReturn(OWNER);
+        when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN)).thenReturn(OWNER);
         mvc = MockMvcBuilders.standaloneSetup(new ArticlesController(identityProvider, articleProvider)).build();
     }
 
@@ -136,6 +137,18 @@ class ArticlesControllerTest {
                 IdentityService.Refusal.REVISION_CONFLICT, null));
         mvc.perform(auth(get("/admin/entities/fixture-entity"))).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error.code").value("revision_conflict"));
+    }
+
+    @Test
+    void writeRejectsInvalidCsrfAndChangedActorBeforeParsingOrMutation() throws Exception {
+        when(identity.authorizeWrite("fixture-session", "fixture-csrf", ORIGIN))
+                .thenThrow(new IdentityService.Rejected(IdentityService.Refusal.FORBIDDEN, null));
+        mvc.perform(write(post("/admin/entities/fixture-entity/actions"), "{}"))
+                .andExpect(status().isForbidden());
+        org.mockito.Mockito.doReturn(USER).when(identity).authorizeWrite("fixture-session", "fixture-csrf", ORIGIN);
+        mvc.perform(write(post("/admin/entities/fixture-entity/actions"), "{}"))
+                .andExpect(status().isForbidden());
+        verify(service, never()).actOnEntity(any(), any(), any(), any(), any(), any());
     }
 
     private static MockHttpServletRequestBuilder auth(MockHttpServletRequestBuilder request) {

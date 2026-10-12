@@ -1,0 +1,12 @@
+package com.lianxibu.site.config;
+import static org.junit.jupiter.api.Assertions.*;import static org.mockito.Mockito.*;
+import com.lianxibu.site.service.jobs.CollectorHostMemoryService;import com.lianxibu.site.service.identity.NodeIdentityService;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;import org.junit.jupiter.api.Test;
+class CollectorHostMemoryConfigurationTest {
+ static final String[] FLAGS={"site.ops.collector-memory.enabled","site.browser.enabled","site.collector.enabled"};
+ ApplicationContextRunner runner(){return new ApplicationContextRunner().withUserConfiguration(CollectorHostMemoryConfiguration.class);}
+ ApplicationContextRunner flags(){return runner().withPropertyValues(java.util.Arrays.stream(FLAGS).map(x->x+"=true").toArray(String[]::new));}
+ @Test void defaultFalseOrAnyMissingFlagCreatesNoNativeMemoryWriter(){runner().run(c->{assertNull(c.getStartupFailure());assertTrue(c.getBeansOfType(CollectorHostMemoryService.class).isEmpty());});for(String absent:FLAGS)for(String value:new String[]{"false",""})flags().withPropertyValues(absent+"="+value).run(c->{assertNull(c.getStartupFailure());assertTrue(c.getBeansOfType(CollectorHostMemoryService.class).isEmpty());});}
+ @Test void actualFormalFactoryConstructsOneOriginalNativeProviderWithoutStartupIoOrThreads(){flags().withBean(javax.sql.DataSource.class,()->mock(javax.sql.DataSource.class)).withBean(org.springframework.transaction.PlatformTransactionManager.class,()->mock(org.springframework.transaction.PlatformTransactionManager.class)).withBean(NodeIdentityService.class,()->mock(NodeIdentityService.class)).run(c->{assertNull(c.getStartupFailure());assertEquals(1,c.getBeansOfType(CollectorHostMemoryService.class).size());verifyNoInteractions(c.getBean(javax.sql.DataSource.class),c.getBean(org.springframework.transaction.PlatformTransactionManager.class),c.getBean(NodeIdentityService.class));});}
+ @Test void enabledFormalRuntimeRequiresAllActualNativeAuthorityAndDatabaseDependencies(){flags().withBean(javax.sql.DataSource.class,()->mock(javax.sql.DataSource.class)).withBean(org.springframework.transaction.PlatformTransactionManager.class,()->mock(org.springframework.transaction.PlatformTransactionManager.class)).run(c->assertNotNull(c.getStartupFailure()));flags().withBean(NodeIdentityService.class,()->mock(NodeIdentityService.class)).run(c->assertNotNull(c.getStartupFailure()));}
+}

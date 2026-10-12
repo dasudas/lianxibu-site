@@ -31,8 +31,37 @@ var _ scheduler.NotFoundAdapter = (*SkillAdapter)(nil)
 
 func (a *SkillAdapter) AllowNotFound() bool { return true }
 func Skills() *SkillAdapter                 { return &SkillAdapter{pending: map[string]catalogPending{}} }
+
+func skillLicensePath(repo, path string) string {
+	if repo == "vercel-labs/agent-skills" {
+		return path
+	}
+	return strings.TrimSuffix(path, "SKILL.md") + "LICENSE.txt"
+}
+
+// This recognizes a declaration, not permission to publish. Admission separately
+// binds the exact file hash and reviewed usage scope.
+func skillLicenseDeclaration(repo string, data []byte) string {
+	if repo == "vercel-labs/agent-skills" {
+		if _, _, _, err := skillMetadata(data); err != nil {
+			return ""
+		}
+		text := strings.ReplaceAll(string(data), "\r\n", "\n")
+		end := strings.Index(text[4:], "\n---\n") + 4
+		var values map[string]any
+		if yaml.Unmarshal([]byte(text[4:end]), &values) == nil && values["license"] == "MIT" {
+			return "MIT"
+		}
+		return ""
+	}
+	text := strings.Join(strings.Fields(string(data)), " ")
+	if strings.Contains(text, "Apache License Version 2.0, January 2004") && strings.Contains(text, "http://www.apache.org/licenses/") && strings.Contains(text, "END OF TERMS AND CONDITIONS") {
+		return "Apache-2.0"
+	}
+	return ""
+}
 func skillEntry(c client.RunClaim) (string, string, string, error) {
-	if c.Run.RunID == "" || c.Run.SourceID == "" || c.Config.SourceID != c.Run.SourceID || c.Config.ConfigVersion != c.Run.ConfigVersion || c.Config.Config.ParserVersion != "github-skill-v1" || len(c.Config.Config.EntryURLs) != 1 {
+	if c.Run.RunID == "" || c.Run.SourceID == "" || c.Config.SourceID != c.Run.SourceID || c.Config.ConfigVersion != c.Run.ConfigVersion || (c.Config.Config.ParserVersion != "github-skill-v1" && c.Config.Config.ParserVersion != "github-skill-v2") || len(c.Config.Config.EntryURLs) != 1 {
 		return "", "", "", ErrSourceConfig
 	}
 	entry := c.Config.Config.EntryURLs[0]
@@ -106,7 +135,11 @@ func (a *SkillAdapter) Request(c client.RunClaim, cursor string) (fetcher.Reques
 	case 1:
 		target += "/commits?" + url.Values{"sha": {state.Branch}, "path": {path}, "per_page": {"1"}}.Encode()
 	case 2:
-		target += "/license?ref=" + state.Commit
+		if c.Config.Config.ParserVersion == "github-skill-v2" {
+			target += "/contents/" + skillLicensePath(repo, path) + "?ref=" + state.Commit
+		} else {
+			target += "/license?ref=" + state.Commit
+		}
 	case 3:
 		target += "/contents/" + path + "?ref=" + state.Commit
 	}
@@ -242,6 +275,12 @@ func (a *SkillAdapter) Parse(c client.RunClaim, response fetcher.Result) (schedu
 			if e != nil {
 				return scheduler.Page{}, e
 			}
+			if c.Config.Config.ParserVersion == "github-skill-v2" {
+				if licensePath != skillLicensePath(repo, path) {
+					return scheduler.Page{}, ErrSourceDocument
+				}
+				spdx = skillLicenseDeclaration(repo, data)
+			}
 			hash := sha256.Sum256(data)
 			state.LicensePath = licensePath
 			state.LicenseHash = hex.EncodeToString(hash[:])
@@ -286,7 +325,7 @@ func (a *SkillAdapter) Parse(c client.RunClaim, response fetcher.Result) (schedu
 		if state.LicensePath != "" {
 			evidence = append(evidence, catalogEvidence("https://github.com/"+repo+"/blob/"+state.Commit+"/"+state.LicensePath, state.Commit, state.LicensePath, state.LicenseHash, "metadata"))
 		}
-		payload := map[string]any{"schema_version": "1", "parser_version": "github-skill-v1", "config_version": json.Number(strconv.FormatUint(c.Run.ConfigVersion, 10)), "category": "skill", "identity": map[string]any{"namespace": "github_skill", "key": string(identity)}, "title": name, "source_url": link, "version": version, "published_at": nil, "updated_at": state.Updated, "summary": summary, "document_text": document, "truncated": truncated, "evidence": evidence}
+		payload := map[string]any{"schema_version": "1", "parser_version": c.Config.Config.ParserVersion, "config_version": json.Number(strconv.FormatUint(c.Run.ConfigVersion, 10)), "category": "skill", "identity": map[string]any{"namespace": "github_skill", "key": string(identity)}, "title": name, "source_url": link, "version": version, "published_at": nil, "updated_at": state.Updated, "summary": summary, "document_text": document, "truncated": truncated, "evidence": evidence}
 		if client.ValidateCatalogPayload(payload) != nil {
 			return scheduler.Page{}, ErrSourceDocument
 		}
@@ -355,7 +394,7 @@ func (a *SkillAdapter) Freeze(c client.RunClaim, item scheduler.Item, at time.Ti
 		return outbox.Record{}, ErrSourceConfig
 	}
 	commit := strings.TrimSuffix(strings.TrimPrefix(link, prefix), "/"+path)
-	if !gitCommit(commit) || payload["category"] != "skill" || payload["parser_version"] != "github-skill-v1" || payload["config_version"] != json.Number(strconv.FormatUint(c.Run.ConfigVersion, 10)) {
+	if !gitCommit(commit) || payload["category"] != "skill" || payload["parser_version"] != c.Config.Config.ParserVersion || payload["config_version"] != json.Number(strconv.FormatUint(c.Run.ConfigVersion, 10)) {
 		return outbox.Record{}, ErrSourceConfig
 	}
 	var random [16]byte

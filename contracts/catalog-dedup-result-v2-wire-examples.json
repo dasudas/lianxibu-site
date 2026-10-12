@@ -1,0 +1,2763 @@
+{
+  "schema_ref": "catalog-dedup-result-v2.schema.json",
+  "cases": [
+    {
+      "name": "known-change-agent",
+      "schema_valid": true,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "known-change-skill",
+      "schema_valid": true,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "skill",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "known-change-workflow",
+      "schema_valid": true,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "workflow",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "known-change-model",
+      "schema_valid": true,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "model",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "known-change-no-reanalysis",
+      "schema_valid": true,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": false,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "known-unchanged",
+      "schema_valid": true,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": false,
+            "version_changed": false,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "existing-version-unknown",
+      "schema_valid": true,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": false,
+            "version_changed": null,
+            "previous_evidence_ref": null,
+            "new_evidence_ref": null
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "new-version-not-determined",
+      "schema_valid": true,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "new",
+            "candidate_entity_id": null,
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": false,
+            "version_changed": null,
+            "previous_evidence_ref": null,
+            "new_evidence_ref": null
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "needs_review-version-not-determined",
+      "schema_valid": true,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "needs_review",
+            "candidate_entity_id": null,
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": false,
+            "version_changed": null,
+            "previous_evidence_ref": null,
+            "new_evidence_ref": null
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "missing-dedup_result_version",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "missing-version_changed",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "missing-previous_evidence_ref",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "missing-new_evidence_ref",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "news-category-v2",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "news_tech",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "unknown-reanalysis",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": null,
+            "previous_evidence_ref": null,
+            "new_evidence_ref": null
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "unchanged-reanalysis",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": false,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "known-missing-old-ref",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": null,
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "new-with-known-version",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "new",
+            "candidate_entity_id": null,
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "existing-without-candidate",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": null,
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "wrong-proof-kind",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "uppercase-proof-hash",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "unknown-item-field",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "fictional_unknown": true
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "string-version-flag",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": "true",
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "empty-items",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "101-items",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item-0",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-1",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-2",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-3",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-4",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-5",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-6",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-7",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-8",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-9",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-10",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-11",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-12",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-13",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-14",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-15",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-16",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-17",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-18",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-19",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-20",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-21",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-22",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-23",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-24",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-25",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-26",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-27",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-28",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-29",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-30",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-31",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-32",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-33",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-34",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-35",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-36",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-37",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-38",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-39",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-40",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-41",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-42",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-43",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-44",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-45",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-46",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-47",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-48",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-49",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-50",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-51",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-52",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-53",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-54",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-55",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-56",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-57",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-58",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-59",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-60",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-61",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-62",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-63",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-64",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-65",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-66",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-67",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-68",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-69",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-70",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-71",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-72",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-73",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-74",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-75",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-76",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-77",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-78",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-79",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-80",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-81",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-82",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-83",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-84",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-85",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-86",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-87",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-88",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-89",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-90",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-91",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-92",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-93",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-94",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-95",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-96",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-97",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-98",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-99",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          },
+          {
+            "item_id": "fictional-item-100",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary."
+      }
+    },
+    {
+      "name": "unknown-envelope-field",
+      "schema_valid": false,
+      "value": {
+        "kind": "dedup",
+        "dedup_result_version": "2",
+        "items": [
+          {
+            "item_id": "fictional-item",
+            "category": "agent",
+            "decision": "existing",
+            "candidate_entity_id": "fictional-entity",
+            "reason": "Fictional version comparison.",
+            "confidence": "0.95",
+            "suggested_title": "Fictional object",
+            "suggested_summary": "Fictional summary",
+            "reanalyze_recommended": true,
+            "version_changed": true,
+            "previous_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "new_evidence_ref": {
+              "kind": "catalog_version_evidence",
+              "proof_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          }
+        ],
+        "summary": "Fictional complete source summary.",
+        "fictional_unknown": true
+      }
+    }
+  ],
+  "runtime_rules": [
+    "Select revision 2 only from the original frozen input.",
+    "Match every original item exactly once and its original category and candidate set.",
+    "Compare known version flags and both proof references to the original native qualification; schema shape grants no authority.",
+    "Unknown version does not record a negative reanalysis judgment.",
+    "Version false or null cannot recommend reanalysis.",
+    "Native judgment, generation creation and receipt use one fresh shared writer; retries retain original identity and call budget."
+  ]
+}

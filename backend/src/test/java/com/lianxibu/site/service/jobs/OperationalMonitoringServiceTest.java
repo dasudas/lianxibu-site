@@ -56,6 +56,25 @@ class OperationalMonitoringServiceTest {
         assertEquals(original, service.sample(heartbeat, true, new Heartbeat(901, true, false, false),
                 OperationalRuleEngineTest.START.plusSeconds(120), action("sample-OPS-02-2")));
     }
+    @Test void NativeOomImmutableReceiptHashBindsEveryActualProcessAndCounterField() {
+        Key memory = new Key("OPS-06", "fixture", "fictional-memory");
+        var original = JavaMemoryVmEventsRuleTest.sample(0, 0, 0, 0);
+        var saved = service.sample(memory, true, original, clock.instant(), action("fictional-native-sample"));
+        assertEquals(saved, service.sample(memory, true, original, clock.instant(), action("fictional-native-sample")));
+        int saves = store.saves;
+        var vm = original.vm();
+        var variants = List.of(
+                new com.lianxibu.site.domain.jobs.JavaVmOomTelemetry.Evidence(vm.pid()+1, vm.startedAt(), vm.receivedAt(), 0, 0, 0),
+                new com.lianxibu.site.domain.jobs.JavaVmOomTelemetry.Evidence(vm.pid(), vm.startedAt().minusSeconds(1), vm.receivedAt(), 0, 0, 0),
+                new com.lianxibu.site.domain.jobs.JavaVmOomTelemetry.Evidence(vm.pid(), vm.startedAt(), vm.receivedAt().plusSeconds(1), 0, 0, 0),
+                new com.lianxibu.site.domain.jobs.JavaVmOomTelemetry.Evidence(vm.pid(), vm.startedAt(), vm.receivedAt(), 1, 0, 0),
+                new com.lianxibu.site.domain.jobs.JavaVmOomTelemetry.Evidence(vm.pid(), vm.startedAt(), vm.receivedAt(), 0, 1, 0),
+                new com.lianxibu.site.domain.jobs.JavaVmOomTelemetry.Evidence(vm.pid(), vm.startedAt(), vm.receivedAt(), 0, 0, 1));
+        for (var changed : variants)
+            assertThrows(IllegalStateException.class, () -> service.sample(memory, true, new JavaMemoryVmEvents(original.kernel(), changed),
+                    clock.instant(), action("fictional-native-sample")));
+        assertEquals(saves, store.saves);
+    }
     @Test void ownerRevisionAndStaleRecoveryChecksHaveNoSideEffects() {
         State state = sample(CAPACITY, 0, new Capacity(new BigDecimal("4")));
         State initial = state;

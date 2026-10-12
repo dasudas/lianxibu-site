@@ -17,10 +17,12 @@ public final class ReviewPublicationJdbcStore implements Store {
         void lockStableIdentity(JsonNode target);
     }
     public record Command(String operation,String kind,String id,long expectedRevision,
-                          String bodyHash,String reason) {
+                          String bodyHash,String reason,String withdrawalReason) {
+        public Command(String operation,String kind,String id,long expectedRevision,String bodyHash,String reason){this(operation,kind,id,expectedRevision,bodyHash,reason,null);}
         public Command {
-            if(!Set.of("approve","publish","edit").contains(operation)||!Set.of("report","agent","skill","workflow","model").contains(kind)||expectedRevision<1||expectedRevision>=CanonicalJson.MAX_SAFE_INTEGER||reason==null||reason.isBlank()||reason.codePointCount(0,reason.length())>2048)throw new IllegalArgumentException("invalid review command");WireValues.id(id,false);
+            if(!Set.of("approve","publish","edit","reject","withdraw").contains(operation)||!Set.of("report","agent","skill","workflow","model").contains(kind)||expectedRevision<1||expectedRevision>=CanonicalJson.MAX_SAFE_INTEGER||reason==null||reason.isBlank()||reason.codePointCount(0,reason.length())>2048)throw new IllegalArgumentException("invalid review command");WireValues.id(id,false);
             if(operation.equals("edit")?bodyHash==null||!bodyHash.matches("[0-9a-f]{64}"):bodyHash!=null)throw new IllegalArgumentException("invalid review body identity");
+            if(operation.equals("withdraw")?withdrawalReason==null||!Set.of("display_adjustment","conclusion_error").contains(withdrawalReason):withdrawalReason!=null)throw new IllegalArgumentException("invalid withdrawal reason");
         }
     }
     private final Command command;
@@ -31,8 +33,14 @@ public final class ReviewPublicationJdbcStore implements Store {
     private final FrozenContentVersionService versions;
     private final ValidityProof validity;
     private final FrozenReferenceClosure closure;
+    private final ContentWithdrawalEffects withdrawal;
     public ReviewPublicationJdbcStore(Command command,ContentReviewWriteService writer,ContentReadService contents,
                                       ContentReviewEvidenceService audit,FrozenContentVersionService versions,ValidityProof validity){
+        this(command,writer,contents,audit,versions,validity,null);
+    }
+    public ReviewPublicationJdbcStore(Command command,ContentReviewWriteService writer,ContentReadService contents,
+                                      ContentReviewEvidenceService audit,FrozenContentVersionService versions,ValidityProof validity,ContentWithdrawalEffects withdrawal){
+        this.withdrawal=withdrawal;
         this.command=command;this.writer=Objects.requireNonNull(writer);this.contents=Objects.requireNonNull(contents);this.audit=Objects.requireNonNull(audit);this.versions=Objects.requireNonNull(versions);this.validity=Objects.requireNonNull(validity);
         commandHash=command==null?null:hash(command);
         closure=new FrozenReferenceClosure(new FrozenReferenceClosure.Source(){public FrozenReferenceClosure.Evidence resolve(ContentVersionKey key){return versions.resolve(key);}public boolean leafExists(JsonNode target){return validity.exactVersionExists(target);}});
@@ -41,6 +49,8 @@ public final class ReviewPublicationJdbcStore implements Store {
         if(command==null||!command.operation().equals(operation)||!command.kind().equals(kind)||!command.id().equals(id)||command.expectedRevision()!=expected||!Objects.equals(command.bodyHash(),bodyHash))throw new Conflict("command_identity_conflict");
     }
     @Override public Receipt committed(String key){if(command==null)throw new Conflict("read_only_provider");return audit.committed(key,commandHash);}
+    public ContentReviewEvidenceService.Recorded recordedEdit(String key){requireCommandEdit();return audit.recorded(key,commandHash);}
+    private void requireCommandEdit(){if(command==null||!"edit".equals(command.operation()))throw new Conflict("command_identity_conflict");}
     @Override public Current lock(String kind,String id){
         JdbcFrozenInputs.requireTx();if(command==null||!command.kind().equals(kind)||!command.id().equals(id))throw new Conflict("target_mismatch");
         var row=contents.reviewSnapshot(kind,id).orElse(null);if(row==null)return null;var first=snapshot(row);
@@ -58,10 +68,13 @@ public final class ReviewPublicationJdbcStore implements Store {
         writer.approve(row,stamp,stampId,current.frozen().inputHash());append(key,new Receipt(row.kind(),row.id(),row.revision()+1,"approved",stamp.hash()));
     }
     @Override public void publish(ReviewContentState row,String key){requireOperation("publish");writer.publish(row);append(key,new Receipt(row.kind(),row.id(),row.revision()+1,"published",HexFormat.of().formatHex(row.reviewStampHash())));}
+    @Override public void reject(ReviewContentState row,String key){requireOperation("reject");writer.reject(row);append(key,new Receipt(row.kind(),row.id(),row.revision()+1,"draft",null));}
+    @Override public void verifyWithdrawal(String cause){if(command==null||!"withdraw".equals(command.operation())||!Objects.equals(command.withdrawalReason(),cause)||withdrawal==null)throw new Conflict("withdrawal_command_conflict");}
+    @Override public void withdraw(ReviewContentState row,String key){requireOperation("withdraw");verifyWithdrawal(command.withdrawalReason());withdrawal.apply(row,command.withdrawalReason(),command.reason(),key);append(key,new Receipt(row.kind(),row.id(),row.revision()+1,"withdrawn",null));}
     @Override public void edit(ReviewContentState row,String body,byte[] bodyHash,String key){requireOperation("edit");audit.archiveCurrent(ContentVersionKey.fromJson(version(row)));writer.edit(row,body,bodyHash);append(key,new Receipt(row.kind(),row.id(),row.revision()+1,"draft",null));}
     private void append(String key,Receipt receipt){var row=contents.reviewSnapshot(receipt.kind(),receipt.id()).orElseThrow(()->new Conflict("content_missing"));audit.append(key,commandHash,command.reason(),receipt,ContentVersionKey.fromJson(version(row)));}
     private VersionValidityService.Validity requiredValidity(JsonNode target){if(!validity.exactVersionExists(target))throw new Conflict("invalid_evidence");var value=validity.validity(target);if(value==null||value.revision()<0||value.revision()>CanonicalJson.MAX_SAFE_INTEGER||value.activeDispositionIds()==null||value.effectiveValid()!=value.activeDispositionIds().isEmpty())throw new Conflict("invalid_evidence");return value;}
     private void requireOperation(String operation){JdbcFrozenInputs.requireTx();if(command==null||!operation.equals(command.operation()))throw new Conflict("command_identity_conflict");}
     private static JsonNode version(ReviewContentState row){if(row.bodyRevision()==null||row.bodyHashV1()==null||row.inputJobId()==null)throw new Conflict("invalid_evidence");var node=JsonMapper.shared().createObjectNode();node.put("kind","content_version");node.put("content_kind",row.kind());node.put("content_id",row.id());node.put("revision",row.bodyRevision());node.put("body_hash",HexFormat.of().formatHex(row.bodyHashV1()));node.put("input_job_id",row.inputJobId());ContentVersionKey.fromJson(node);return node;}
-    private static String hash(Command c){var node=JsonMapper.shared().createObjectNode();node.put("operation",c.operation());node.put("kind",c.kind());node.put("id",c.id());node.put("expected_revision",c.expectedRevision());node.put("body_hash",c.bodyHash());node.put("reason",c.reason());return CanonicalJson.hash(CanonicalJson.Domain.ACTION,node);}
+    private static String hash(Command c){var node=JsonMapper.shared().createObjectNode();node.put("operation",c.operation());node.put("kind",c.kind());node.put("id",c.id());node.put("expected_revision",c.expectedRevision());node.put("body_hash",c.bodyHash());node.put("reason",c.reason());if("withdraw".equals(c.operation()))node.put("withdrawal_reason",c.withdrawalReason());return CanonicalJson.hash(CanonicalJson.Domain.ACTION,node);}
 }

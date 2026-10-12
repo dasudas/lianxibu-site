@@ -8,6 +8,8 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
@@ -24,6 +26,9 @@ class DeepSeekChatClientTest {
     private volatile int status = 200;
     private volatile String response = reply("{\"answer\":1}", true);
     private volatile boolean truncate;
+    private volatile boolean stall;
+    private final CountDownLatch headersSent=new CountDownLatch(1);
+    private final CountDownLatch finishBody=new CountDownLatch(1);
 
     @BeforeEach void setup() throws Exception {
         server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
@@ -34,6 +39,11 @@ class DeepSeekChatClientTest {
             exchange.getResponseHeaders().add("Retry-After", "7");
             byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(status, bytes.length + (truncate ? 20 : 0));
+            if(stall) {
+                exchange.getResponseBody().write(bytes,0,1);exchange.getResponseBody().flush();headersSent.countDown();
+                try { finishBody.await(5,TimeUnit.SECONDS); } catch(InterruptedException e) {Thread.currentThread().interrupt();}
+                exchange.close();return;
+            }
             exchange.getResponseBody().write(bytes);
             exchange.close();
         });
@@ -43,7 +53,26 @@ class DeepSeekChatClientTest {
                 URI.create("http://localhost:" + server.getAddress().getPort()
                         + "/chat/completions"), () -> "fixture-key");
     }
-    @AfterEach void stop() { server.stop(0); }
+    @AfterEach void stop() { finishBody.countDown();server.stop(0); }
+
+    @Test void responseBodyCannotOutliveTotalDeadlineAndIsNeverRetried() {
+        stall=true;
+        var bounded=new DeepSeekChatClient(HttpClient.newHttpClient(),URI.create("http://localhost:"+server.getAddress().getPort()+"/chat/completions"),()->"fictional-key",Duration.ofMillis(500));
+        var result=assertTimeoutPreemptively(Duration.ofSeconds(3),()->bounded.sendOnce(request()));
+        assertEquals(Status.UNKNOWN,result.status());assertEquals(1,calls.get());assertEquals(0,headersSent.getCount());
+    }
+    @Test void interruptCancelsTheActualBodyWaitAndPreservesInterruptStatus() throws Exception {
+        stall=true;var outcome=new AtomicReference<DeepSeekChatClient.Outcome>();var interrupted=new java.util.concurrent.atomic.AtomicBoolean();
+        Thread sender=new Thread(()->{outcome.set(client.sendOnce(request()));interrupted.set(Thread.currentThread().isInterrupted());});
+        sender.start();try {
+            assertTrue(headersSent.await(3,TimeUnit.SECONDS));sender.interrupt();sender.join(2000);
+            assertFalse(sender.isAlive());assertEquals(Status.UNKNOWN,outcome.get().status());assertTrue(interrupted.get());assertEquals(1,calls.get());
+        } finally {finishBody.countDown();sender.interrupt();sender.join(3000);}
+    }
+    @Test void oversizedResponseCancelsWithoutAnotherSend() {
+        response="x".repeat(2*1024*1024+1);
+        assertEquals(Status.INVALID_JSON,client.sendOnce(request()).status());assertEquals(1,calls.get());
+    }
 
     @Test void sendsOneOfficialShapeAndPreservesUnknownCost() throws Exception {
         var outcome = client.sendOnce(request());
@@ -90,6 +119,16 @@ class DeepSeekChatClientTest {
         response = response.replace("\"stop\"", "\"length\"");
         assertEquals(Status.INVALID_JSON, client.sendOnce(request()).status());
         assertEquals(2, calls.get());
+    }
+
+    @Test void invalidUsageIsUnknownWithoutLongOverflowOrInventedZero() {
+        for(String usage:java.util.List.of(
+                "{\"prompt_tokens\":18446744073709551624,\"completion_tokens\":4,\"total_tokens\":12}",
+                "{\"prompt_tokens\":8,\"completion_tokens\":4,\"total_tokens\":13}",
+                "{\"prompt_tokens\":8,\"completion_tokens\":4,\"total_tokens\":12,\"prompt_cache_hit_tokens\":9}")) {
+            response=reply("{\"answer\":1}",false).replace("}]}","}],\"usage\":"+usage+"}");
+            var result=client.sendOnce(request());assertEquals(Status.VALID,result.status());assertNull(result.usage());
+        }
     }
 
     @Test void incompleteHttpBodyIsUnknownAndNeverResent() {

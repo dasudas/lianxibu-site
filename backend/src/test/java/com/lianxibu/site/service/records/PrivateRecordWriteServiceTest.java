@@ -152,7 +152,7 @@ class PrivateRecordWriteServiceTest {
         final Map<String, RecordsService.Record> receipts = new HashMap<>();
         final Map<String, String> hashes = new HashMap<>();
         List<String> routeNodes = List.of();
-        @Override public RecordsService.Record committed(String key, String hash) {
+        @Override public RecordsService.Record committed(String userId, String key, String hash) {
             if (hashes.containsKey(key) && !hashes.get(key).equals(hash))
                 throw new IllegalStateException("action conflict");
             return receipts.get(key);

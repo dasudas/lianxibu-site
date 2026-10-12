@@ -8,6 +8,12 @@ import tools.jackson.databind.JsonNode;
 
 /** Owner-only job and alert contract port. Business admission and persistence follow later. */
 public interface JobsService {
+    enum JobRefusal { REVISION_CONFLICT, IDENTITY_CONFLICT, NOT_FOUND, RUN_FROZEN, RETRY_EXHAUSTED, EXTERNAL_RESULT_UNRESOLVED, SUPERSEDED, INVALID_EVIDENCE, INPUT_UNCHANGED }
+    final class JobRejected extends RuntimeException {
+        private final JobRefusal refusal;
+        public JobRejected(JobRefusal refusal){super(refusal.name());this.refusal=refusal;}
+        public JobRefusal refusal(){return refusal;}
+    }
     enum OpsRefusal { REVISION_CONFLICT, RECOVERY_CONDITION_UNMET, IDENTITY_CONFLICT, NOT_FOUND, CONFIGURATION_UNKNOWN }
     final class OpsRejected extends RuntimeException {
         private final OpsRefusal refusal;
@@ -34,7 +40,11 @@ public interface JobsService {
     record JobPage(List<Job> items, long page, int pageSize, long total) implements JobOrAlertPage { }
     record AlertPage(List<Alert> items, long page, int pageSize, long total) implements JobOrAlertPage { }
     record ResourceRef(String kind, String id, String packageId) { }
-    record JobCreate(String taskType, ResourceRef target, long expectedRevision, String reason) { }
+    record AdHocRequest(String prompt) { @Override public String toString(){return "TemporaryQuestion[redacted]";} }
+    record JobCreate(String taskType, ResourceRef target, long expectedRevision, String reason,AdHocRequest request) {
+        public JobCreate(String taskType,ResourceRef target,long expectedRevision,String reason){this(taskType,target,expectedRevision,reason,null);}
+        @Override public String toString(){return "OwnerJobCreation[redacted]";}
+    }
     record ValidatedResult(String schemaVersion, String inputHash, JsonNode payload, String resultHash) { }
     record JobAction(long expectedRevision, String action, String reason, String attemptId,
                      Long expectedContentRevision, String resultHash, String externalState,

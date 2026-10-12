@@ -79,7 +79,7 @@ public final class JdbcJobRecords {
         insertRecord(intent.id(), "generation_intent", identity, "waiting_input", 0, now,
                 "logical_key,logical_key_hash,generation,task_type,business_date,input_state",
                 intent.logicalKey(), sha(intent.logicalKey()), intent.generation(),
-                intent.taskType(), java.sql.Date.valueOf(intent.businessDate()), "waiting_input");
+                intent.taskType(), intent.businessDate().toString(), "waiting_input");
         return intent.id();
     }
 
@@ -185,6 +185,11 @@ public final class JdbcJobRecords {
     }
 
     public String appendDisposition(Disposition value, Instant now) {
+        return appendDisposition(value,now,false);
+    }
+    /** Native proof ledgers explicitly persist their timestamp boundary as UTC. */
+    public String appendDispositionUtc(Disposition value,Instant now){return appendDisposition(value,now,true);}
+    private String appendDisposition(Disposition value,Instant now,boolean timestampsUtc) {
         requireTx();
         if (value == null || !id(value.id()) || value.actionKey() == null
                 || !value.actionKey().matches("[A-Za-z0-9._:-]{1,128}") || !id(value.targetType())
@@ -198,7 +203,7 @@ public final class JdbcJobRecords {
                 throw new Conflict();
             return previous.id();
         }
-        insertRecord(value.id(), "disposition", identity, "applied", 0, now,
+        insertRecord(timestampsUtc,value.id(), "disposition", identity, "applied", 0, now,
                 "action_key_hash,target_type,target_key_json,target_key_hash,operator_id,reason,"
                         + "acted_at,action_payload,action_payload_hash",
                 actionHash, value.targetType(),
@@ -220,7 +225,7 @@ public final class JdbcJobRecords {
 
     private boolean sameIntent(String id, Intent value) {
         return jdbc.queryForObject("SELECT task_type=? AND business_date=? FROM jobs WHERE id=?",
-                Boolean.class, value.taskType(), java.sql.Date.valueOf(value.businessDate()), id);
+                Boolean.class, value.taskType(), value.businessDate().toString(), id);
     }
     private boolean sameRoot(String id, Root value) {
         return jdbc.queryForObject("SELECT intent_id=? AND task_type=? AND priority_no=?"
@@ -257,6 +262,10 @@ public final class JdbcJobRecords {
     }
     private void insertRecord(String id, String kind, byte[] identity, String state,
                               int priority, Instant now, String extraColumns, Object... extras) {
+        insertRecord(false,id,kind,identity,state,priority,now,extraColumns,extras);
+    }
+    private void insertRecord(boolean timestampsUtc,String id,String kind,byte[] identity,String state,
+                              int priority,Instant now,String extraColumns,Object...extras) {
         String key = kind + ":" + HexFormat.of().formatHex(identity);
         int extraCount = extraColumns.split(",").length;
         if (extraCount != extras.length) throw new IllegalArgumentException("typed job columns mismatch");
@@ -265,10 +274,18 @@ public final class JdbcJobRecords {
         Collections.addAll(values, id, key, kind, id, state, priority, Timestamp.from(now),
                 0, Timestamp.from(now), Timestamp.from(now), kind, identity, 0);
         Collections.addAll(values, extras);
-        jdbc.update("INSERT INTO jobs(id,business_key,task_kind,target_id,state,priority_no,"
+        String sql="INSERT INTO jobs(id,business_key,task_kind,target_id,state,priority_no,"
                         + "eligible_at,revision,created_at,updated_at,record_kind,record_identity_hash,"
                         + "call_count," + extraColumns + ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,"
-                        + placeholders + ")", values.toArray());
+                        + placeholders + ")";
+        if(!timestampsUtc){jdbc.update(sql,values.toArray());return;}
+        jdbc.update(connection->{
+            var statement=connection.prepareStatement(sql);
+            for(int n=0;n<values.size();n++){Object value=values.get(n);
+                if(value instanceof Timestamp time)statement.setTimestamp(n+1,time,java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")));
+                else statement.setObject(n+1,value);
+            }return statement;
+        });
     }
     private static void requireTx() {
         if (!TransactionSynchronizationManager.isActualTransactionActive())

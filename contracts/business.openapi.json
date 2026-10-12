@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lianxibu business API",
-    "version": "0.28",
+    "version": "0.34",
     "description": "Design contract. Observation revisions 0.11/0.12; config/control 0.11. Owner: Java backend; consumers: browser / Go collector. Not a deployed API."
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -11948,7 +11948,7 @@
       "post": {
         "operationId": "business_post_admin_jobs_id_actions",
         "summary": "POST /admin/jobs/{id}/actions",
-        "description": "Semantics and transaction invariants: api-contract.md. Schema validation precedes service semantic checks.",
+        "description": "Semantics and transaction invariants: api-contract.md. Schema validation precedes service semantic checks. Owner cancel also accepts one original P14 ad_hoc_ai generation_intent only while no original execution root, attempt, INPUT or generation_prepare receipt exists. Owner authorization precedes identity parsing or SQL. Complete original native acceptance must be captured readonly and reverified inside the sole shared short writer; current native waiting_input revision CAS then cancelled, no slot, budget or original request mutation. Already cancelled unprepared intent can record a no-change confirmation; same idempotency key replays its exact original receipt before current eligibility and never resets the same question identity. A prepared intent refuses 409 run_frozen and the owner must act on its original logical task; other intent kinds remain read-only. Cancel/prepare competition serializes at the existing shared writer. Same key with changed target, expected revision, actor or exact reason refuses 409 identity_conflict; stale revision refuses 409 revision_conflict; absent target 404; damaged acceptance/receipt or storage failure sanitized 503. Existing logical-task cancellation semantics and all closed request/response shapes remain unchanged; no provider call, refund, attempt creation, new generation or publication permission.",
         "security": [
           {
             "sessionCookie": [],
@@ -13673,6 +13673,137 @@
                   "maxLength": 64
                 },
                 "description": "Retry delay in seconds or HTTP-date; honor before bounded backoff."
+              }
+            }
+          },
+          "503": {
+            "description": "temporarily_unavailable / source_mapping_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "description": "Retry delay in seconds or HTTP-date; honor before bounded backoff."
+              }
+            }
+          }
+        },
+        "x-authorization": "owner",
+        "x-contract-source": "api-contract.md",
+        "x-idempotency": "not applicable"
+      }
+    },
+    "/admin/jobs/{id}/ad-hoc": {
+      "get": {
+        "operationId": "business_get_admin_jobs_id_ad_hoc",
+        "summary": "GET /admin/jobs/{id}/ad-hoc",
+        "description": "Owner-only no-store read of one ORIGINAL ad_hoc_ai generation_intent ID. No query fields. original_request.prompt preserves exact original Unicode question; audit reason/settings/actor/private request are not exposed. prepared_job is the same original root only after full native original acceptance and generation-prepare receipt validation; null means no root and no prepare receipt, never a damaged proof. retained_result is the fully validated original AdHocResult envelope, null when no retained result; never regenerate or invoke AI on read. All returned native metadata and result proofs share one readonly repeatable-read snapshot, after pure input construction outside every transaction and fresh original acceptance equality. Cross-field IDs, input hashes and original question must match; failed/cancelled states do not erase a proven retained answer. IDs are opaque strings; no current content/publication/application permission. Response <= 1 MiB. Authentication/owner role before identity parsing/storage; 400 unknown/duplicate query, 422 malformed identity, 404 absent/non-P14 intent, 503 corrupt/incomplete/capacity/storage proof with Retry-After 1. No mutation, slot/budget changes or paid model call.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; replay returns the original result. No partial batch omission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdHocQuestionView"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                },
+                "description": "Dynamic response; visibility must be revalidated."
+              }
+            }
+          },
+          "400": {
+            "description": "protocol_error: unknown or duplicate JSON keys / malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden: current permission checked before replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: includes hidden or invalid public content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "validation / target_mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           },
@@ -19094,9 +19225,16 @@
                 "maxLength": 2048
               },
               "expected_content_revision": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "result_hash": {
                 "type": "string",
@@ -19724,34 +19862,94 @@
         ]
       },
       "JobCreate": {
-        "type": "object",
-        "properties": {
-          "task_type": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 32
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "task_type": {
+                "allOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32
+                  },
+                  {
+                    "not": {
+                      "const": "ad_hoc_ai"
+                    }
+                  }
+                ]
+              },
+              "target": {
+                "$ref": "#/components/schemas/ResourceRef"
+              },
+              "expected_revision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              }
+            },
+            "required": [
+              "task_type",
+              "target",
+              "expected_revision",
+              "reason"
+            ],
+            "additionalProperties": false
           },
-          "target": {
-            "$ref": "#/components/schemas/ResourceRef"
-          },
-          "expected_revision": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 9007199254740991
-          },
-          "reason": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 2048
+          {
+            "type": "object",
+            "properties": {
+              "task_type": {
+                "const": "ad_hoc_ai"
+              },
+              "target": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "ad_hoc_request"
+                  },
+                  "id": {
+                    "$ref": "#/components/schemas/Id"
+                  },
+                  "package_id": {
+                    "type": "null"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "id",
+                  "package_id"
+                ],
+                "additionalProperties": false
+              },
+              "expected_revision": {
+                "const": 0
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "request": {
+                "$ref": "#/components/schemas/AdHocJobRequest"
+              }
+            },
+            "required": [
+              "task_type",
+              "target",
+              "expected_revision",
+              "reason",
+              "request"
+            ],
+            "additionalProperties": false
           }
-        },
-        "required": [
-          "task_type",
-          "target",
-          "expected_revision",
-          "reason"
-        ],
-        "additionalProperties": false
+        ]
       },
       "PackageImport": {
         "type": "object",
@@ -24435,6 +24633,12 @@
           },
           {
             "$ref": "#/components/schemas/AdHocResult"
+          },
+          {
+            "$ref": "#/components/schemas/ValueResultV2"
+          },
+          {
+            "$ref": "#/components/schemas/CatalogDedupResultV2"
           }
         ]
       },
@@ -25857,6 +26061,528 @@
         ],
         "additionalProperties": false,
         "description": "Owner-only permanent member action receipt. command_ref must exactly match submitted source/run/item/revision/action and complete wire command hash. In-place root is source_run_item with original item ID, revision expected+1 and generation null. Frozen item decision creates only a new correction run: root source_run with a different run ID, positive generation and original source binding; result_revision is new run management revision. Both roots have package_id null. Original frozen run/member remains unchanged. Receipt proves command acceptance only, never collection or analysis completion. No source credentials, original source payload or business body."
+      },
+      "ValueDecisionV2": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "news_tech",
+              "agent",
+              "skill",
+              "workflow",
+              "model"
+            ]
+          },
+          "high_value": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "valuable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "item_id",
+          "category",
+          "high_value",
+          "reason",
+          "valuable"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "high_value": {
+                  "const": true
+                }
+              },
+              "required": [
+                "high_value"
+              ]
+            },
+            "then": {
+              "properties": {
+                "valuable": {
+                  "const": true
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ValueResultV2": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "const": "value"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValueDecisionV2"
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "selected_item_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+            },
+            "minItems": 0,
+            "maxItems": 5,
+            "uniqueItems": true
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 16384
+          },
+          "value_result_version": {
+            "const": "2"
+          }
+        },
+        "required": [
+          "kind",
+          "items",
+          "selected_item_ids",
+          "summary",
+          "value_result_version"
+        ],
+        "additionalProperties": false
+      },
+      "AdHocJobRequest": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32768
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "additionalProperties": false
+      },
+      "AdHocQuestionView": {
+        "type": "object",
+        "properties": {
+          "intent": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Job"
+              },
+              {
+                "properties": {
+                  "record_kind": {
+                    "const": "generation_intent"
+                  },
+                  "task_type": {
+                    "const": "ad_hoc_ai"
+                  },
+                  "priority": {
+                    "const": 0
+                  },
+                  "call_count": {
+                    "const": 0
+                  },
+                  "max_attempts": {
+                    "type": "null"
+                  },
+                  "content_id": {
+                    "type": "null"
+                  },
+                  "report_mode": {
+                    "type": "null"
+                  }
+                }
+              }
+            ]
+          },
+          "original_request": {
+            "$ref": "#/components/schemas/AdHocJobRequest"
+          },
+          "prepared_job": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Job"
+                  },
+                  {
+                    "properties": {
+                      "record_kind": {
+                        "const": "logical_task"
+                      },
+                      "task_type": {
+                        "const": "ad_hoc_ai"
+                      },
+                      "priority": {
+                        "const": 14
+                      },
+                      "max_attempts": {
+                        "const": 3
+                      },
+                      "content_id": {
+                        "type": "null"
+                      },
+                      "report_mode": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "retained_result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ValidatedResult"
+                  },
+                  {
+                    "properties": {
+                      "payload": {
+                        "$ref": "#/components/schemas/AdHocResult"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "intent",
+          "original_request",
+          "prepared_job",
+          "retained_result"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "prepared_job": {
+                  "type": "null"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "retained_result": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "CatalogVersionEvidenceRef": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "const": "catalog_version_evidence"
+          },
+          "proof_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+          }
+        },
+        "required": [
+          "kind",
+          "proof_hash"
+        ],
+        "additionalProperties": false
+      },
+      "CatalogDedupDecisionV2": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "skill",
+              "workflow",
+              "model"
+            ]
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "new",
+              "existing",
+              "needs_review"
+            ]
+          },
+          "candidate_entity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "confidence": {
+            "type": "string",
+            "pattern": "^(0(\\.[0-9]{1,8})?|1(\\.0{1,8})?)$(?![\\s\\S])"
+          },
+          "suggested_title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "suggested_summary": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 16384
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reanalyze_recommended": {
+            "type": "boolean"
+          },
+          "version_changed": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "previous_evidence_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CatalogVersionEvidenceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "new_evidence_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CatalogVersionEvidenceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "item_id",
+          "category",
+          "decision",
+          "candidate_entity_id",
+          "reason",
+          "confidence",
+          "suggested_title",
+          "suggested_summary",
+          "reanalyze_recommended",
+          "version_changed",
+          "previous_evidence_ref",
+          "new_evidence_ref"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "decision": {
+                  "const": "existing"
+                }
+              },
+              "required": [
+                "decision"
+              ]
+            },
+            "then": {
+              "properties": {
+                "candidate_entity_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$(?![\\s\\S])"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "version_changed": {
+                  "type": "null"
+                },
+                "previous_evidence_ref": {
+                  "type": "null"
+                },
+                "new_evidence_ref": {
+                  "type": "null"
+                },
+                "reanalyze_recommended": {
+                  "const": false
+                },
+                "candidate_entity_id": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "version_changed": {
+                  "type": "null"
+                }
+              },
+              "required": [
+                "version_changed"
+              ]
+            },
+            "then": {
+              "properties": {
+                "version_changed": {
+                  "type": "null"
+                },
+                "previous_evidence_ref": {
+                  "type": "null"
+                },
+                "new_evidence_ref": {
+                  "type": "null"
+                },
+                "reanalyze_recommended": {
+                  "const": false
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "previous_evidence_ref": {
+                  "$ref": "#/components/schemas/CatalogVersionEvidenceRef"
+                },
+                "new_evidence_ref": {
+                  "$ref": "#/components/schemas/CatalogVersionEvidenceRef"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "version_changed": {
+                  "const": false
+                }
+              },
+              "required": [
+                "version_changed"
+              ]
+            },
+            "then": {
+              "properties": {
+                "reanalyze_recommended": {
+                  "const": false
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "reanalyze_recommended": {
+                  "const": true
+                }
+              },
+              "required": [
+                "reanalyze_recommended"
+              ]
+            },
+            "then": {
+              "properties": {
+                "decision": {
+                  "const": "existing"
+                },
+                "version_changed": {
+                  "const": true
+                }
+              }
+            }
+          }
+        ]
+      },
+      "CatalogDedupResultV2": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "const": "dedup"
+          },
+          "dedup_result_version": {
+            "const": "2"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogDedupDecisionV2"
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 16384
+          }
+        },
+        "required": [
+          "kind",
+          "dedup_result_version",
+          "items",
+          "summary"
+        ],
+        "additionalProperties": false
       }
     },
     "securitySchemes": {

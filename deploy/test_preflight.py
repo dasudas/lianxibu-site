@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 import preflight
+import release_config
 
 class PreflightTests(unittest.TestCase):
     def setUp(self):
@@ -15,6 +16,8 @@ class PreflightTests(unittest.TestCase):
         self.facts = {"schema_revision": 2, "queue_schema_revision": 3,
                       "backend_capabilities": {"artifact_sha256": self.read(self.current[0])["artifact_sha256"], "supported_features": ["fictional_feature"]},
                       "release_gates": {key: True for key in ("V03", "V05", "V07", "V08", "V09")}}
+        self.environment = self.root / "fictional-backend.env"
+        self.environment.write_text("\n".join(key + "=true" for key in release_config.REQUIRED_FLAGS), encoding="utf-8")
     def manifest(self, component, version):
         directory = self.root / component / version
         directory.mkdir(parents=True)
@@ -29,11 +32,11 @@ class PreflightTests(unittest.TestCase):
     def read(self, path): return json.loads(path.read_text())
     def change(self, path, **values):
         data = self.read(path); data.update(values); path.write_text(json.dumps(data))
-    def check(self): return preflight.check(self.current, self.candidate, self.facts)
+    def check(self): return preflight.check(self.current, self.candidate, self.facts, self.environment)
     def test_upgrade_and_rollback_apply_same_read_only_checks(self):
         before = {path: path.read_bytes() for path in self.root.rglob("*") if path.is_file()}
         self.assertTrue(self.check()["release_ready"])
-        self.assertTrue(preflight.check([*self.current[:2], self.candidate], self.current[2], self.facts)["release_ready"])
+        self.assertTrue(preflight.check([*self.current[:2], self.candidate], self.current[2], self.facts, self.environment)["release_ready"])
         self.assertEqual(before, {path: path.read_bytes() for path in self.root.rglob("*") if path.is_file()})
     def test_bootstrap_unknown_ranges_and_unfinished_gates_never_pass(self):
         self.change(self.current[0], schema_min=None)
@@ -60,5 +63,42 @@ class PreflightTests(unittest.TestCase):
         self.change(self.candidate, supported_contracts={"business_api": "1.1", "collector_api": "1.0", "collector_wire": "1.0"}, minimum_business_contract_revision=None)
         self.assertIn("unproven_business_api_pair", self.check()["errors"])
         self.assertIn("unknown_frontend_minimum", self.check()["errors"])
+
+    def test_missing_day_config_refuses_release_even_with_all_other_gates_and_pairs(self):
+        result = preflight.check(self.current, self.candidate, self.facts)
+        self.assertTrue(result["compatibility_verified"])
+        self.assertFalse(result["runtime_configuration_verified"])
+        self.assertFalse(result["release_ready"])
+        self.environment.write_text(self.environment.read_text().replace("SITE_SOURCES_DAY_ROSTER_ENABLED=true", "SITE_SOURCES_DAY_ROSTER_ENABLED=false"))
+        result = self.check()
+        self.assertIn("required_runtime_flag_disabled:SITE_SOURCES_DAY_ROSTER_ENABLED", result["errors"])
+        self.assertFalse(result["release_ready"])
+
+    def test_complete_release_gates_and_observed_feature_cannot_hide_disabled_business_modes(self):
+        # The observed artifact feature does not prove a later EnvironmentFile still enables it.
+        self.facts["backend_capabilities"]["supported_features"] = ["formal-business-v1"]
+        for path in [*self.current, self.candidate]:
+            self.change(path, required_features=["formal-business-v1"])
+        original = self.environment.read_text()
+        for flag in ['SITE_CONTENT_AVAILABILITY_ENABLED', 'SITE_CONTENT_PROPAGATION_ENABLED', 'SITE_EXECUTION_CATALOG_PREPARATION_ENABLED', 'SITE_EXECUTION_REPORT_PREPARATION_ENABLED', 'SITE_EXECUTION_REPORT_RUNTIME_ENABLED', 'SITE_EXECUTION_AD_HOC_ENABLED', 'SITE_LEARNING_ENABLED', 'SITE_SCHEDULER_ENABLED']:
+            for disabled in ("", flag + "=false"):
+                with self.subTest(flag=flag, disabled=bool(disabled)):
+                    self.environment.write_text(original.replace(flag + "=true", disabled))
+                    for selected, candidate in [(self.current, self.candidate), ([*self.current[:2], self.candidate], self.current[2])]:
+                        result = preflight.check(selected, candidate, self.facts, self.environment)
+                        self.assertTrue(result["compatibility_verified"])
+                        self.assertFalse(result["runtime_configuration_verified"])
+                        self.assertFalse(result["release_ready"])
+                        self.assertIn("required_runtime_flag_disabled:" + flag, result["errors"])
+                        self.assertNotIn(str(self.environment), str(result))
+        self.environment.write_text(original)
+        self.assertTrue(self.check()["release_ready"])
+
+    def test_verified_config_digest_tracks_read_file_and_does_not_replace_gates(self):
+        result = self.check()
+        self.assertTrue(result["runtime_configuration_verified"])
+        self.assertEqual(hashlib.sha256(self.environment.read_bytes()).hexdigest(), result["backend_environment_sha256"])
+        self.facts["release_gates"]["V05"] = False
+        self.assertFalse(self.check()["release_ready"])
 
 if __name__ == "__main__": unittest.main()

@@ -15,6 +15,7 @@ import com.lianxibu.site.service.identity.NodeIdentityService;
 import com.lianxibu.site.service.jobs.SharedWriteExecutor;
 import com.lianxibu.site.service.sources.RunLeaseTokenCodec;
 import com.lianxibu.site.service.sources.SourceRunLeaseService;
+import com.lianxibu.site.service.sources.SourceDayRunClaimAdmissionService;
 import com.lianxibu.site.service.sources.RunManifestService;
 import com.lianxibu.site.service.sources.ProbeResultService;
 import com.lianxibu.site.service.sources.SourceIdentityMappingService;
@@ -27,6 +28,7 @@ import java.util.Base64;
 import javax.crypto.spec.SecretKeySpec;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -64,26 +66,38 @@ public class CollectorRuntimeConfiguration {
     @Bean
     SourceRunLeaseService collectorLeases(DataSource dataSource, PlatformTransactionManager tx,
                                           NodeIdentityService nodes, OperationalInputGate inputGate,
+                                          ObjectProvider<SourceDayRunClaimAdmissionService> dayAdmission,
                                           @Value("${SITE_RUN_LEASE_KEY_B64:}") String encoded,
                                           @Value("${SITE_RUN_LEASE_KEY_ID:}") String keyId) {
+        return createLeases(dataSource,tx,nodes,inputGate,encoded,keyId,
+                dayAdmission.getIfAvailable(),Clock.systemUTC());
+    }
+
+    public SourceRunLeaseService createLeases(DataSource dataSource,PlatformTransactionManager tx,
+            NodeIdentityService nodes,OperationalInputGate inputGate,String encoded,String keyId,
+            SourceDayRunClaimAdmissionService dayAdmission,Clock clock) {
         byte[] key;
         try { key = Base64.getDecoder().decode(encoded); }
         catch (IllegalArgumentException invalid) { throw new IllegalStateException("collector lease key unavailable"); }
         if (key.length != 32 || keyId == null || !keyId.matches("[A-Za-z0-9._:-]{1,64}"))
             throw new IllegalStateException("collector lease key unavailable");
-        Clock clock = Clock.systemUTC();
         var writes = new SharedWriteExecutor(new JdbcSharedWriteEntry(dataSource), tx);
         return new SourceRunLeaseService(new JdbcSourceRunStore(dataSource),
                 new JdbcSourceAdmission(dataSource), writes,
                 new RunLeaseTokenCodec(new SecretKeySpec(key, "AES"), keyId, new SecureRandom()),
-                nodes::authorizeBearer, new JdbcSourceRunReceipts(dataSource, clock), clock,inputGate::newRunAllowed);
+                nodes::authorizeBearer, new JdbcSourceRunReceipts(dataSource, clock), clock,inputGate::newRunAllowed,dayAdmission);
     }
 
     @Bean
     RunManifestService collectorManifests(DataSource dataSource, PlatformTransactionManager tx,
                                           NodeIdentityService nodes) {
+        var intentions = new com.lianxibu.site.service.jobs.CollectionIntentService(dataSource, Clock.systemUTC());
+        var handoff = new com.lianxibu.site.service.sources.CollectionHandoffService(
+                new com.lianxibu.site.repository.sources.JdbcCollectionHandoff(dataSource), intentions::ensure);
         return new RunManifestService(new JdbcRunManifestStore(dataSource),
-                new SharedWriteExecutor(new JdbcSharedWriteEntry(dataSource), tx), nodes, Clock.systemUTC());
+                new SharedWriteExecutor(new JdbcSharedWriteEntry(dataSource), tx),
+                (bearer, sourceId) -> nodes.authorizeBearer(bearer, "run:write", sourceId),
+                Clock.systemUTC(), handoff::terminal);
     }
 
     @Bean
@@ -127,8 +141,9 @@ public class CollectorRuntimeConfiguration {
     @Bean
     CollectorGateway collectorGateway(DataSource dataSource, NodeIdentityService nodes,
                                       SourceRunLeaseService leases, RunManifestService manifests,
-                                      ObservationIngressService observations, ProbeResultService probes) {
+                                      ObservationIngressService observations, ProbeResultService probes,
+                                      com.lianxibu.site.service.jobs.CollectorHeartbeatService heartbeats) {
         return new JdbcCollectorGateway(dataSource, nodes, leases, manifests,
-                observations, probes, Clock.systemUTC());
+                observations, probes, Clock.systemUTC(),heartbeats);
     }
 }

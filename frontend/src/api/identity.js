@@ -6,6 +6,9 @@ export function createIdentityApi(client) {
         || typeof password !== 'string' || [...password].length < 1 || [...password].length > 1024) {
       throw new TypeError('Username and password are required within their field limits');
     }
+    // Anonymous challenges are single-use, including a rejected password attempt.
+    await client.getSession({ signal });
+    signal?.throwIfAborted();
     const { data } = await client.request('POST', '/session', { body: { username, password }, signal });
     if (!data || data.authenticated !== true || typeof data.user_id !== 'string' || !data.user_id
         || [...data.user_id].length > 64 || /[\u0000-\u001f\u007f]/.test(data.user_id) || !['user', 'owner'].includes(data.role)) {

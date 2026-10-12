@@ -52,6 +52,54 @@ public final class ContentReadService {
                 row.revision(),row.effectiveBodyRevision(),row.inputJobId(),row.bodyHashV1(),row.bodyJson(),row.state()));
     }
 
+
+    /** Proof for comparison, independent of the legacy compatibility version view. */
+    public record ComparisonVersion(String kind,String id,long revision,Long bodyRevision,
+            String inputJobId,byte[] bodyHash,String bodyJson,boolean proven) {
+        public ComparisonVersion { bodyHash=bodyHash==null?null:bodyHash.clone(); }
+        @Override public byte[] bodyHash(){return bodyHash==null?null:bodyHash.clone();}
+        @Override public String toString(){return "ContentComparisonVersion[redacted]";}
+    }
+    public Optional<ComparisonVersion> comparisonVersion(String kind,String id) {
+        key(kind,id);return reads.execute(status->comparisonProof(kind,id,store.comparisonCurrent(kind,id)));
+    }
+    /** Native evidence for a manual writer; the compatibility version is insufficient. */
+    public Optional<ComparisonVersion> provenApplicationVersion(String kind,String id){
+        key(kind,id);var proof=comparisonProof(kind,id,store.applicationComparisonCurrent(kind,id));
+        if(proof.isPresent()&&!proof.get().proven())throw new IllegalStateException("native content application proof unavailable");
+        return proof;
+    }
+    private Optional<ComparisonVersion> comparisonProof(String kind,String id,JdbcContentReads.ComparisonRow row){
+        if(row==null)return Optional.empty();
+            if(!kind.equals(row.kind())||!id.equals(row.id())||row.revision()<1||row.revision()>com.lianxibu.site.domain.protocol.CanonicalJson.MAX_SAFE_INTEGER
+                    ||row.bodyRevision()!=null&&(row.bodyRevision()<1||row.bodyRevision()>com.lianxibu.site.domain.protocol.CanonicalJson.MAX_SAFE_INTEGER)
+                    ||row.bodyHash()!=null&&row.bodyHash().length!=32)
+                throw new IllegalStateException("content comparison proof unavailable");
+            boolean proven=row.bodyRevision()!=null&&row.inputJobId()!=null&&row.bodyHash()!=null&&row.versionKeyJson()!=null;
+            if(proven){
+                com.lianxibu.site.domain.protocol.WireValues.id(row.inputJobId(),false);
+                String hash=java.util.HexFormat.of().formatHex(row.bodyHash());
+                var version=com.lianxibu.site.domain.protocol.ContentVersionKey.fromJson(com.lianxibu.site.domain.protocol.CanonicalJson.parse(row.versionKeyJson()));
+                if(!hash.equals(com.lianxibu.site.domain.protocol.CanonicalJson.hash(com.lianxibu.site.domain.protocol.CanonicalJson.Domain.CONTENT,com.lianxibu.site.domain.protocol.CanonicalJson.parse(row.bodyJson())))
+                        ||!kind.equals(version.contentKind())||!id.equals(version.contentId())||version.revision()!=row.bodyRevision()
+                        ||!hash.equals(version.bodyHash())||!row.inputJobId().equals(version.inputJobId()))
+                    throw new IllegalStateException("content comparison proof unavailable");
+            }
+            return Optional.of(new ComparisonVersion(row.kind(),row.id(),row.revision(),row.bodyRevision(),row.inputJobId(),row.bodyHash(),row.bodyJson(),proven));
+    }
+
+
+    /** For revision/identity checks only: bodyJson is deliberately absent. */
+    public Optional<CurrentVersion> applicationVersion(String kind,String id){
+        key(kind,id);return reads.execute(status->{
+            var row=store.applicationHeader(kind,id);if(row==null)return Optional.empty();
+            if(!kind.equals(row.kind())||!id.equals(row.id())||row.revision()<1||row.revision()>com.lianxibu.site.domain.protocol.CanonicalJson.MAX_SAFE_INTEGER
+                    ||row.bodyRevision()!=null&&(row.bodyRevision()<1||row.bodyRevision()>com.lianxibu.site.domain.protocol.CanonicalJson.MAX_SAFE_INTEGER)
+                    ||row.bodyHash()!=null&&row.bodyHash().length!=32)throw new IllegalStateException("content application metadata unavailable");
+            return Optional.of(new CurrentVersion(row.kind(),row.id(),row.revision(),row.bodyRevision()==null?row.revision():row.bodyRevision(),row.inputJobId(),row.bodyHash(),null,row.state()));
+        });
+    }
+
     public Optional<ReviewContentState> reviewSnapshot(String kind,String id) {
         return adminCurrent(kind,id).map(ReviewContentState::fromRow);
     }

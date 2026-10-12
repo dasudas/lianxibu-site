@@ -71,21 +71,34 @@ public final class SharedWriteExecutor {
         if (context == null || receipt == null || work == null) {
             throw new IllegalArgumentException("shared write action required");
         }
+        return executePrepared(context,receipt,()->work);
+    }
+
+    /** Resolve the durable receipt first, then prepare once outside every transaction.
+     * Each writer retry still rechecks its receipt and all native permissions. */
+    public <T> T executePrepared(ActionContext context,CommittedResult<T> receipt,
+                                 java.util.function.Supplier<Work<T>> preparation) {
+        if(context==null||receipt==null||preparation==null)throw new IllegalArgumentException("shared prepared write action required");
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("shared writer must own the outer transaction");
         }
         T existing = lookup(context, receipt);
         if (existing != null) return existing;
+        Work<T> work=preparation.get();
+        if(work==null)throw new IllegalStateException("prepared writer work required");
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
                 T value = writes.execute(status -> {
+                    try {
                     entry.lock();
                     // Another caller may have committed this key while we waited for the writer lock.
                     T committed = receipt.find(context.actionKey());
                     if (committed != null) return committed;
                     T result = work.apply(context);
                     if (result == null) throw new IllegalStateException("write result required");
+                    entry.recordMutation(context.actionKey(), context.preallocatedResourceId());
                     return result;
+                    } finally { entry.releaseMutation(); }
                 });
                 return value;
             } catch (RuntimeException failure) {

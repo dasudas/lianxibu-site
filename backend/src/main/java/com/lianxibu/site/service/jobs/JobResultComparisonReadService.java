@@ -21,7 +21,17 @@ public final class JobResultComparisonReadService {
             String contentId, String contentKind, Long contentRevision, Long bodyRevision,
             JsonNode currentBody, String inputSnapshotId, Instant cutoff,
             ContentService.Coverage coverage, ResultApplicationService.Input input,
-            ResultApplicationService.Validated retained, ResultApplicationService.Current current) { }
+            ResultApplicationService.Validated retained, ResultApplicationService.Current current,
+            String knownUnavailable) {
+        public Snapshot(String jobId,String recordKind,long jobRevision,String contentId,String contentKind,
+                Long contentRevision,Long bodyRevision,JsonNode currentBody,String inputSnapshotId,Instant cutoff,
+                ContentService.Coverage coverage,ResultApplicationService.Input input,
+                ResultApplicationService.Validated retained,ResultApplicationService.Current current){
+            this(jobId,recordKind,jobRevision,contentId,contentKind,contentRevision,bodyRevision,currentBody,
+                    inputSnapshotId,cutoff,coverage,input,retained,current,null);
+        }
+        @Override public String toString(){return "JobResultComparisonSnapshot[redacted]";}
+    }
     public interface Store {
         /** Null means absent. Known legacy null metadata differs from unavailable storage.
          * Prove permanent root/content/input/result associations; never reconstruct from current settings. */
@@ -53,6 +63,10 @@ public final class JobResultComparisonReadService {
         try {
             if(!jobId.equals(value.jobId()))throw new IllegalArgumentException();
             number(value.jobRevision());
+            if(value.knownUnavailable()!=null){
+                if(!Set.of("unproven_input","unproven_current_version","not_content_result").contains(value.knownUnavailable()))throw new IllegalArgumentException();
+                return unavailable(value,value.knownUnavailable());
+            }
             if(value.retained()==null)return unavailable(value,"no_retained_result");
             if(value.input()==null)return unavailable(value,"unproven_input");
             var input=value.input();
@@ -90,7 +104,7 @@ public final class JobResultComparisonReadService {
             if(state.discarded())blocked.add("discarded");
             if(state.generation()!=input.generation()||!Objects.equals(state.inputHash(),input.inputHash()))blocked.add("superseded");
             if(!state.dependenciesValid())blocked.add("invalid_evidence");
-            if(!"CONTENT_REVISION_CONFLICT".equals(state.applicationState()))blocked.add("application_state_not_conflict");
+            if(!Set.of("CONTENT_REVISION_CONFLICT","EXTERNAL_RESULT_CONFIRMED").contains(state.applicationState()==null?"":state.applicationState()))blocked.add("application_state_not_conflict");
             return new Comparison(jobId,value.jobRevision(),value.contentKind(),value.contentId(),
                     value.contentRevision(),value.bodyRevision(),current,candidate,retained.resultHash(),
                     value.inputSnapshotId(),input.generation(),value.cutoff(),coverage(value.coverage()),

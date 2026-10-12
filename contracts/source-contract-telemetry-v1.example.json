@@ -1,0 +1,16 @@
+{
+  "schema_version": "source-contract-telemetry-v1",
+  "source_id": "fictional-source",
+  "config_version": 1,
+  "epoch": "00000000-0000-4000-8000-000000000001",
+  "sequence": 1,
+  "observed_at": "2026-01-01T00:10:00.000000Z",
+  "window_start": "2026-01-01T00:00:00.000000Z",
+  "total_failures": 1,
+  "events": [
+    {
+      "sequence": 1,
+      "occurred_at": "2026-01-01T00:09:00.000000Z"
+    }
+  ]
+}

@@ -8,10 +8,30 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.*;
 @EnabledIfEnvironmentVariable(named="B45_MYSQL",matches="true")
 class GenerationJdbcStoreMySqlTest extends GenerationJdbcStoreTest {
+ private static com.zaxxer.hikari.HikariDataSource isolatedPool;
+ private static String isolatedUrl;
+ private static final class OwnedTestPool extends com.zaxxer.hikari.HikariDataSource {
+  OwnedTestPool(com.zaxxer.hikari.HikariConfig configuration){super(configuration);}
+  // A test application context borrows this pool; the fixture owns its JVM lifetime.
+  @Override public void close(){ }
+  void closeOwned(){super.close();}
+ }
+ static synchronized com.zaxxer.hikari.HikariDataSource isolatedSource(String url){
+  try{
+   if(url==null||!url.startsWith("jdbc:mysql://"))throw new IllegalStateException("isolated test database required");
+   var endpoint=URI.create(url.substring(5));
+   if(!"mysql".equals(endpoint.getScheme())||!"127.0.0.1".equals(endpoint.getHost())||endpoint.getPort()!=13336||!"/fictional_b45_inputs".equals(endpoint.getPath())||endpoint.getUserInfo()!=null)throw new IllegalStateException("dedicated loopback schema required");
+   if(isolatedPool!=null){if(!url.equals(isolatedUrl))throw new IllegalStateException("isolated test endpoint changed");return isolatedPool;}
+   var config=new com.zaxxer.hikari.HikariConfig();config.setJdbcUrl(url);config.setUsername("root");config.setPassword("");
+   config.setMaximumPoolSize(4);config.setMinimumIdle(1);config.setConnectionTimeout(5000);config.setValidationTimeout(1000);config.setMaxLifetime(0);config.setIdleTimeout(0);config.setPoolName("fictional-b45-tests");
+   var owned=new OwnedTestPool(config);isolatedPool=owned;isolatedUrl=url;
+   Runtime.getRuntime().addShutdownHook(new Thread(owned::closeOwned,"fictional-b45-test-pool-close"));return isolatedPool;
+  }catch(IllegalArgumentException malformed){throw new IllegalStateException("dedicated loopback schema required");}
+ }
  @Override @BeforeEach void fixture(){
   String url=System.getenv("B45_MYSQL_URL");if(url==null)throw new IllegalStateException("isolated test database required");var endpoint=URI.create(url.substring(5));
   if(!"mysql".equals(endpoint.getScheme())||!"127.0.0.1".equals(endpoint.getHost())||endpoint.getPort()!=13336||!"/fictional_b45_inputs".equals(endpoint.getPath()))throw new IllegalStateException("dedicated loopback schema required");
-  var ds=new DriverManagerDataSource(url,"root","");source=ds;jdbc=new JdbcTemplate(ds);assertEquals("8.0.36",jdbc.queryForObject("SELECT VERSION()",String.class));jdbc.execute("DROP TABLE IF EXISTS jobs");jdbc.execute("DROP TABLE IF EXISTS worker_lock");schema();writes=new SharedWriteExecutor(new JdbcSharedWriteEntry(source),new DataSourceTransactionManager(source),()->25,n->{});store=new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,command(false));
+  var ds=isolatedSource(url);source=ds;jdbc=new JdbcTemplate(ds);assertEquals("8.0.36",jdbc.queryForObject("SELECT VERSION()",String.class));jdbc.execute("DROP TABLE IF EXISTS jobs");jdbc.execute("DROP TABLE IF EXISTS worker_lock");schema();writes=new SharedWriteExecutor(new JdbcSharedWriteEntry(source),new DataSourceTransactionManager(source),()->25,n->{});store=new GenerationJdbcStore(source,clock,"fictional-owner",OWNER,command(false));
  }
  @Override void schema(){jdbc.execute("CREATE TABLE worker_lock(id INT PRIMARY KEY) ENGINE=InnoDB");jdbc.update("INSERT INTO worker_lock VALUES(1)");
 jdbc.execute(mysqlDdl("CREATE TABLE jobs(id VARCHAR(64) PRIMARY KEY,business_key VARCHAR(191) NOT NULL UNIQUE,"
@@ -20,7 +40,7 @@ jdbc.execute(mysqlDdl("CREATE TABLE jobs(id VARCHAR(64) PRIMARY KEY,business_key
                 + "created_at TIMESTAMP NOT NULL,updated_at TIMESTAMP NOT NULL,record_kind VARCHAR(24) NOT NULL,"
                 + "record_identity_hash BINARY(32) NOT NULL UNIQUE,call_count INT NOT NULL,"
                 + "max_attempts INT,logical_key CLOB,logical_key_hash BINARY(32),generation BIGINT,"
-                + "stage_part BIGINT,intent_id VARCHAR(64),task_type VARCHAR(32),business_date DATE,"
+                + "stage_part BIGINT,intent_id VARCHAR(64),task_type VARCHAR(32),business_date DATE,supersedes_job_id VARCHAR(64),"
                 + "input_state VARCHAR(16),root_job_id VARCHAR(64),attempt_no INT,request_json CLOB,input_snapshot_json CLOB,business_input_hash BINARY(32),coverage_state VARCHAR(16),missing_inputs_json CLOB,input_cutoff_at TIMESTAMP,dependency_id VARCHAR(64),"
                 + "snapshot_owner_id VARCHAR(64),input_hash BINARY(32),owner_job_id VARCHAR(64),"
                 + "purpose VARCHAR(16),stamp_id VARCHAR(64),part_no BIGINT,payload_json CLOB,"

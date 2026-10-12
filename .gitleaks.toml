@@ -1,0 +1,14 @@
+title = "Public repository scan with exact non-secret SQL fixture exceptions"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Static operational settings row key in two database tests; not a credential"
+condition = "AND"
+regexTarget = "match"
+regexes = [ '''^setting_key='operational_limits-v1'$''' ]
+paths = [ '''^backend/src/test/java/com/lianxibu/site/(config/OperationalRuntimeConfigurationTest|service/settings/SettingsJdbcStoreTest)\.java$''' ]

@@ -36,9 +36,9 @@ public final class VersionValidityLedgerService implements ReviewPublicationJdbc
         return result;
     }
     public Result committed(String key,String expectedHash){
-        var row=store.action(key);if(row==null)return null;var event=parse(row);if(!actor.equals(row.actor()))throw unavailable();
+        var row=store.action(key);if(row==null)return null;var event=parse(row);if(!actor.equals(row.actor()))throw new Rejected("command_identity_conflict");
         var command=new Command(event.target(),event.revision()-1,event.action(),row.reason(),event.reverse());
-        if(!expectedHash.equals(VersionValidityService.commandHash(command,canonical(event.target()))))throw unavailable();
+        if(!expectedHash.equals(VersionValidityService.commandHash(command,canonical(event.target()))))throw new Rejected("command_identity_conflict");
         // The immutable chain at and beyond this event must remain complete; newer actions do not change this receipt.
         validity(event.target());
         var active=new HashSet<String>();long revision=0;Instant after=null;String afterId="";var chain=new TreeMap<Long,Parsed>();

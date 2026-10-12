@@ -43,7 +43,8 @@ func agentFixture(t *testing.T, repo string, missingLicense bool) (client.RunCla
 	a := Agents()
 	page := agentPage(t, a, c, "", fmt.Sprintf(`{"id":42,"full_name":%q,"name":"Fictional Agent","description":"Fictional description","default_branch":"main","stargazers_count":999}`, repo), 200)
 	a = Agents()
-	page = agentPage(t, a, c, page.NextCursor, `[{"id":9,"draft":true,"prerelease":false},{"id":10,"draft":false,"prerelease":false,"tag_name":"v1.2.3","published_at":"2026-09-01T12:00:00Z"}]`, 200)
+	page = agentPage(t, a, c, page.NextCursor, `[{"id":9,"draft":true,"prerelease":false}]`, 200)
+	page = agentPage(t, a, c, page.NextCursor, `[{"id":10,"draft":false,"prerelease":false,"tag_name":"v1.2.3","published_at":"2026-09-01T12:00:00Z"}]`, 200)
 	commit := strings.Repeat("a", 40)
 	page = agentPage(t, a, c, page.NextCursor, fmt.Sprintf(`{"sha":%q,"commit":{"committer":{"date":"2026-08-31T12:00:00Z"}}}`, commit), 200)
 	if missingLicense {
@@ -103,6 +104,42 @@ func TestAgentMissingLicenseAndBadConfiguration(t *testing.T) {
 	req, _ := a.Request(c, "")
 	if _, err := a.Parse(c, fetcher.Result{StatusCode: 200, FinalURL: req.URL, Body: []byte(`{"id":42,"full_name":"other/repo","default_branch":"main"}`)}); err == nil {
 		t.Fatal("repo identity mismatch")
+	}
+}
+
+func TestCatalogReleaseSmallPagesResumeAndStopAtBound(t *testing.T) {
+	c := agentClaim("openai/codex")
+	page := agentPage(t, Agents(), c, "", `{"id":42,"full_name":"openai/codex","default_branch":"main"}`, 200)
+	for n := 1; n <= 30; n++ {
+		a := Agents()
+		req, err := a.Request(c, page.NextCursor)
+		if err != nil || !strings.HasSuffix(req.URL, fmt.Sprintf("/releases?per_page=1&page=%d", n)) {
+			t.Fatalf("page %d: %s %v", n, req.URL, err)
+		}
+		page, err = a.Parse(c, fetcher.Result{StatusCode: 200, FinalURL: req.URL, Body: []byte(`[{"draft":false,"prerelease":true}]`)})
+		if err != nil || page.End || len(page.Items) != 0 {
+			t.Fatal("release continuation", err)
+		}
+	}
+	req, err := Agents().Request(c, page.NextCursor)
+	if err != nil || !strings.HasSuffix(req.URL, "/commits/main") || !strings.Contains(strings.Join(page.Gaps, " "), "release_scan_limit") {
+		t.Fatal("bounded fallback", req.URL, err)
+	}
+}
+
+func TestCatalogReleaseSecondPageFindsStableAndRejectsOversizedPage(t *testing.T) {
+	c := agentClaim("openai/codex")
+	page := agentPage(t, Agents(), c, "", `{"id":42,"full_name":"openai/codex","default_branch":"main"}`, 200)
+	page = agentPage(t, Agents(), c, page.NextCursor, `[{"draft":true,"prerelease":false}]`, 200)
+	a := Agents()
+	req, _ := a.Request(c, page.NextCursor)
+	if _, err := a.Parse(c, fetcher.Result{StatusCode: 200, FinalURL: req.URL, Body: []byte(`[{"draft":true,"prerelease":false},{"draft":true,"prerelease":false}]`)}); err == nil {
+		t.Fatal("more than requested page accepted")
+	}
+	page = agentPage(t, Agents(), c, page.NextCursor, `[{"draft":false,"prerelease":false,"tag_name":"v1","published_at":"2026-09-01T12:00:00Z"}]`, 200)
+	req, err := Agents().Request(c, page.NextCursor)
+	if err != nil || !strings.HasSuffix(req.URL, "/commits/v1") || strings.Contains(strings.Join(page.Gaps, " "), "no_formal_release") {
+		t.Fatal("stable selection", req.URL, err)
 	}
 }
 

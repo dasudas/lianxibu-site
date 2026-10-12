@@ -1,15 +1,17 @@
 package com.lianxibu.site.repository.jobs;
 
 import com.lianxibu.site.domain.protocol.CanonicalJson;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -33,7 +35,7 @@ public final class DeepSeekChatClient {
                         String contentJson, Usage usage, Integer retryAfterSeconds) {
             this.status = status;
             this.httpStatus = httpStatus;
-            this.providerRequestId = providerRequestId;
+            this.providerRequestId = validRequestId(providerRequestId)?providerRequestId:null;
             this.contentJson = contentJson;
             this.usage = usage;
             this.retryAfterSeconds = retryAfterSeconds;
@@ -57,6 +59,7 @@ public final class DeepSeekChatClient {
     private final HttpClient http;
     private final URI endpoint;
     private final Supplier<String> keyAtSend;
+    private final Duration totalTimeout;
 
     public DeepSeekChatClient(Supplier<String> keyAtSend) {
         this(HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER)
@@ -64,7 +67,11 @@ public final class DeepSeekChatClient {
     }
     /** The endpoint and transport are injected for a loopback stub test. */
     DeepSeekChatClient(HttpClient http, URI endpoint, Supplier<String> keyAtSend) {
+        this(http,endpoint,keyAtSend,Duration.ofSeconds(90));
+    }
+    DeepSeekChatClient(HttpClient http, URI endpoint, Supplier<String> keyAtSend,Duration totalTimeout) {
         if (http == null || endpoint == null || keyAtSend == null
+                || totalTimeout==null || totalTimeout.isZero() || totalTimeout.isNegative() || totalTimeout.compareTo(Duration.ofSeconds(90))>0
                 || !("https".equals(endpoint.getScheme()) && "api.deepseek.com".equals(endpoint.getHost())
                     || "http".equals(endpoint.getScheme()) && "localhost".equals(endpoint.getHost()))
                 || !"/chat/completions".equals(endpoint.getPath())
@@ -73,6 +80,7 @@ public final class DeepSeekChatClient {
         this.http = http;
         this.endpoint = endpoint;
         this.keyAtSend = keyAtSend;
+        this.totalTimeout=totalTimeout;
     }
 
     /** The caller has already reserved the attempt and passed the send-once authorization. */
@@ -86,32 +94,59 @@ public final class DeepSeekChatClient {
         if (key == null || key.isBlank() || key.indexOf('\r') >= 0 || key.indexOf('\n') >= 0)
             throw new IllegalStateException("provider credential unavailable");
         HttpRequest request = HttpRequest.newBuilder(endpoint)
-                .timeout(Duration.ofSeconds(90))
+                .timeout(totalTimeout)
                 .header("Authorization", "Bearer " + key)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body)).build();
+        if(Thread.currentThread().isInterrupted())return new Outcome(Status.UNKNOWN,null,null,null,null,null);
+        long started=System.nanoTime();
+        CompletableFuture<HttpResponse<byte[]>> pending=http.sendAsync(request,info->new BoundedBody());
         try {
-            HttpResponse<InputStream> response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
-            try (InputStream stream = response.body()) {
-                byte[] received = stream.readNBytes(MAX_RESPONSE_BYTES + 1);
+            HttpResponse<byte[]> response = pending.get(Math.max(1,totalTimeout.toNanos()-(System.nanoTime()-started)),TimeUnit.NANOSECONDS);
+                byte[] received = response.body();
                 String requestIdHeader = response.headers().firstValue("x-request-id").orElse(null);
                 long declared = response.headers().firstValueAsLong("content-length").orElse(-1);
                 if (declared >= 0 && received.length < declared)
                     return new Outcome(Status.UNKNOWN, response.statusCode(),
                             requestIdHeader, null, null, null);
-                if (received.length > MAX_RESPONSE_BYTES)
-                    return new Outcome(Status.INVALID_JSON, response.statusCode(),
-                            requestIdHeader, null, null, null);
                 return interpret(response.statusCode(), response.headers().firstValue("retry-after")
                         .orElse(null), requestIdHeader, received);
-            }
         } catch (InterruptedException interrupted) {
+            pending.cancel(true);
             Thread.currentThread().interrupt();
             return new Outcome(Status.UNKNOWN, null, null, null, null, null);
-        } catch (IOException transportUnknown) {
+        } catch (TimeoutException | CancellationException transportUnknown) {
+            pending.cancel(true);
             return new Outcome(Status.UNKNOWN, null, null, null, null, null);
+        } catch (ExecutionException failure) {
+            pending.cancel(true);Throwable cause=failure.getCause();
+            while(cause instanceof CompletionException && cause.getCause()!=null)cause=cause.getCause();
+            return new Outcome(cause instanceof ResponseTooLarge?Status.INVALID_JSON:Status.UNKNOWN,null,null,null,null,null);
         }
+    }
+
+    private static final class ResponseTooLarge extends RuntimeException { }
+    private static final class BoundedBody implements HttpResponse.BodySubscriber<byte[]> {
+        private final CompletableFuture<byte[]> body=new CompletableFuture<>();
+        private final ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+        private Flow.Subscription subscription;
+        @Override public CompletionStage<byte[]> getBody(){return body;}
+        @Override public void onSubscribe(Flow.Subscription value){
+            if(subscription!=null){value.cancel();return;}subscription=value;value.request(1);
+        }
+        @Override public void onNext(List<ByteBuffer> buffers){
+            if(body.isDone()){subscription.cancel();return;}
+            for(var buffer:buffers){
+                if(buffer.remaining()>MAX_RESPONSE_BYTES-bytes.size()){
+                    subscription.cancel();body.completeExceptionally(new ResponseTooLarge());return;
+                }
+                byte[] chunk=new byte[buffer.remaining()];buffer.get(chunk);bytes.writeBytes(chunk);
+            }
+            subscription.request(1);
+        }
+        @Override public void onError(Throwable failure){body.completeExceptionally(failure);}
+        @Override public void onComplete(){body.complete(bytes.toByteArray());}
     }
 
     private static byte[] providerBody(String frozen) {
@@ -187,11 +222,19 @@ public final class DeepSeekChatClient {
         Long completion = count(node, "completion_tokens");
         Long total = count(node, "total_tokens");
         if (prompt == null || completion == null || total == null) return null;
-        return new Usage(prompt, completion, total, count(node, "prompt_cache_hit_tokens"));
+        Long cache=count(node,"prompt_cache_hit_tokens");
+        if(prompt+completion!=total||cache!=null&&cache>prompt
+                ||node.hasNonNull("prompt_cache_hit_tokens")&&cache==null)return null;
+        return new Usage(prompt, completion, total, cache);
     }
     private static Long count(JsonNode node, String key) {
         JsonNode value = node.path(key);
-        return value.isIntegralNumber() && value.longValue() >= 0 ? value.longValue() : null;
+        return value.isIntegralNumber() && value.canConvertToLong() && value.longValue() >= 0 && value.longValue()<=CanonicalJson.MAX_SAFE_INTEGER ? value.longValue() : null;
+    }
+    private static boolean validRequestId(String id) {
+        if(id==null||id.isBlank()||id.codePointCount(0,id.length())>256||id.codePoints().anyMatch(c->c<32||c==127))return false;
+        for(int i=0;i<id.length();i++){char c=id.charAt(i);if(Character.isHighSurrogate(c)){if(++i>=id.length()||!Character.isLowSurrogate(id.charAt(i)))return false;}else if(Character.isLowSurrogate(c))return false;}
+        return true;
     }
     private static Integer retryAfter(String raw) {
         if (raw == null || !raw.matches("[0-9]{1,4}")) return null;

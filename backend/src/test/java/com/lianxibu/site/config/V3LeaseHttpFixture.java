@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.PlatformTransactionManager;
 
-/** Only the collector HTTP test imports this fixture. All persistent providers are real. */
+/** Collector HTTP fixture: persistent providers are real; day admission is an explicit test double. */
 @TestConfiguration(proxyBeanMethods=false)
 class V3LeaseHttpFixture {
     static final class FixtureClock extends Clock {
@@ -36,7 +36,7 @@ class V3LeaseHttpFixture {
         return new SourceRunLeaseService(new JdbcSourceRunStore(dataSource),new JdbcSourceAdmission(dataSource),
             new SharedWriteExecutor(new JdbcSharedWriteEntry(dataSource),tx),
             new RunLeaseTokenCodec(new SecretKeySpec(key,"AES"),"fixture",new SecureRandom()),
-            nodes::authorizeBearer,new JdbcSourceRunReceipts(dataSource,clock),clock,inputGate::newRunAllowed);
+            nodes::authorizeBearer,new JdbcSourceRunReceipts(dataSource,clock),clock,inputGate::newRunAllowed,SourceDayClaimTestDouble.allow(dataSource));
     }
     @Bean @Primary CollectorGateway fictionalV3Gateway(DataSource dataSource,NodeIdentityService nodes,
             SourceRunLeaseService leases,RunManifestService manifests,ObservationIngressService observations,
