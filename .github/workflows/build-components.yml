@@ -67,7 +67,7 @@ jobs:
           go test ./internal/outbox -run '^$'
       - name: Build and test backend
         working-directory: backend
-        run: mvn -B --no-transfer-progress -Duser.timezone=UTC '-DargLine=-Xms128m -Xmx4096m -XX:MaxMetaspaceSize=512m' verify
+        run: mvn -B --no-transfer-progress -Duser.timezone=UTC -DforkCount=1 -DreuseForks=false '-DargLine=-Xms128m -Xmx4096m -XX:MaxMetaspaceSize=512m' verify
       - name: Preserve backend test reports
         if: always()
         uses: actions/upload-artifact@v5
