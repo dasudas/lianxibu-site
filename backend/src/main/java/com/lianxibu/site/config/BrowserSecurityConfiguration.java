@@ -16,7 +16,7 @@ public class BrowserSecurityConfiguration {
     @Bean
     @Order(2)
     SecurityFilterChain browserIdentitySecurity(HttpSecurity http) throws Exception {
-        http.securityMatcher("/session", "/admin/content", "/admin/preferences", "/admin/collector-nodes", "/admin/collector-nodes/*/actions", "/private/article-records", "/private/records", "/private/records/*/*")
+        http.securityMatcher("/session", "/admin/content", "/admin/preferences", "/admin/collector-nodes", "/admin/collector-nodes/*/actions", "/admin/jobs", "/admin/jobs/*", "/admin/jobs/*/actions", "/private/article-records", "/private/records", "/private/records/*/*")
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
