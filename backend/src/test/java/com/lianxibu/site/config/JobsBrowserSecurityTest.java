@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import com.lianxibu.site.controller.jobs.JobsController;
+import com.lianxibu.site.controller.jobs.OwnerAdHocQuestionController;
+import com.lianxibu.site.controller.jobs.JobScheduleController;
+import com.lianxibu.site.controller.jobs.JobResultComparisonController;
 import com.lianxibu.site.service.identity.IdentityService;
 import com.lianxibu.site.service.identity.IdentityService.Actor;
 import com.lianxibu.site.service.jobs.JobsService;
@@ -14,6 +17,8 @@ import java.net.http.HttpResponse;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,7 +34,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 class JobsBrowserSecurityTest {
     @Configuration(proxyBeanMethods = false)
     @EnableAutoConfiguration(exclude = DataSourceAutoConfiguration.class)
-    @Import({BrowserSecurityConfiguration.class, BootstrapSecurityConfiguration.class, JobsController.class})
+    @Import({BrowserSecurityConfiguration.class, BootstrapSecurityConfiguration.class, JobsController.class,
+            OwnerAdHocQuestionController.class, JobScheduleController.class, JobResultComparisonController.class})
     static class Fixture { }
 
     @LocalServerPort int port;
@@ -84,6 +90,26 @@ class JobsBrowserSecurityTest {
     @Test void unrelatedAndUnlistedNestedPathsRemainDenied() throws Exception {
         assertEquals(403, request("GET", "/actuator/health", null).statusCode());
         assertEquals(403, request("GET", "/admin/jobs/fictional-job/unlisted", "fictional-owner-session").statusCode());
+        verifyNoInteractions(jobs);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ad-hoc", "schedule", "result-comparison"})
+    void ownerNestedReadsReachTheOriginalUnavailableBoundary(String path) throws Exception {
+        var response = request("GET", "/admin/jobs/fictional-job/" + path, "fictional-owner-session");
+        assertEquals(503, response.statusCode());
+        org.junit.jupiter.api.Assertions.assertTrue(response.body().contains("temporarily_unavailable"));
+        assertEquals("no-store", response.headers().firstValue("Cache-Control").orElseThrow());
+        verify(identity).authenticate("fictional-owner-session");
+        verifyNoInteractions(jobs);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ad-hoc", "schedule", "result-comparison"})
+    void nestedReadsKeepAnonymousAndMemberRefusals(String path) throws Exception {
+        assertEquals(401, request("GET", "/admin/jobs/fictional-job/" + path, null).statusCode());
+        assertEquals(403, request("GET", "/admin/jobs/fictional-job/" + path, "fictional-member-session").statusCode());
+        verify(identity).authenticate("fictional-member-session");
         verifyNoInteractions(jobs);
     }
 }
