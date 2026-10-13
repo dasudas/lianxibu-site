@@ -8,6 +8,49 @@ import package as artifacts
 
 
 class PackageTests(unittest.TestCase):
+    def test_fingerprints_root_relative_entries_and_imports(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, output = root / "input", root / "output"
+            (source / "src").mkdir(parents=True)
+            (source / "src/entry.js").write_text("import '/src/module.js';\n", encoding="utf-8")
+            (source / "src/module.js").write_text("export const answer = 42;\n", encoding="utf-8")
+            (source / "src/style.css").write_text("body { color: navy; }\n", encoding="utf-8")
+            (source / "index.html").write_text(
+                '<link href="/src/style.css" rel="stylesheet"><script type="module" src="/src/entry.js"></script>',
+                encoding="utf-8")
+            mapping = artifacts.fingerprint_frontend(source, output)
+            index = (output / "index.html").read_text(encoding="utf-8")
+            entry = (output / mapping["src/entry.js"]).read_text(encoding="utf-8")
+            for name in ("src/style.css", "src/entry.js"):
+                self.assertIn('"/' + mapping[name] + '"', index)
+                self.assertTrue((output / mapping[name]).is_file())
+                self.assertNotIn('"/' + name + '"', index)
+            self.assertIn("'/" + mapping["src/module.js"] + "'", entry)
+            self.assertNotIn("'/src/module.js'", entry)
+
+    def test_root_asset_missing_and_escape_are_rejected(self):
+        for path in ("/src/missing.js", "/../src/entry.js"):
+            with self.subTest(path=path), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source = root / "input"
+                (source / "src").mkdir(parents=True)
+                (source / "src/entry.js").write_text("export const answer = 42;", encoding="utf-8")
+                (source / "index.html").write_text('<script src="' + path + '"></script>', encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    artifacts.fingerprint_frontend(source, root / "output")
+
+    def test_network_path_asset_is_not_rewritten_as_local(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "input"
+            source.mkdir()
+            index = '<script src="//example.invalid/fictional.js"></script>'
+            (source / "index.html").write_text(index, encoding="utf-8")
+            (root / "output").mkdir()
+            artifacts.fingerprint_frontend(source, root / "output")
+            self.assertEqual((root / "output/index.html").read_text(encoding="utf-8"), index)
+
     def test_fingerprints_entries_and_relative_imports(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SAFE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
-RELATIVE_ASSET = re.compile(r"(?P<quote>['\"])(?P<path>\.{1,2}/[^'\"]+\.(?:js|css|svg|png|jpg|jpeg|webp|woff2|ico))(?P=quote)")
+RELATIVE_ASSET = re.compile(r"(?P<quote>['\"])(?P<path>(?:\.{1,2}/|/(?!/))[^'\"]+\.(?:js|css|svg|png|jpg|jpeg|webp|woff2|ico))(?P=quote)")
 FORBIDDEN_TEXT = [
     re.compile(rb"sk-[A-Za-z0-9]{20,}"),
     re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
@@ -95,12 +95,14 @@ def fingerprint_frontend(source: Path, target: Path) -> dict[str, str]:
 
     def rewrite_relative(text: str, parent: str) -> str:
         def replace(match: re.Match[str]) -> str:
-            dependency = posixpath.normpath(posixpath.join(posixpath.dirname(parent), match.group("path")))
+            path = match.group("path")
+            root_relative = path.startswith("/")
+            dependency = posixpath.normpath(path[1:] if root_relative else posixpath.join(posixpath.dirname(parent), path))
             if dependency.startswith("../") or dependency not in available:
                 raise ValueError("unresolved or escaping frontend import")
             resolved = visit(dependency)
-            new_path = posixpath.relpath(resolved, posixpath.dirname(parent) or ".")
-            if not new_path.startswith("."):
+            new_path = "/" + resolved if root_relative else posixpath.relpath(resolved, posixpath.dirname(parent) or ".")
+            if not root_relative and not new_path.startswith("."):
                 new_path = "./" + new_path
             quote = match.group("quote")
             return quote + new_path + quote
