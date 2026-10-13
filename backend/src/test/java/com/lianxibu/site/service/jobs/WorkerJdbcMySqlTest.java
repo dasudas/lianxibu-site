@@ -108,7 +108,7 @@ class WorkerJdbcMySqlTest {
   var calls=new java.util.concurrent.atomic.AtomicInteger();var server=com.sun.net.httpserver.HttpServer.create(new InetSocketAddress("localhost",0),0);server.createContext("/chat/completions",exchange->{calls.incrementAndGet();exchange.sendResponseHeaders(500,-1);exchange.close();});server.start();
   try{
    for(String mode:List.of("claim","authorize")){
-    reset();seedBoth();String epoch="fictional-child-"+mode;String javaBinary=java.nio.file.Path.of(System.getProperty("java.home"),"bin","java.exe").toString();
+    reset();seedBoth();String epoch="fictional-child-"+mode;String javaBinary=java.nio.file.Path.of(System.getProperty("java.home"),"bin",System.getProperty("os.name").startsWith("Windows")?"java.exe":"java").toString();
     var child=new ProcessBuilder(javaBinary,"-cp",System.getProperty("surefire.test.class.path",System.getProperty("java.class.path")),"com.lianxibu.site.service.jobs.WorkerCrashChild",mode,epoch).redirectErrorStream(true).start();
     try(var reader=new java.io.BufferedReader(new java.io.InputStreamReader(child.getInputStream(),java.nio.charset.StandardCharsets.UTF_8));var pool=Executors.newSingleThreadExecutor()){
      try{var signal=pool.submit(()->{String line;while((line=reader.readLine())!=null){if(line.startsWith("FICTIONAL_COMMITTED|"))return line;}throw new AssertionError("child exited before committed barrier");});String[] marker=signal.get(5,TimeUnit.SECONDS).split("\\|",-1);assertEquals(mode,marker[1]);String attempt=marker[2],root=marker[3];assertEquals(epoch,marker[4]);assertEquals("occupied",state.slot().state());assertEquals(1,records.byId(root).callCount());assertEquals("authorize".equals(mode),state.authorized(attempt));
