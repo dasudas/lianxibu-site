@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import tools.jackson.databind.JsonNode;
 
@@ -19,6 +21,8 @@ public final class ObservationPayloadPolicy {
     private static final Set<String> EVIDENCE_TYPES = Set.of("metadata", "readme", "release",
             "skill_document", "author_report", "benchmark");
     private static final Set<String> UNITS = Set.of("percent", "ratio", "points", "seconds", "count");
+    private record EvidenceLocation(String url, String revision, String path) { }
+    private record EvidenceRole(EvidenceLocation location, String kind) { }
     private ObservationPayloadPolicy() { }
 
     public static void validate(String kind, JsonNode payload) {
@@ -170,19 +174,24 @@ public final class ObservationPayloadPolicy {
 
     private static void evidence(JsonNode value) {
         if (!value.isArray() || value.size() < 1 || value.size() > 32) invalid();
-        Set<String> seen = new HashSet<>();
+        Set<EvidenceRole> seen = new HashSet<>();
+        Map<EvidenceLocation, String> knownHashes = new HashMap<>();
         for (JsonNode entry : value) {
             WireValues.object(entry, EVIDENCE_FIELDS, EVIDENCE_FIELDS);
             String url = https(entry.get("url"));
             String revision = optional(entry.get("revision"), 256);
             String path = optional(entry.get("path"), 1024);
-            if (entry.get("file_hash") != null && !entry.get("file_hash").isNull()) {
-                WireValues.sha256(entry.get("file_hash"));
-            }
+            String fileHash = entry.get("file_hash") == null || entry.get("file_hash").isNull()
+                    ? null : WireValues.sha256(entry.get("file_hash"));
             String kind = oneOf(entry.get("evidence_type"), EVIDENCE_TYPES);
             if (Set.of("readme", "skill_document").contains(kind)
                     && (revision == null || path == null)) invalid();
-            if (!seen.add(url + "\u0000" + revision + "\u0000" + path)) invalid();
+            var location = new EvidenceLocation(url, revision, path);
+            if (!seen.add(new EvidenceRole(location, kind))) invalid();
+            if (fileHash != null) {
+                String previous = knownHashes.putIfAbsent(location, fileHash);
+                if (previous != null && !previous.equals(fileHash)) invalid();
+            }
         }
     }
 
