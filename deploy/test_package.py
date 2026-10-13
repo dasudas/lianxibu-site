@@ -96,5 +96,27 @@ class PackageTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         artifacts.inspect_jar(jar)
 
+    def test_javascript_url_validator_is_not_a_css_asset_reference(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "input"
+            source.mkdir()
+            (source / "index.html").write_text('<script src="./entry.js"></script>', encoding="utf-8")
+            (source / "entry.js").write_text("function url(value){return new URL(value);} export const sourceUrl = url('https://example.com/fictional');", encoding="utf-8")
+            mapping = artifacts.fingerprint_frontend(source, root / "output")
+            self.assertIn("function url(value)", (root / "output" / mapping["entry.js"]).read_text(encoding="utf-8"))
+
+    def test_true_dynamic_frontend_asset_references_still_fail_closed(self):
+        for filename, content in (("entry.js", "import(`./${name}.js`);"), ("entry.css", "body { background: url(./image.png); }")):
+            with self.subTest(filename=filename), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source = root / "input"
+                source.mkdir()
+                (source / "index.html").write_text('<script src="./entry.js"></script>', encoding="utf-8")
+                (source / "entry.js").write_text("export const fictional = true;", encoding="utf-8")
+                (source / filename).write_text(content, encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    artifacts.fingerprint_frontend(source, root / "output")
+
 if __name__ == "__main__":
     unittest.main()

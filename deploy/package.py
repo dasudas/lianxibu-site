@@ -106,7 +106,9 @@ def fingerprint_frontend(source: Path, target: Path) -> dict[str, str]:
             return quote + new_path + quote
 
         rewritten = RELATIVE_ASSET.sub(replace, text)
-        if re.search(r"import\s*\(\s*`|url\(\s*[^'\"\s)]", rewritten):
+        dynamic_import = re.search(r"import\s*\(\s*`", rewritten)
+        css_asset = Path(parent).suffix.lower() in {".css", ".svg", ".html"} and re.search(r"url\(\s*[^'\"\s)]", rewritten)
+        if dynamic_import or css_asset:
             raise ValueError("unverifiable dynamic asset reference")
         return rewritten
 
