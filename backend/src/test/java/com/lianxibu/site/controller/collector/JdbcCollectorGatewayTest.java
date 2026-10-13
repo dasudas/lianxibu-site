@@ -107,6 +107,39 @@ class JdbcCollectorGatewayTest {
                 observationService, probes, clock);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"2026-02-01T00:00:00Z", "2026-02-01T00:00:00.123Z", "2026-02-01T00:00:00.123456Z"})
+    void storedExpiryNormalizesOnlyInConfigAndClaimWire(String expiry) {
+        String original = jdbc.queryForObject("SELECT effective_config_json FROM sources WHERE id=?", String.class, SOURCE);
+        var stored = (tools.jackson.databind.node.ObjectNode) CanonicalJson.parse(original);
+        stored.put("valid_until", expiry);
+        String raw = new String(CanonicalJson.bytes(stored), StandardCharsets.UTF_8);
+        jdbc.update("UPDATE sources SET effective_config_json=? WHERE id=?", raw, SOURCE);
+        String expected = new java.time.format.DateTimeFormatterBuilder().appendInstant(6).toFormatter().format(Instant.parse(expiry));
+        var config = gateway.execute(NODE, "fixture-bearer", Operation.CONFIG, request(null, null, null));
+        assertEquals(expected, config.data().get("sources").get(0).get("config").get("valid_until").asText());
+        assertEquals(raw, jdbc.queryForObject("SELECT effective_config_json FROM sources WHERE id=?", String.class, SOURCE));
+        leases.scheduleDaily(SOURCE, new ActionContext("schedule", "fixture-run", "fixture"));
+        JsonNode body = CanonicalJson.parse("{\"source_ids\":[\"fixture:feed\"],\"required_features\":[],\"max_runs\":10}");
+        var claim = gateway.execute(NODE, "fixture-bearer", Operation.RUN_CLAIMS, request(null, body, null));
+        assertEquals(expected, claim.data().get("runs").get(0).get("config").get("config").get("valid_until").asText());
+        assertEquals(raw, jdbc.queryForObject("SELECT config_snapshot_json FROM source_runs WHERE id='fixture-run'", String.class));
+        assertEquals(raw, jdbc.queryForObject("SELECT effective_config_json FROM sources WHERE id=?", String.class, SOURCE));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"2026-02-01T00:00:00+00:00", "2026-02-01T00:00:00.0000001Z"})
+    void unrepresentableStoredExpiryIsNotSilentlyRoundedOrReturned(String expiry) {
+        var stored = (tools.jackson.databind.node.ObjectNode) CanonicalJson.parse(
+                jdbc.queryForObject("SELECT effective_config_json FROM sources WHERE id=?", String.class, SOURCE));
+        stored.put("valid_until", expiry);
+        String raw = new String(CanonicalJson.bytes(stored), StandardCharsets.UTF_8);
+        jdbc.update("UPDATE sources SET effective_config_json=? WHERE id=?", raw, SOURCE);
+        assertThrows(IllegalArgumentException.class, () -> gateway.execute(NODE, "fixture-bearer", Operation.CONFIG, request(null, null, null)));
+        assertEquals(raw, jdbc.queryForObject("SELECT effective_config_json FROM sources WHERE id=?", String.class, SOURCE));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM source_runs", Integer.class));
+    }
+
     @Test void configClaimRunAndPermanentLeaseReceiptUseCurrentDatabaseRows() {
         var config = gateway.execute(NODE, "fixture-bearer", Operation.CONFIG,
                 request(null, null, null));

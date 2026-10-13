@@ -471,7 +471,17 @@ public final class JdbcCollectorGateway implements CollectorGateway {
         value.put("source_id", sourceId);
         value.put("config_version", version);
         value.put("activation_stage", stage);
-        value.set("config", CanonicalJson.parse(raw));
+        var config = (ObjectNode) CanonicalJson.parse(raw);
+        String storedTime = config.get("valid_until").asText();
+        if (!storedTime.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z")) {
+            throw new IllegalArgumentException("invalid stored config expiry");
+        }
+        Instant expiry = Instant.parse(storedTime);
+        if (expiry.getNano() % 1000 != 0) {
+            throw new IllegalArgumentException("stored config expiry exceeds microsecond precision");
+        }
+        config.put("valid_until", time(expiry));
+        value.set("config", config);
         return value;
     }
 
