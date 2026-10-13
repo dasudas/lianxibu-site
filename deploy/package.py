@@ -62,8 +62,11 @@ def inspect_jar(path: Path) -> None:
             reject_path(name, "backend")
             if name.startswith("BOOT-INF/classes/") and not name.endswith("/"):
                 reject_text(archive.read(name))
-            if name.startswith("BOOT-INF/classes/") and ("frontend/" in name or "collector/" in name):
-                raise ValueError("foreign source embedded in backend")
+            if name.startswith("BOOT-INF/classes/"):
+                component_path = name[len("BOOT-INF/classes/"):]
+                foreign_source = Path(component_path).suffix.lower() in {".go", ".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx", ".css", ".html", ".vue", ".svelte"}
+                if component_path.startswith(("frontend/", "collector/")) or foreign_source:
+                    raise ValueError("foreign source embedded in backend")
 
 
 def inspect_collector(path: Path) -> None:

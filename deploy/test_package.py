@@ -71,5 +71,30 @@ class PackageTests(unittest.TestCase):
             artifacts.reject_text(marker)
 
 
+    def test_backend_keeps_legal_java_component_package_names(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            jar = Path(temporary) / "fictional-backend.jar"
+            for package in ("collector", "frontend"):
+                with self.subTest(package=package):
+                    with zipfile.ZipFile(jar, "w") as archive:
+                        archive.writestr("BOOT-INF/classes/application.yaml", "fictional: true\n")
+                        archive.writestr("BOOT-INF/classes/com/lianxibu/site/controller/" + package + "/Fictional.class", b"\xca\xfe\xba\xbe")
+                    try:
+                        artifacts.inspect_jar(jar)
+                    except ValueError as rejected:
+                        self.fail("legal Java package rejected: " + str(rejected))
+
+    def test_backend_rejects_foreign_component_roots_and_source_extensions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            jar = Path(temporary) / "fictional-backend.jar"
+            paths = ("collector/main.go", "frontend/main.js", "com/lianxibu/site/collector/main.go", "com/lianxibu/site/frontend/main.js")
+            for path in paths:
+                with self.subTest(path=path):
+                    with zipfile.ZipFile(jar, "w") as archive:
+                        archive.writestr("BOOT-INF/classes/application.yaml", "fictional: true\n")
+                        archive.writestr("BOOT-INF/classes/" + path, "fictional source")
+                    with self.assertRaises(ValueError):
+                        artifacts.inspect_jar(jar)
+
 if __name__ == "__main__":
     unittest.main()
