@@ -56,6 +56,10 @@ secrets/
 logs/
 data/
 outbox/
+# Verified collector source package; runtime files remain excluded.
+!collector/internal/outbox/
+collector/internal/outbox/*
+!collector/internal/outbox/*.go
 evidence/
 screenshots/
 artifacts/
