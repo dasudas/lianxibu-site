@@ -17,8 +17,15 @@ public final class JdbcRecordWrites {
     private final JdbcTemplate jdbc;
     public JdbcRecordWrites(DataSource source){jdbc=new JdbcTemplate(source);}
     public String committed(String user,byte[] key,byte[] commandHash){
-        var rows=jdbc.query("SELECT request_hash,response_json FROM request_receipts WHERE actor_id=? AND scope=? AND key_hash=?",
-                (rs,i)->{if(!Arrays.equals(commandHash,rs.getBytes(1)))throw new IllegalArgumentException("record action conflict");return rs.getString(2);},user,SCOPE,key);
+        var rows=jdbc.query("SELECT request_hash,response_json,receipt_kind,operation,expires_at,original_status,current_status,status_code FROM request_receipts WHERE actor_id=? AND scope=? AND key_hash=?",
+                (rs,i)->{
+                    if(!"admin_action".equals(rs.getString(3))||!"record_write".equals(rs.getString(4))
+                            ||rs.getTimestamp(5)!=null||!"applied".equals(rs.getString(6))
+                            ||!"applied".equals(rs.getString(7))||rs.getInt(8)!=200||rs.getString(2)==null)
+                        throw new IllegalStateException("private record receipt unavailable");
+                    if(!Arrays.equals(commandHash,rs.getBytes(1)))throw new IllegalArgumentException("record action conflict");
+                    return rs.getString(2);
+                },user,SCOPE,key);
         if(rows.size()>1)throw new IllegalStateException("duplicate record receipt");return rows.isEmpty()?null:rows.getFirst();
     }
     public Row locked(String user,String pkg,String kind,String id){
@@ -36,7 +43,7 @@ public final class JdbcRecordWrites {
     }
     public void receipt(String user,String action,byte[] key,byte[] hash,String response,long revision,Instant now){
         requireTx();jdbc.update("INSERT INTO request_receipts(principal,operation,request_key,request_hash,status_code,response_json,expires_at,id,receipt_kind,actor_id,scope,key_hash,original_status,current_status,created_at,revision,request_key_raw,business_hash) VALUES(?,?,?,?,200,?,NULL,?,?,?,?,?,'applied','applied',?,?,?,?)",
-                user,"record_write",action,hash,response,UUID.randomUUID().toString(),"user_action",user,SCOPE,key,Timestamp.from(now),revision,action,hash);
+                user,"record_write",action,hash,response,UUID.randomUUID().toString(),"admin_action",user,SCOPE,key,Timestamp.from(now),revision,action,hash);
     }
     public java.util.Set<String> completed(String user,String pkg,java.util.Set<String> ids){
         var found=new java.util.HashSet<String>();
