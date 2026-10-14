@@ -554,4 +554,72 @@ class ObservationIngressServiceTest {
         @Override public Clock withZone(ZoneId zone) { return this; }
         @Override public Instant instant() { return now; }
     }
+    @Test void nullManifestIdentityIsFilledFromFrozenObservationExactlyOnce() {
+        byte[] raw = article("obs-null-reservation", "Fictional reserved item", "run-fixture", "member-null-reservation");
+        reserveNullSourceItem(raw);
+        var accepted = service.accept("node-fixture", raw, action("obs-null-reservation"));
+        assertEquals("accepted", accepted.status());
+        assertEquals("reserved-null-row", jdbc.queryForObject("SELECT id FROM source_run_items", String.class));
+        assertEquals("fixture-item", jdbc.queryForObject("SELECT source_item_id FROM source_run_items", String.class));
+        assertArrayEquals(JdbcObservationStore.sourceItemHash("fixture:feed", "fixture-item"),
+                jdbc.queryForObject("SELECT source_item_hash FROM source_run_items", byte[].class));
+        assertEquals(3L, jdbc.queryForObject("SELECT part_no FROM source_run_items", Long.class));
+        assertEquals(accepted.receiptRef(), jdbc.queryForObject("SELECT receipt_ref FROM source_run_items", String.class));
+        assertEquals(1L, count("source_run_items"));
+        assertEquals(1L, count("request_receipts"));
+        assertNull(jdbc.queryForObject("SELECT expires_at FROM request_receipts", java.sql.Timestamp.class));
+        var replay = service.accept("node-fixture", raw, action("obs-null-reservation"));
+        assertEquals("duplicate", replay.status());
+        assertEquals(accepted.receiptRef(), replay.receiptRef());
+        assertEquals(1L, count("source_run_items"));
+        assertEquals(1L, count("request_receipts"));
+    }
+
+    @Test void nullReservationDoesNotHideFrozenHashOrExistingIdentityConflicts() {
+        byte[] raw = article("obs-null-reservation", "Fictional reserved item", "run-fixture", "member-null-reservation");
+        reserveNullSourceItem(raw);
+        jdbc.update("UPDATE source_run_items SET payload_hash=?", new byte[32]);
+        assertThrows(IllegalStateException.class, () -> service.accept("node-fixture", raw, action("obs-null-reservation")));
+        assertEquals(0L, count("request_receipts"));
+        assertNull(jdbc.queryForObject("SELECT source_item_id FROM source_run_items", String.class));
+        assertNull(jdbc.queryForObject("SELECT receipt_ref FROM source_run_items", String.class));
+        jdbc.update("UPDATE source_run_items SET payload_hash=?,source_item_id=?,source_item_hash=?",
+                java.util.HexFormat.of().parseHex(CanonicalJson.parse(raw).get("payload_hash").asText()),
+                "different-fixture-item", JdbcObservationStore.sourceItemHash("fixture:feed", "different-fixture-item"));
+        assertThrows(IllegalStateException.class, () -> service.accept("node-fixture", raw, action("obs-null-reservation")));
+        assertEquals(0L, count("request_receipts"));
+        assertEquals("different-fixture-item", jdbc.queryForObject("SELECT source_item_id FROM source_run_items", String.class));
+        assertEquals("pending", jdbc.queryForObject("SELECT terminal_state FROM source_run_items", String.class));
+        assertEquals(0L, jdbc.queryForObject("SELECT revision FROM source_run_items", Long.class));
+    }
+
+    @Test void filledReservationStillObeysUniqueSourceIdentityAndRollsBackAck() {
+        byte[] raw = article("obs-null-reservation", "Fictional reserved item", "run-fixture", "member-null-reservation");
+        reserveNullSourceItem(raw);
+        jdbc.update("INSERT INTO source_run_items(id,created_at,revision,run_id,member_id,source_id,"
+                + "source_item_id,source_item_hash,observation_id,node_id,payload_hash,terminal_state,state,validity_revision,effective_valid)"
+                + " VALUES(?,?,0,?,?,?,?,?,?,?,?, 'pending','pending',0,1)",
+                "other-reserved-row", java.sql.Timestamp.from(time.instant()), "run-fixture", "other-member",
+                "fixture:feed", "fixture-item", JdbcObservationStore.sourceItemHash("fixture:feed", "fixture-item"),
+                "other-observation", "node-fixture", new byte[32]);
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class,
+                () -> service.accept("node-fixture", raw, action("obs-null-reservation")));
+        assertEquals(0L, count("request_receipts"));
+        assertEquals(2L, count("source_run_items"));
+        assertNull(jdbc.queryForObject("SELECT source_item_id FROM source_run_items WHERE id='reserved-null-row'", String.class));
+        assertNull(jdbc.queryForObject("SELECT receipt_ref FROM source_run_items WHERE id='reserved-null-row'", String.class));
+        assertEquals(0L, jdbc.queryForObject("SELECT revision FROM source_run_items WHERE id='reserved-null-row'", Long.class));
+    }
+
+    private void reserveNullSourceItem(byte[] raw) {
+        var observation = CanonicalJson.parse(raw);
+        jdbc.update("INSERT INTO source_run_items(id,created_at,revision,run_id,member_id,source_id,"
+                + "source_item_id,source_item_hash,observation_id,node_id,payload_hash,part_no,terminal_state,state,validity_revision,effective_valid)"
+                + " VALUES(?,?,0,?,?,?,NULL,NULL,?,?,?,3,'pending','pending',0,1)",
+                "reserved-null-row", java.sql.Timestamp.from(time.instant()), "run-fixture", "member-null-reservation",
+                "fixture:feed", "obs-null-reservation", "node-fixture",
+                java.util.HexFormat.of().parseHex(observation.get("payload_hash").asText()));
+        jdbc.update("UPDATE source_runs SET part_count=1 WHERE id='run-fixture'");
+    }
+
 }

@@ -119,18 +119,18 @@ public final class JdbcObservationStore {
                 observation.runId(), observation.memberId());
         if (!reserved.isEmpty()) {
             Object[] old = reserved.getFirst();
-            if (!"pending".equals(old[5]) || !observation.sourceItemId().equals(old[1])
+            if (!"pending".equals(old[5]) || old[1] != null && !observation.sourceItemId().equals(old[1])
                     || !MessageDigest.isEqual((byte[]) old[2],
                         HexFormat.of().parseHex(observation.payloadHash()))
                     || !java.util.Objects.equals(old[3], nullableText(observation.wire().get("replaces_observation_id")))) {
                 throw new IllegalStateException("reserved manifest member differs from observation");
             }
-            jdbc.update("UPDATE source_run_items SET category=?,node_id=?,evidence_json=?,"
+            jdbc.update("UPDATE source_run_items SET source_item_id=?,source_item_hash=?,category=?,node_id=?,evidence_json=?,"
                             + "evidence_hash=?,article_id=?,article_revision_id=?,terminal_state='accepted',"
                             + "receipt_ref=?,state=?,projection_decision=?,source_order_json=?,"
                             + "exclusion_reason=?,activation_state=?,"
                             + "revision=revision+1 WHERE id=? AND terminal_state='pending'",
-                    category, nodeId, evidenceJson, evidenceHash, articleId, revisionId,
+                    observation.sourceItemId(), itemHash, category, nodeId, evidenceJson, evidenceHash, articleId, revisionId,
                     receiptId, state, projectionDecision, order, exclusionReason, activation, old[0]);
             return;
         }
