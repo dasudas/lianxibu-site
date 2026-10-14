@@ -3,6 +3,9 @@ package com.lianxibu.site.service.learning;
 import com.lianxibu.site.domain.protocol.CanonicalJson;
 import com.lianxibu.site.domain.protocol.WireValues;
 import com.lianxibu.site.repository.learning.JdbcLearningReads;
+import com.lianxibu.site.repository.learning.LearningRelations;
+import com.lianxibu.site.repository.learning.LearningRelations.NodeFrame;
+import com.lianxibu.site.repository.learning.LearningRelations.RouteFrame;
 import com.lianxibu.site.repository.learning.JdbcLearningReads.ItemRow;
 import com.lianxibu.site.repository.learning.JdbcLearningReads.LinkRow;
 import com.lianxibu.site.service.identity.IdentityService;
@@ -10,16 +13,19 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import tools.jackson.databind.JsonNode;
 
 /** Zero-reimport reader for current learning rows. Writes remain closed until B20/B21. */
 public final class LearningReadService implements LearningService {
     private final JdbcLearningReads store;
+    private final LearningRelations relations;
 
     public LearningReadService(JdbcLearningReads store) {
         if (store == null) throw new IllegalArgumentException("learning reads required");
         this.store = store;
+        this.relations = store.relations();
     }
 
     @Override
@@ -39,7 +45,8 @@ public final class LearningReadService implements LearningService {
     @Override
     public Page<Route> routes(String packageId, Query query) {
         var result = items(packageId, "route", query);
-        return mapped(result, query, result.items().stream().map(this::route).toList());
+        var frames = routeFrames(result.items());
+        return mapped(result, query, result.items().stream().map(row -> route(row, frames.get(row.id()))).toList());
     }
 
     @Override
@@ -51,7 +58,8 @@ public final class LearningReadService implements LearningService {
     @Override
     public Page<Node> nodes(String packageId, Query query) {
         var result = items(packageId, "node", query);
-        return mapped(result, query, result.items().stream().map(this::node).toList());
+        var frames = nodeFrames(result.items());
+        return mapped(result, query, result.items().stream().map(row -> node(row, frames.get(row.id()))).toList());
     }
 
     @Override
@@ -68,7 +76,8 @@ public final class LearningReadService implements LearningService {
 
     @Override
     public Node node(String packageId, String nodeId) {
-        return node(required(packageId, "node", nodeId));
+        ItemRow row = required(packageId, "node", nodeId);
+        return node(row, nodeFrames(List.of(row)).get(row.id()));
     }
 
     @Override
@@ -91,11 +100,12 @@ public final class LearningReadService implements LearningService {
         List<ItemRow> rows = store.graphNodes(packageKey, moduleKey, after, 51);
         boolean hasNext = rows.size() > 50;
         if (hasNext) rows = rows.subList(0, 50);
-        List<Node> nodes = rows.stream().map(this::node).toList();
+        var frames = nodeFrames(rows);
+        List<Node> nodes = rows.stream().map(row -> node(row, frames.get(row.id()))).toList();
         List<GraphEdge> edges = new ArrayList<>();
-        for (ItemRow row : rows) {
-            for (LinkRow link : store.outgoing(packageKey, "node", row.id(), "requires", "node")) {
-                edges.add(new GraphEdge(row.id(), link.toId(), "prerequisite"));
+        for (Node node : nodes) {
+            for (String dependency : node.dependencies()) {
+                edges.add(new GraphEdge(node.id(), dependency, "prerequisite"));
             }
         }
         return new Graph(nodes, List.copyOf(edges), hasNext ? rows.getLast().id() : null);
@@ -125,16 +135,23 @@ public final class LearningReadService implements LearningService {
         return row;
     }
 
-    private Route route(ItemRow row) {
-        List<String> modules = targets(store.outgoing(row.packageId(), "route", row.id(),
-                "contains", "module"));
-        Set<String> eligible = new HashSet<>();
-        for (String module : modules) {
-            eligible.addAll(targets(store.outgoing(row.packageId(), "module", module,
-                    "contains", "node")));
-        }
+    private Map<String,NodeFrame> nodeFrames(List<ItemRow> rows) {
+        if (rows.isEmpty()) return Map.of();
+        return relations.nodes(new LearningRelations.Selection(rows.getFirst().packageId(),
+                rows.stream().map(ItemRow::id).toList()));
+    }
+
+    private Map<String,RouteFrame> routeFrames(List<ItemRow> rows) {
+        if (rows.isEmpty()) return Map.of();
+        return relations.routes(new LearningRelations.Selection(rows.getFirst().packageId(),
+                rows.stream().map(ItemRow::id).toList()));
+    }
+
+    private Route route(ItemRow row, RouteFrame frame) {
+        if (frame == null) throw unavailable();
         // This public reader has no user identity; private progress is added by a later provider.
-        return new Route(row.packageId(), row.id(), row.title(), modules, 0, eligible.size(), "0");
+        return new Route(row.packageId(), row.id(), row.title(), frame.moduleIds(),
+                0, frame.eligibleNodeCount(), "0");
     }
 
     private Module module(ItemRow row) {
@@ -143,17 +160,22 @@ public final class LearningReadService implements LearningService {
         return new Module(row.packageId(), row.id(), row.title(), routes);
     }
 
-    private Node node(ItemRow row) {
+    private Node node(ItemRow row, NodeFrame frame) {
         JsonNode body = body(row);
-        List<String> modules = store.incoming(row.packageId(), "node", row.id(),
-                "contains", "module").stream().map(LinkRow::fromId).distinct().toList();
+        if (frame == null) throw unavailable();
+        List<String> modules = frame.moduleIds().stream().distinct().toList();
         if (modules.size() != 1) throw unavailable();
-        List<String> dependencies = targets(store.outgoing(row.packageId(), "node", row.id(),
-                "requires", "node"));
-        List<Resource> resources = resources(row.packageId(), "node", row.id());
+        List<Resource> resources = new ArrayList<>();
+        for (LearningRelations.ResourceData resource : frame.resources()) {
+            if (resource.title() == null || resource.bodyJson() == null) throw unavailable();
+            JsonNode original = CanonicalJson.parse(resource.bodyJson());
+            if (!original.isObject()) throw unavailable();
+            resources.add(new Resource(resource.title(), text(original, "url")));
+        }
         return new Node(row.packageId(), row.id(), modules.getFirst(), row.title(),
                 text(body, "scope"), ordered(body, "goals_raw"),
-                ordered(body, "completion_criteria_raw"), dependencies, resources, row.revision());
+                ordered(body, "completion_criteria_raw"), frame.dependencyIds(),
+                List.copyOf(resources), row.revision());
     }
 
     private Question question(ItemRow row) {
@@ -177,16 +199,6 @@ public final class LearningReadService implements LearningService {
                 ordered(body, "goals_raw"), ordered(body, "requirements_raw"),
                 ordered(body, "tasks_raw"), ordered(body, "deliverables_raw"),
                 ordered(body, "acceptance_criteria_raw"), row.revision());
-    }
-
-    private List<Resource> resources(String packageId, String kind, String itemId) {
-        List<Resource> values = new ArrayList<>();
-        for (LinkRow link : store.outgoing(packageId, kind, itemId, "references", "resource")) {
-            ItemRow resource = store.byId(packageId, "resource", link.toId());
-            if (resource == null) throw unavailable();
-            values.add(new Resource(resource.title(), text(body(resource), "url")));
-        }
-        return List.copyOf(values);
     }
 
     private static JsonNode body(ItemRow row) {
@@ -222,10 +234,6 @@ public final class LearningReadService implements LearningService {
         if (value == null || value.isNull()) return "";
         if (!value.isTextual()) throw unavailable();
         return value.textValue();
-    }
-
-    private static List<String> targets(List<LinkRow> links) {
-        return links.stream().map(LinkRow::toId).toList();
     }
 
     private static PackageSummary summary(JdbcLearningReads.PackageRow row) {

@@ -38,6 +38,8 @@ public final class JdbcLearningReads {
         jdbc = new JdbcTemplate(dataSource);
     }
 
+    public LearningRelations relations() { return new JdbcLearningRelations(jdbc); }
+
     public Page<PackageRow> packages(long page, int size) {
         long total = count("SELECT COUNT(*) FROM learning_packages WHERE state = 'published'", List.of());
         List<PackageRow> rows = jdbc.query("SELECT id, title, state, revision FROM learning_packages "
