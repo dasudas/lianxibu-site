@@ -7,4 +7,23 @@ class BacklogNativeHistoryStoreTest extends SharedWriteMutationWitnessTest{
  @Test void nativeJsonHistoryUnknownGapExactOriginalSpanAndCasReplayAreBounded(){var f=fixture();try(var scope=JdbcBacklogMutationWitness.open(f.source,f.clock)){var db=new JdbcBacklogHistory(f.source,scope);var root=root(f,db);var witness=rr(f,db::mutation);f.clock.now=f.clock.now.plusSeconds(60);var first=new JdbcBacklogHistory.History(root.id(),root.createdAt(),f.clock.instant(),root.stamp(),witness,true,false,List.of(new Span(root.createdAt(),f.clock.instant(),null,null)),1);f.writes.execute(new SharedWriteExecutor.ActionContext("fictional-history-save","fictional-root",null),k->null,k->{db.save(null,first);return true;});var stored=rr(f,()->db.read(root));assertEquals(first,stored);assertNull(stored.spans().getFirst().ready());assertEquals("BacklogHistory[redacted]",stored.toString());f.clock.now=f.clock.now.plusSeconds(60);var spans=new ArrayList<>(stored.spans());spans.add(new Span(stored.readAt(),f.clock.instant(),true,false));var next=new JdbcBacklogHistory.History(root.id(),root.createdAt(),f.clock.instant(),root.stamp(),rr(f,db::mutation),true,false,spans,2);f.writes.execute(new SharedWriteExecutor.ActionContext("fictional-history-save-2","fictional-root",null),k->null,k->{db.save(stored,next);return true;});assertEquals(next,rr(f,()->db.read(root)));assertThrows(RuntimeException.class,()->f.writes.execute(new SharedWriteExecutor.ActionContext("fictional-stale-cas","fictional-root",null),k->null,k->{db.save(stored,next);return true;}));assertEquals(next,rr(f,()->db.read(root)));assertThrows(IllegalStateException.class,()->db.save(next,next));}}
  @Test void originalNativeIdentityDamageCannotBecomeACompleteZeroQueue(){var f=fixture();try(var scope=JdbcBacklogMutationWitness.open(f.source,f.clock)){var db=new JdbcBacklogHistory(f.source,scope);root(f,db);f.sql.update("UPDATE jobs SET record_identity_hash=? WHERE id='fictional-root'",new byte[32]);assertThrows(RuntimeException.class,()->rr(f,db::pending));}}
  @Test void incompleteHistoryBadScopeCapacityAndTimestampFailClosed(){var f=fixture();try(var scope=JdbcBacklogMutationWitness.open(f.source,f.clock)){var db=new JdbcBacklogHistory(f.source,scope);var root=root(f,db);f.clock.now=f.clock.now.plusSeconds(60);var h=new JdbcBacklogHistory.History(root.id(),root.createdAt(),f.clock.instant(),root.stamp(),rr(f,db::mutation),false,false,List.of(new Span(root.createdAt(),f.clock.instant(),false,false)),1);f.writes.execute(new SharedWriteExecutor.ActionContext("fictional-history","fictional-root",null),k->null,k->{db.save(null,h);return true;});for(String bad:List.of("{}","{\"schema_version\":\"backlog-history-v1\",\"extra\":0}")){f.sql.update("UPDATE runtime_settings SET value_json=? WHERE setting_key=?",bad,JdbcBacklogHistory.key(root.id()));assertThrows(RuntimeException.class,()->rr(f,()->db.read(root)));}assertThrows(IllegalStateException.class,()->new JdbcBacklogHistory(new OperationalPersistenceFixture().source,scope));assertThrows(RuntimeException.class,()->new JdbcBacklogHistory.History(root.id(),root.createdAt(),f.clock.instant(),root.stamp(),rr(f,db::mutation),true,false,List.of(new Span(root.createdAt(),f.clock.instant().minusSeconds(1),true,false)),1));}}
+ @org.junit.jupiter.params.ParameterizedTest
+ @org.junit.jupiter.params.provider.ValueSource(strings={"no_input","no_updates"})
+ void existingEmptyTerminalIsNotBacklogAndQueuedRootRemainsVisible(String terminal){
+  var f=fixture();try(var scope=JdbcBacklogMutationWitness.open(f.source,f.clock)){
+   var db=new JdbcBacklogHistory(f.source,scope);var before=root(f,db);
+   f.sql.update("UPDATE jobs SET state=? WHERE id='fictional-root'",terminal);
+   assertTrue(rr(f,db::pending).isEmpty());
+   f.sql.update("UPDATE jobs SET state='queued' WHERE id='fictional-root'");
+   var after=rr(f,db::pending);assertEquals(1,after.size());assertEquals(before.id(),after.getFirst().id());assertEquals("queued",after.getFirst().state());
+  }
+ }
+ @Test void unknownStateStillRefusesWholeBacklogInsteadOfInventingZero(){
+  var f=fixture();try(var scope=JdbcBacklogMutationWitness.open(f.source,f.clock)){
+   var db=new JdbcBacklogHistory(f.source,scope);root(f,db);
+   f.sql.update("UPDATE jobs SET state='fictional_unknown_state' WHERE id='fictional-root'");
+   assertThrows(IllegalStateException.class,()->rr(f,db::pending));
+  }
+ }
+
 }
