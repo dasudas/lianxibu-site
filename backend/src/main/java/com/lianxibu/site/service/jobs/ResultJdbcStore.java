@@ -37,9 +37,11 @@ public final class ResultJdbcStore implements Store {
         this.references=Objects.requireNonNull(references);this.clock=Objects.requireNonNull(clock);this.actor=WireValues.id(actor,false);
     }
     public FrozenApplicationContext context(){
-        state.claim(proofIdentity());return FrozenApplicationContext.fromJson(CanonicalJson.parse(inputs.read(identity.rootId(),identity.inputHash())).get(FrozenApplicationContext.FIELD));
+        state.claim(proofIdentity());return readContext();
     }
-    public Input input(){var claim=state.claim(proofIdentity());return context().input(identity.rootId(),identity.attemptId(),identity.inputHash(),claim.path("root_revision").asLong());}
+    /** The caller has just verified the complete original claim; the original INPUT is still read fresh. */
+    private FrozenApplicationContext readContext(){return FrozenApplicationContext.fromJson(CanonicalJson.parse(inputs.read(identity.rootId(),identity.inputHash())).get(FrozenApplicationContext.FIELD));}
+    public Input input(){var claim=state.claim(proofIdentity());return readContext().input(identity.rootId(),identity.attemptId(),identity.inputHash(),claim.path("root_revision").asLong());}
     @Override public boolean retainAfterAutomaticFailure(Input value){
         if(manualProof||value==null)return false;
         if("2".equals(value.dedupResultVersion())&&Set.of(GenerationFlowService.Stage.AGENT_DEDUP,GenerationFlowService.Stage.SKILL_DEDUP,GenerationFlowService.Stage.WORKFLOW_DEDUP,GenerationFlowService.Stage.MODEL_DEDUP).contains(value.stage()))return true;
@@ -75,7 +77,7 @@ public final class ResultJdbcStore implements Store {
         return new Result(status,retained.resultHash(),contentId,revision);
     }
     @Override public Current current(String rootId){
-        exact(rootId);var root=state.root(rootId);var claim=state.claim(proofIdentity());var ctx=context();
+        exact(rootId);var root=state.root(rootId);var claim=state.claim(proofIdentity());var ctx=readContext();
         if(manualProof)manualFrame(ctx,rootId);
         var row=content(ctx);if(manualProof&&ctx.contentId()!=null&&row==null)throw new Rejected();
         boolean valid=ctx.referencesComplete()&&ctx.referenceTargets().stream().allMatch(references::valid);
@@ -103,7 +105,7 @@ public final class ResultJdbcStore implements Store {
         else if(!Set.of(Status.CONTENT_REVISION_CONFLICT.name(),"EXTERNAL_RESULT_CONFIRMED").contains(root.application()==null?"":root.application()))throw new Rejected();
         var receipt=JsonMapper.shared().createObjectNode();receipt.put("schema_version","result-application-receipt-v1");receipt.put("action_hash",actionHash);receipt.put("input_hash",identity.inputHash());receipt.put("status",status.name());receipt.put("result_hash",hash);receipt.put("content_id",contentId);if(revision==null)receipt.putNull("content_revision");else receipt.put("content_revision",revision);
         if(status==Status.APPLIED){
-            var ctx=context();if(!ctx.referencesComplete()||!ctx.referenceTargets().stream().allMatch(references::valid))throw new Rejected();
+            var ctx=readContext();if(!ctx.referencesComplete()||!ctx.referenceTargets().stream().allMatch(references::valid))throw new Rejected();
             if(ctx.contentId()!=null){var row=content(ctx);if(!ctx.contentId().equals(contentId)||row==null||revision==null||revision!=row.revision()||!identity.rootId().equals(row.inputJobId())||row.bodyHash()==null)throw new Rejected();
                 var version=JsonMapper.shared().createObjectNode();version.put("kind","content_version");version.put("content_kind",ctx.contentKind());version.put("content_id",contentId);version.put("revision",row.bodyRevision());version.put("body_hash",HexFormat.of().formatHex(row.bodyHash()));version.put("input_job_id",row.inputJobId());ContentVersionKey.fromJson(version);receipt.set("content_version",version);
             }else if(contentId!=null||revision!=null)throw new Rejected();

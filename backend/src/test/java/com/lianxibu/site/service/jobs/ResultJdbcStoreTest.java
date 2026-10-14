@@ -76,4 +76,11 @@ public class ResultJdbcStoreTest {
   boolean ackLost;FaultManager(DataSource source){super(source);}
   @Override protected void doCommit(DefaultTransactionStatus status){super.doCommit(status);if(ackLost&&!status.isReadOnly()){ackLost=false;throw new TransactionSystemException("fictional committed ACK lost");}}
  }
+ static Object countingInvoke(Object target,java.lang.reflect.Method method,Object[] args)throws Throwable{try{return method.invoke(target,args);}catch(java.lang.reflect.InvocationTargetException failure){throw failure.getCause();}}
+ @Test void OneOriginalInputReadHasBoundedRoundTripsAndKeepsTheCompleteTypedProof(){
+  var expected=store.input();var counter=new java.util.concurrent.atomic.AtomicInteger();long rows=count("jobs");var before=new JdbcWorkerState(source).slot();var actualSource=source;
+  javax.sql.DataSource counting=(javax.sql.DataSource)java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{javax.sql.DataSource.class},(p,m,a)->{Object value=countingInvoke(actualSource,m,a);if(value instanceof java.sql.Connection connection)return java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{java.sql.Connection.class},(p2,m2,a2)->{Object statement=countingInvoke(connection,m2,a2);if(statement instanceof java.sql.PreparedStatement prepared)return java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{java.sql.PreparedStatement.class},(p3,m3,a3)->{if(m3.getName().startsWith("execute"))counter.incrementAndGet();return countingInvoke(prepared,m3,a3);});return statement;});return value;});
+  var reader=new ContentReadService(new JdbcContentReads(counting),tx,ContentReadService.denyUnverifiedReferences());var original=new ResultJdbcStore(counting,identity,reader,t->true,clock,"fictional-owner");assertEquals(expected,original.input());System.out.println("Fictional original input JDBC execute calls="+counter.get());assertTrue(counter.get()<=4,"Original input round-trip budget exceeded: "+counter.get());assertEquals(rows,count("jobs"));assertEquals(before,new JdbcWorkerState(source).slot());assertEquals(1,sends);
+ }
+
 }
