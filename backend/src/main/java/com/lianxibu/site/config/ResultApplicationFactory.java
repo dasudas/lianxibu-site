@@ -97,8 +97,22 @@ public final class ResultApplicationFactory implements AttemptOutcomeService.App
         var frame=reads==null?new Frame(store.input(),false):reads.execute(s->frame(store,identity));Objects.requireNonNull(frame);
         var input=frame.input();if(!input.stage().analysis()&&!input.stage().report()&&reads==null)throw new ResultApplicationService.Rejected();
         var handler=reads!=null&&input.stage()==GenerationFlowService.Stage.NEWS_VALUE&&!frame.applied()?value.capture(input):value;
-        var service=new ResultApplicationService(writes,store,Map.of("dedup",dedup(frame.input()),"value",handler,"analysis",new CatalogDayAnalysisResultHandler(new ContentResultHandler(generated,store::context,analysis),inputs,manager,catalogPermissions),"report",new ReportProgramResultHandler(new ContentResultHandler(generated,store::context,reports),inputs,manager,reportPermissions),"ad_hoc",adHoc));
+        var service=new ResultApplicationService(writes,store,Map.of("dedup",manualDedup(input),"value",handler,"analysis",new CatalogDayAnalysisResultHandler(new ContentResultHandler(generated,store::context,analysis),inputs,manager,catalogPermissions),"report",new ReportProgramResultHandler(new ContentResultHandler(generated,store::context,reports),inputs,manager,reportPermissions),"ad_hoc",adHoc));
         return new AttemptOutcomeService.Application(input,service);
+    }
+    /** Original receipt lookup precedes the result frame and native batch preparation. */
+    private ResultApplicationService.Handler manualDedup(ResultApplicationService.Input input){
+        var delegate=dedup(input);if(!"2".equals(input.dedupResultVersion()))return delegate;
+        return new ResultApplicationService.Handler(){
+            @Override public ResultApplicationService.Handler prepareManual(ResultApplicationService.Input value){
+                if(!input.equals(value)||reads==null||TransactionSynchronizationManager.isActualTransactionActive())throw new ResultApplicationService.Rejected();
+                var snapshot=new TransactionTemplate(manager);snapshot.setReadOnly(true);snapshot.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
+                var frame=snapshot.execute(s->new JdbcOwnerRetainedResultReads(source).read(input.rootId()));
+                if(frame==null||frame.identity()==null||!input.attemptId().equals(frame.identity().attemptId())||!input.inputHash().equals(frame.inputHash())||input.generation()!=frame.generation()||frame.envelope()==null)throw new ResultApplicationService.Rejected();
+                return delegate.prepareForManual(input,ResultApplicationService.validate(input,frame.envelope()));
+            }
+            @Override public ResultApplicationService.Applied apply(ResultApplicationService.Input value,ResultApplicationService.Validated result,ResultApplicationService.Current current,boolean manual){throw new ResultApplicationService.Rejected();}
+        };
     }
     private DedupResultHandler dedup(ResultApplicationService.Input input){
         if(!"2".equals(input.dedupResultVersion()))return dedup;
