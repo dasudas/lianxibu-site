@@ -185,4 +185,17 @@ class JobsControllerTest {
         return auth(request).contentType(MediaType.APPLICATION_JSON).header("X-CSRF-Token", "fixture-csrf")
                 .header("Origin", ORIGIN).header("Idempotency-Key", "fixture-key").content(body);
     }
+    private String dedupResolution(boolean v2,String version){
+        var payload=tools.jackson.databind.json.JsonMapper.shared().createObjectNode().put("kind","dedup").put("summary","Fictional directory result");payload.putArray("items");if(v2)payload.put("dedup_result_version",version);
+        var command=tools.jackson.databind.json.JsonMapper.shared().createObjectNode().put("expected_revision",1).put("action","resolve_external").put("reason","Fictional directory verification").put("attempt_id","fictional-attempt").put("external_state","succeeded");command.putArray("evidence_refs").add("fictional-proof");command.putNull("usage");command.putObject("result").put("schema_version","1").put("input_hash","a".repeat(64)).put("result_hash","b".repeat(64)).set("payload",payload);return command.toString();
+    }
+    @Test void originalCatalogV2AndLegacyV1ArePassedUnchangedToNativeSemanticVerification()throws Exception{
+        when(service.action(any(),any(),any(),any(),any(),any())).thenReturn(ACTION);String v2=dedupResolution(true,"2");mvc.perform(write(post("/admin/jobs/fictional-job/actions"),v2)).andExpect(status().isOk());var captor=org.mockito.ArgumentCaptor.forClass(JobsService.JobAction.class);verify(service).action(eq(OWNER),eq("fictional-job"),captor.capture(),any(),any(),any());org.junit.jupiter.api.Assertions.assertEquals(tools.jackson.databind.json.JsonMapper.shared().readTree(v2).get("result").get("payload"),captor.getValue().result().payload());
+        org.mockito.Mockito.clearInvocations(service);String v1=dedupResolution(false,null);mvc.perform(write(post("/admin/jobs/fictional-job/actions"),v1)).andExpect(status().isOk());verify(service).action(eq(OWNER),eq("fictional-job"),captor.capture(),any(),any(),any());org.junit.jupiter.api.Assertions.assertEquals(tools.jackson.databind.json.JsonMapper.shared().readTree(v1).get("result").get("payload"),captor.getValue().result().payload());
+    }
+    @Test void unknownNumericCatalogVersionsAndExtraFieldsNeverReachNativeService()throws Exception{
+        for(String body:new String[]{dedupResolution(true,"3"),dedupResolution(true,"2").replace("\"dedup_result_version\":\"2\"","\"dedup_result_version\":2")})mvc.perform(write(post("/admin/jobs/fictional-job/actions"),body)).andExpect(status().isUnprocessableEntity());
+        mvc.perform(write(post("/admin/jobs/fictional-job/actions"),dedupResolution(true,"2").replace("\"dedup_result_version\":\"2\"","\"dedup_result_version\":\"2\",\"fictional_extra\":true"))).andExpect(status().isBadRequest());verify(service,never()).action(any(),any(),any(),any(),any(),any());
+    }
+
 }

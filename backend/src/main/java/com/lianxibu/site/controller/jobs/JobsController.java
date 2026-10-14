@@ -238,7 +238,13 @@ public final class JobsController {
         if (!payload.isObject()) throw validation("result payload object required");
         String kind = text(payload.get("kind"), 1, 32);
         Set<String> required = switch (kind) {
-            case "dedup" -> Set.of("kind", "items", "summary");
+            case "dedup" -> {
+                if(payload.has("dedup_result_version")) {
+                    if(!"2".equals(text(payload.get("dedup_result_version"),1,8)))throw validation("invalid dedup result version");
+                    yield Set.of("kind","items","summary","dedup_result_version");
+                }
+                yield Set.of("kind", "items", "summary");
+            }
             case "value" -> {
                 if(payload.has("value_result_version")) {
                     if(!"2".equals(text(payload.get("value_result_version"),1,8)))throw validation("invalid value result version");
