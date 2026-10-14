@@ -426,12 +426,7 @@ public final class GenerationFlowService {
             CanonicalJson.hash(Domain.INPUT,value),input.coverageState(),input.missing(),input.hasContent(),input.state());
     }
     static Instant nextEligible(Instant now) {
-        LocalDateTime local = LocalDateTime.ofInstant(now, SHANGHAI);
-        if (!local.toLocalTime().isBefore(LocalTime.of(1, 0))
-                && local.toLocalTime().isBefore(LocalTime.of(7, 0))) return now;
-        LocalDate day = local.toLocalDate();
-        if (!local.toLocalTime().isBefore(LocalTime.of(7, 0))) day = day.plusDays(1);
-        return day.atTime(1, 0).atZone(SHANGHAI).toInstant();
+        return ReleaseAcceptanceWindow.current().nextEligible(now);
     }
     private static void requireCompleteRequest(String json, String inputHash) {
         try {
@@ -495,4 +490,6 @@ public final class GenerationFlowService {
             if(!end.equals(value.businessDate().plusDays(1)))throw new InputRejected();
         }
     }
+    static Instant nextEligible(Instant now, ReleaseAcceptanceWindow window) { return java.util.Objects.requireNonNull(window).nextEligible(now); }
+
 }

@@ -309,4 +309,45 @@ class WorkerAuthorizationServiceTest {
         @Override public Clock withZone(ZoneId zone) { return this; }
         @Override public Instant instant() { return now; }
     }
+    private ReleaseAcceptanceWindow acceptanceUntil(String end) {
+        return ReleaseAcceptanceWindow.fromEnvironment(java.util.Map.of(
+                "SITE_AI_ACCEPTANCE_RELEASE", "2099010101",
+                "SITE_AI_ACCEPTANCE_ISSUED_AT", "2026-10-01T03:00:00Z",
+                "SITE_AI_ACCEPTANCE_UNTIL", end));
+    }
+
+    @Test void hostAcceptanceClaimsOutsideNormalWindowAndStillSendsOneTime() {
+        clock.set("2026-10-01T11:00:00+08:00"); add("acceptance",14,true,0);
+        service=new WorkerAuthorizationService(writes,store,clock,ignored->0,()->dispatchAllowed,
+                acceptanceUntil("2026-10-01T05:00:00Z"));
+        var claim=service.claim(action("acceptance-claim"));assertEquals(State.CLAIMED,claim.state());
+        AtomicInteger sends=new AtomicInteger();
+        assertEquals(State.SENT,service.dispatch(claim.permit(),request->{sends.incrementAndGet();assertEquals(REQUEST,request);return "fictional";}).state());
+        assertEquals(State.LOST,service.dispatch(claim.permit(),request->{sends.incrementAndGet();return "unexpected";}).state());
+        assertEquals(1,sends.get());assertEquals(1,count("acceptance"));
+        assertEquals(State.IDLE,service.claim(action("acceptance-busy")).state());
+    }
+
+    @Test void acceptanceExpiryAfterClaimRefundsUnsentBudgetAndUsesNormalNextWindow() {
+        clock.set("2026-10-01T11:00:00+08:00");add("expiry",14,true,0);
+        service=new WorkerAuthorizationService(writes,store,clock,ignored->0,()->true,
+                acceptanceUntil("2026-10-01T03:00:02Z"));
+        var claim=service.claim(action("expiry-claim"));assertEquals(State.CLAIMED,claim.state());
+        clock.set("2026-10-01T11:00:02+08:00");AtomicInteger sends=new AtomicInteger();
+        assertEquals(State.NOT_SENT,service.dispatch(claim.permit(),request->{sends.incrementAndGet();return "unexpected";}).state());
+        assertEquals(0,sends.get());assertEquals(0,count("expiry"));assertEquals("free",slotState());
+        assertEquals(Instant.parse("2026-10-01T17:00:00Z"),jdbc.queryForObject("SELECT eligible_at FROM task WHERE root_id='expiry'",Timestamp.class).toInstant());
+    }
+
+    @Test void hostAcceptanceDoesNotBypassPauseOrOperationalProtection() {
+        clock.set("2026-10-01T11:00:00+08:00");add("protected",14,true,0);
+        service=new WorkerAuthorizationService(writes,store,clock,ignored->0,()->dispatchAllowed,
+                acceptanceUntil("2026-10-01T05:00:00Z"));
+        dispatchAllowed=false;assertEquals(State.IDLE,service.claim(action("guarded")).state());assertEquals(0,count("protected"));
+        dispatchAllowed=true;var claim=service.claim(action("protected-claim"));assertEquals(State.CLAIMED,claim.state());
+        store.paused=true;AtomicInteger sends=new AtomicInteger();
+        assertEquals(State.NOT_SENT,service.dispatch(claim.permit(),request->{sends.incrementAndGet();return "unexpected";}).state());
+        assertEquals(0,sends.get());assertEquals(0,count("protected"));assertEquals("free",slotState());
+    }
+
 }

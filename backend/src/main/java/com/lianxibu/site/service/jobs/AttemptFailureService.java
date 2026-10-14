@@ -38,10 +38,10 @@ public final class AttemptFailureService {
         return new Result(receipt.state(),receipt.nextAttemptId(),receipt.eligibleAt());
     }
     static Instant nextEligible(Instant now,int calls,int retryAfter) {
+        return nextEligible(now,calls,retryAfter,ReleaseAcceptanceWindow.current());
+    }
+    static Instant nextEligible(Instant now,int calls,int retryAfter,ReleaseAcceptanceWindow window) {
         if(now==null||calls<1||calls>2||retryAfter<0||retryAfter>3600)throw new IllegalArgumentException("retry schedule invalid");
-        var local=now.plusSeconds(Math.max(calls==1?30:60,retryAfter)).atZone(ZONE);
-        if(local.toLocalTime().isBefore(LocalTime.of(1,0)))return local.toLocalDate().atTime(1,0).atZone(ZONE).toInstant();
-        if(!local.toLocalTime().isBefore(LocalTime.of(7,0)))return local.toLocalDate().plusDays(1).atTime(1,0).atZone(ZONE).toInstant();
-        return local.toInstant();
+        return Objects.requireNonNull(window).nextEligible(now.plusSeconds(Math.max(calls==1?30:60,retryAfter)));
     }
 }

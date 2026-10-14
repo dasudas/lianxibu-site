@@ -74,6 +74,7 @@ public final class WorkerAuthorizationService {
     private final SharedWriteExecutor writes;
     private final Store store;
     private final Clock clock;
+    private final ReleaseAcceptanceWindow window;
     private final IntUnaryOperator tieChoice;
     private final java.util.function.BooleanSupplier dispatchAllowed;
     private final AtomicReference<Permit> current = new AtomicReference<>();
@@ -91,23 +92,30 @@ public final class WorkerAuthorizationService {
     }
     WorkerAuthorizationService(SharedWriteExecutor writes, Store store, Clock clock,
                                IntUnaryOperator tieChoice, java.util.function.BooleanSupplier dispatchAllowed) {
-        if (writes == null || store == null || clock == null || tieChoice == null || dispatchAllowed == null)
+        this(writes, store, clock, tieChoice, dispatchAllowed, ReleaseAcceptanceWindow.current());
+    }
+
+    WorkerAuthorizationService(SharedWriteExecutor writes, Store store, Clock clock,
+                               IntUnaryOperator tieChoice, java.util.function.BooleanSupplier dispatchAllowed,
+                               ReleaseAcceptanceWindow window) {
+        if (writes == null || store == null || clock == null || tieChoice == null || dispatchAllowed == null || window == null)
             throw new IllegalArgumentException("worker dependencies required");
         this.writes = writes;
         this.store = store;
         this.clock = clock;
         this.tieChoice = tieChoice;
         this.dispatchAllowed = dispatchAllowed;
+        this.window = window;
     }
 
     public Claim claim(ActionContext action) {
         // Lease identity must equal the original UTC microsecond receipt on immediate replay.
         Instant now = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
-        if (!inWindow(now)) return new Claim(State.IDLE, null, "outside_window", nextWindow(now));
+        if (!window.isOpen(now)) return new Claim(State.IDLE, null, "outside_window", window.nextWindow(now));
         if(TransactionSynchronizationManager.isActualTransactionActive())throw new IllegalStateException("worker must own outer transaction");
         Store capturedStore=Objects.requireNonNull(store.captureClaim(action,now));
         Identity identity = writes.execute(action, store::committedClaim, context -> {
-            if (!inWindow(clock.instant()) || capturedStore.paused() || !capturedStore.slotFree())
+            if (!window.isOpen(clock.instant()) || capturedStore.paused() || !capturedStore.slotFree())
                 return idleMarker();
             if (!dispatchAllowed.getAsBoolean()) return idleMarker();
             List<Candidate> candidates = capturedStore.candidates(now).stream()
@@ -154,7 +162,7 @@ public final class WorkerAuthorizationService {
             authorization = writes.execute(action(identity, "authorize"),
                     store::committedAuthorization, context -> {
                         Instant now = clock.instant();
-                        if (!inWindow(now) || capturedStore.paused())
+                        if (!window.isOpen(now) || capturedStore.paused())
                             return new Authorization(false, "window_or_pause");
                         if (!dispatchAllowed.getAsBoolean()) return new Authorization(false,"operational_guard");
                         return capturedStore.authorize(identity, now, context.actionKey());
@@ -173,7 +181,7 @@ public final class WorkerAuthorizationService {
         try { paused = store.paused(); }
         catch (RuntimeException unavailable) { return new Dispatch(State.UNKNOWN, null); }
         Instant beforeSend = clock.instant();
-        if (!inWindow(beforeSend) || paused || permit.cancelled.get())
+        if (!window.isOpen(beforeSend) || paused || permit.cancelled.get())
             return abortNeverSent(identity, "window_or_pause");
         try { if (!dispatchAllowed.getAsBoolean()) return abortNeverSent(identity,"operational_guard"); }
         catch (RuntimeException unavailable) { return new Dispatch(State.UNKNOWN,null); }
@@ -190,8 +198,8 @@ public final class WorkerAuthorizationService {
         try {
             Boolean refunded = writes.execute(action(identity, "not-sent"),
                     store::committedAbort, context -> store.refundNotSent(identity,
-                            "operational_guard".equals(reason) && inWindow(clock.instant())
-                                    ? clock.instant().plusSeconds(60) : nextWindow(clock.instant()), reason, context.actionKey()));
+                            "operational_guard".equals(reason) && window.isOpen(clock.instant())
+                                    ? clock.instant().plusSeconds(60) : window.nextWindow(clock.instant()), reason, context.actionKey()));
             return new Dispatch(Boolean.TRUE.equals(refunded) ? State.NOT_SENT : State.LOST, null);
         } catch (RuntimeException uncertain) {
             return new Dispatch(State.UNKNOWN, null);
@@ -233,13 +241,9 @@ public final class WorkerAuthorizationService {
         return false;
     }
     static boolean inWindow(Instant instant) {
-        LocalTime local = LocalDateTime.ofInstant(instant, SHANGHAI).toLocalTime();
-        return !local.isBefore(LocalTime.of(1, 0)) && local.isBefore(LocalTime.of(7, 0));
+        return ReleaseAcceptanceWindow.current().isOpen(instant);
     }
     static Instant nextWindow(Instant instant) {
-        LocalDateTime local = LocalDateTime.ofInstant(instant, SHANGHAI);
-        var day = local.toLocalDate();
-        if (!local.toLocalTime().isBefore(LocalTime.of(7, 0))) day = day.plusDays(1);
-        return day.atTime(1, 0).atZone(SHANGHAI).toInstant();
+        return ReleaseAcceptanceWindow.current().nextWindow(instant);
     }
 }
