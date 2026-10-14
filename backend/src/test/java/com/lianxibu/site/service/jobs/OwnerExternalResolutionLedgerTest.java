@@ -82,4 +82,27 @@ class OwnerExternalResolutionLedgerTest extends OwnerExternalResolutionMaterialT
     @Test void WriterRequiresOriginalReadCommittedTransactionAndSemanticCallback(){
         var c=material(command("succeeded"));assertThrows(RuntimeException.class,()->ledger.resolve("fictional-no-transaction",c,f.clock.instant(),this::semantics));long count=records();assertThrows(IllegalArgumentException.class,()->f.writes.execute(f.action("fictional-invalid-semantic"),k->null,a->ledger.resolve(a.actionKey(),c,f.clock.instant(),(frame,raw)->{throw new IllegalArgumentException("Fictional invalid result");})));assertEquals(count,records());assertThrows(NullPointerException.class,()->f.writes.execute(f.action("fictional-no-semantic"),k->null,a->ledger.resolve(a.actionKey(),c,f.clock.instant(),null)));
     }
+    void originalRetainedBeforeUnknown(){
+        f.jdbc.update("UPDATE jobs SET state='running' WHERE id=?",f.identity.attemptId());
+        f.writes.execute(f.action("fictional-before-unknown-retain"),k->null,c->{var state=new JdbcResultState(f.source);var result=ResultApplicationService.validate(f.store.input(),f.raw());state.retain(state.root(ResultJdbcStoreTest.ROOT),f.identity.attemptId(),result.resultHash(),f.raw(),f.clock.instant());return true;});
+        f.jdbc.update("UPDATE jobs SET state='unknown_external' WHERE id=?",f.identity.attemptId());
+    }
+    @Test void SameOriginalRetainedResponseCanBeConfirmedWithoutReplacingAnyPartOrCall(){
+        originalRetainedBeforeUnknown();var state=new JdbcResultState(f.source);var root=state.root(ResultJdbcStoreTest.ROOT);String retained=state.retained(root),request=original();long parts=f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE purpose='result'",Long.class);var slot=new JdbcWorkerState(f.source).slot();
+        var c=material(command("succeeded"));var result=execute("fictional-retained-confirm",c);assertTrue(result.rootResultRetained());assertEquals("succeeded",state(f.identity.attemptId()));assertEquals("EXTERNAL_RESULT_CONFIRMED",f.jdbc.queryForObject("SELECT application_state FROM jobs WHERE id=?",String.class,ResultJdbcStoreTest.ROOT));
+        assertEquals(retained,state.retained(state.root(ResultJdbcStoreTest.ROOT)));assertEquals(root.resultJson(),state.root(ResultJdbcStoreTest.ROOT).resultJson());assertEquals(parts,f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE purpose='result'",Long.class));assertEquals(slot,new JdbcWorkerState(f.source).slot());assertEquals(request,original());assertEquals(1,read().root().callCount());assertEquals(1,f.sends);assertEquals(0,f.count("contents"));assertEquals(result,execute("fictional-retained-confirm",c));
+    }
+    @Test void ExistingSuccessfulResponseCannotBeOverwrittenByUnknownFailureOrAnotherValidResponse(){
+        originalRetainedBeforeUnknown();long count=records(),revision=read().root().revision();for(String outcome:List.of("unknown","failed"))rejected("identity_conflict",()->execute("fictional-retained-"+outcome,material(command(outcome))));
+        var c=command("succeeded");var payload=(ObjectNode)c.result().payload().deepCopy();((ObjectNode)payload.get("body")).put("title","Fictional different valid response");var core=JsonMapper.shared().createObjectNode().put("schema_version","1").put("input_hash",f.identity.inputHash());core.set("payload",payload);
+        var changed=new JobAction(c.expectedRevision(),c.action(),c.reason(),c.attemptId(),null,null,c.externalState(),c.evidenceRefs(),new ValidatedResult("1",f.identity.inputHash(),payload,hashResult(core)),null);rejected("identity_conflict",()->execute("fictional-retained-replacement",material(changed)));assertEquals(count,records());assertEquals(revision,read().root().revision());assertEquals("unknown_external",state(f.identity.attemptId()));
+    }
+    @Test void RetainedPartAndRootAssociationsRemainMandatoryBeforeAnyConfirmation(){
+        for(String damage:List.of("part","attempt_manifest","root_hash","root_manifest")){
+            setup();originalRetainedBeforeUnknown();var c=material(command("succeeded"));long count=records(),revision=read().root().revision();
+            switch(damage){case "part"->f.jdbc.update("UPDATE jobs SET payload_hash=? WHERE purpose='result'",new byte[32]);case "attempt_manifest"->f.jdbc.update("UPDATE jobs SET result_json=NULL WHERE id=?",f.identity.attemptId());case "root_hash"->f.jdbc.update("UPDATE jobs SET result_hash=? WHERE id=?",new byte[32],ResultJdbcStoreTest.ROOT);case "root_manifest"->f.jdbc.update("UPDATE jobs SET result_json=NULL WHERE id=?",ResultJdbcStoreTest.ROOT);}
+            assertThrows(IllegalStateException.class,()->execute("fictional-retained-damage-"+damage,c));assertEquals(count,records());assertEquals(revision,read().root().revision());assertEquals("unknown_external",state(f.identity.attemptId()));
+        }
+    }
+
 }

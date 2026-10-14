@@ -55,14 +55,21 @@ public final class JdbcOwnerExternalResolution {
         var headers=sql.query("SELECT id,revision,state,result_hash,result_json IS NOT NULL,applied_at IS NOT NULL,application_state FROM jobs WHERE id=? AND record_kind='logical_task' FOR UPDATE",(r,n)->new Object[]{r.getString(1),r.getObject(2,Long.class),r.getString(3),r.getBytes(4),r.getBoolean(5),r.getBoolean(6),r.getString(7)},root);
         if(headers.isEmpty()||!root.equals(headers.getFirst()[0]))throw new Rejected("not_found");if(headers.size()!=1)throw unavailable();var header=headers.getFirst();
         if(header[1]==null||(long)header[1]!=expected)throw new Rejected("revision_conflict");
-        var locked=sql.query("SELECT id,revision,CASE WHEN OCTET_LENGTH(usage_json) BETWEEN 1 AND 16384 THEN usage_json ELSE NULL END,OCTET_LENGTH(usage_json),cost_decimal,result_hash,result_json IS NOT NULL FROM jobs WHERE id=? AND record_kind='ai_attempt' AND root_job_id=? FOR UPDATE",(r,n)->new Object[]{r.getString(1),r.getObject(2,Long.class),r.getString(3),r.getObject(4,Long.class),r.getBigDecimal(5),r.getBytes(6),r.getBoolean(7)},attempt,root);
+        var locked=sql.query("SELECT id,revision,CASE WHEN OCTET_LENGTH(usage_json) BETWEEN 1 AND 16384 THEN usage_json ELSE NULL END,OCTET_LENGTH(usage_json),cost_decimal,result_hash,result_json IS NOT NULL,CASE WHEN OCTET_LENGTH(result_json) BETWEEN 1 AND 16384 THEN result_json ELSE NULL END FROM jobs WHERE id=? AND record_kind='ai_attempt' AND root_job_id=? FOR UPDATE",(r,n)->new Object[]{r.getString(1),r.getObject(2,Long.class),r.getString(3),r.getObject(4,Long.class),r.getBigDecimal(5),r.getBytes(6),r.getBoolean(7),r.getString(8)},attempt,root);
         if(locked.isEmpty()||!attempt.equals(locked.getFirst()[0]))throw new Rejected("not_found");if(locked.size()!=1)throw unavailable();var old=locked.getFirst();
         var frame=originals.read(root,attempt);if(frame==null)throw new Rejected("not_found");binds(frame,root,attempt,command.inputHash());
         if(!"unknown_external".equals(frame.attemptState()))throw new Rejected("run_frozen");
-        if(old[1]==null||(long)old[1]<0||(long)old[1]>=CanonicalJson.MAX_SAFE_INTEGER||old[5]!=null||(boolean)old[6]||old[3]!=null&&(old[2]==null||(long)old[3]>16384))throw unavailable();
+        if(old[1]==null||(long)old[1]<0||(long)old[1]>=CanonicalJson.MAX_SAFE_INTEGER||old[3]!=null&&(old[2]==null||(long)old[3]>16384))throw unavailable();
+        String retained=retained(root,(byte[])old[5],(boolean)old[6],(String)old[7]);
         verifier.verify(frame,command.canonical());String external=text(evidence,"external_state");var usage=mergeUsage((String)old[2],(BigDecimal)old[4],evidence.get("usage"));
         boolean latest=frame.attemptNo()==frame.root().callCount(),pending=latest&&"unknown_external".equals(header[2]);
-        if(pending&&(header[3]!=null||(boolean)header[4]||(boolean)header[5]||"APPLIED".equals(header[6])))throw unavailable();
+        if(pending){
+            if((boolean)header[5]||"APPLIED".equals(header[6]))throw unavailable();
+            var original=new JdbcResultState(sql.getDataSource()).root(root);
+            String rootRetained=retained(root,(byte[])header[3],(boolean)header[4],original.resultJson());
+            if(!Objects.equals(retained,rootRetained))throw unavailable();
+        }
+        if(retained!=null&&(!"succeeded".equals(external)||!retained.equals(JdbcFrozenInputs.canonical(evidence.get("result")))))throw new Rejected("identity_conflict");
         String state=(String)header[2],application=(String)header[6];boolean retain=pending&&"succeeded".equals(external);
         if(retain){state="result_conflict";application="EXTERNAL_RESULT_CONFIRMED";}else if(pending&&"failed".equals(external)){state="failed";application=null;}
         JsonNode resultManifest=writeResult(root,evidence.get("result"),now);JsonNode review=writeReview(root,attempt,command.inputHash(),command.hash(),command.canonical(),now);
@@ -75,6 +82,15 @@ public final class JdbcOwnerExternalResolution {
         return new Resolved(operation(key),root,attempt,expected+1,external,retain);
     }
 
+    /** A response retained before automatic application failed is immutable, not a second result. */
+    private String retained(String root,byte[] hash,boolean present,String manifest){
+        if(hash==null){if(present||manifest!=null)throw unavailable();return null;}
+        if(hash.length!=32||!present||manifest==null)throw unavailable();
+        var original=new JdbcResultState.Root(root,null,0,0,null,null,HexFormat.of().formatHex(hash),manifest,null);
+        String raw=new JdbcResultState(sql.getDataSource()).retained(original);
+        verifyResult(root,CanonicalJson.parse(raw),CanonicalJson.parse(manifest));
+        return JdbcFrozenInputs.canonical(CanonicalJson.parse(raw));
+    }
     private record Usage(String json,BigDecimal cost){ }
     private static Usage mergeUsage(String oldJson,BigDecimal oldCost,JsonNode next){
         var old=oldJson==null?JsonMapper.shared().createObjectNode():CanonicalJson.parse(oldJson);if(!old.isObject()||oldCost!=null&&(oldCost.signum()<0||oldCost.compareTo(new BigDecimal("1000000000000"))>=0))throw unavailable();
