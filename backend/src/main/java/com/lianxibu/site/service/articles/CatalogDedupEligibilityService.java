@@ -37,6 +37,7 @@ public final class CatalogDedupEligibilityService {
             for(int offset=0;offset<accepted.size();offset+=100){var ids=new LinkedHashSet<String>();accepted.subList(offset,Math.min(offset+100,accepted.size())).forEach(member->ids.add(member.itemId()));captured.putAll(metadata.lockBatch(ids));}
             var eligibleIds=new ArrayList<String>();
 
+            // News projection is not applicable to catalog/metric members; explicit unknown outcomes still fail.
             for(var member:universe.members()) {
                 if("excluded".equals(member.terminalState())){entries.put(member.itemId(),new Entry(member.itemId(),Reason.COLLECTOR_EXCLUDED,null,null,null));continue;}
                 var row=captured.get(member.itemId());
@@ -46,7 +47,7 @@ public final class CatalogDedupEligibilityService {
                         ||!Arrays.equals(HexFormat.of().parseHex(member.payloadHash()),row.payloadHash())||row.revision()<0||row.revision()>=CanonicalJson.MAX_SAFE_INTEGER
                         ||!"production".equals(row.activation())||!Set.of("complete","partial").contains(row.delivery())
                         ||!Set.of("pending","ready","needs_review","excluded").contains(row.state())
-                        ||!Set.of("initialized","unchanged","promoted","historical","needs_review").contains(row.projection())
+                        ||(row.projection()!=null&&!Set.of("initialized","unchanged","promoted","historical","needs_review").contains(row.projection()))
                         ||row.created()==null||row.finished()==null||row.created().getNano()%1000!=0||row.finished().getNano()%1000!=0)throw unavailable();
                 Reason reason=Reason.ELIGIBLE;
                 if(!row.valid()||Set.of("needs_review","excluded").contains(row.state())||"needs_review".equals(row.projection())

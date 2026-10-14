@@ -137,4 +137,15 @@ class CatalogDedupEligibilityTest {
         assertThrows(RuntimeException.class,()->service.read(universe,"agent",day,cutoff));tx.setReadOnly(true);
         assertThrows(RuntimeException.class,this::selection);
     }
+    @Test void catalogHasNoNewsProjectionAndStillUsesOriginalFullDecisionMatrix(){
+        jdbc.update("UPDATE source_run_items SET projection_decision=NULL");
+        var selected=selection();assertEquals(List.of("ELIGIBLE","COLLECTOR_EXCLUDED","ALREADY_APPLIED","NOT_AI_ELIGIBLE","NOT_AI_ELIGIBLE","ELIGIBLE"),selected.entries().stream().map(e->e.reason().name()).toList());
+        assertEquals(6,jdbc.queryForObject("SELECT COUNT(*) FROM source_run_items WHERE projection_decision IS NULL",Integer.class));
+        assertEquals(12,jdbc.queryForObject("SELECT SUM(revision) FROM source_run_items",Integer.class));
+        assertNotNull(selected.entries().getFirst().fact());assertNull(selected.entries().get(2).fact());
+    }
+    @Test void unknownNonNullProjectionDoesNotBecomeAnEligibleCatalog(){
+        jdbc.update("UPDATE source_run_items SET projection_decision='fictional_bad' WHERE id='fictional-item-0'");assertThrows(RuntimeException.class,this::selection);
+    }
+
 }
