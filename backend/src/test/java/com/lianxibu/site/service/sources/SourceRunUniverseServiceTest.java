@@ -25,10 +25,11 @@ public class SourceRunUniverseServiceTest {
         jdbc.update("INSERT INTO sources VALUES('fictional-source','news_tech')");
         create(false);
     }
-    void create(boolean empty) {
+    void create(boolean empty) { create(empty,false); }
+    void create(boolean empty,boolean unspecified) {
         var parts=new ArrayList<RunManifestService.Part>();
         if(!empty)for(int part=0;part<2;part++) {
-            var members=List.of(new RunManifestService.Member("fictional-member-"+part,"fictional-key-"+part,"fictional-observation-"+part,"a".repeat(64),null));
+            var members=List.of(new RunManifestService.Member("fictional-member-"+part,unspecified?null:"fictional-key-"+part,"fictional-observation-"+part,"a".repeat(64),null));
             String hash=RunManifestService.partHash("fictional-run",part,members);parts.add(new RunManifestService.Part("fictional-run",part,hash,members));
             var p=JsonMapper.shared().createObjectNode().put("run_id","fictional-run").put("part_no",part).put("part_hash",hash);var array=p.putArray("members");
             for(var member:members)array.addObject().put("member_id",member.memberId()).put("source_item_id",member.sourceItemId()).put("observation_id",member.observationId()).put("payload_hash",member.payloadHash()).putNull("replaces_observation_id");
@@ -70,4 +71,18 @@ public class SourceRunUniverseServiceTest {
         jdbc.update("UPDATE request_receipts SET ack_json=? WHERE id='fictional-part-0'","{\"padding\":\""+"x".repeat(262145)+"\"}");assertThrows(RuntimeException.class,this::read);
         jdbc.update("UPDATE request_receipts SET ack_json='{}' WHERE id='fictional-part-0'");assertThrows(RuntimeException.class,this::read);
     }
+    @Test void originalOptionalIdentityCanBeFilledWithoutRehashingManifestOrMutatingRows(){
+        jdbc.update("DELETE FROM source_run_items");jdbc.update("DELETE FROM request_receipts");jdbc.update("DELETE FROM source_runs");create(false,true);
+        String before=jdbc.queryForObject("SELECT ack_json FROM request_receipts WHERE id='fictional-part-0'",String.class);
+        byte[] hash=jdbc.queryForObject("SELECT manifest_hash FROM source_runs",byte[].class);
+        jdbc.update("UPDATE source_run_items SET source_item_id='fictional-derived-key' WHERE id='fictional-item-0'");
+        var universe=read();assertEquals(2,universe.members().size());assertEquals("fictional-derived-key",universe.members().getFirst().sourceItemId());
+        assertEquals(CanonicalJson.parse(before),CanonicalJson.parse(jdbc.queryForObject("SELECT ack_json FROM request_receipts WHERE id='fictional-part-0'",String.class)));
+        assertArrayEquals(hash,jdbc.queryForObject("SELECT manifest_hash FROM source_runs",byte[].class));assertEquals(7,jdbc.queryForObject("SELECT revision FROM source_runs",Long.class));
+        jdbc.update("UPDATE source_run_items SET observation_id='fictional-substituted' WHERE id='fictional-item-0'");assertThrows(RuntimeException.class,this::read);
+    }
+    @Test void explicitOriginalIdentityStillRejectsAChangedProjection(){
+        jdbc.update("UPDATE source_run_items SET source_item_id='fictional-alias' WHERE id='fictional-item-0'");assertThrows(RuntimeException.class,this::read);
+    }
+
 }

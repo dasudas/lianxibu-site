@@ -47,7 +47,8 @@ public final class SourceRunUniverseService implements Reader {
         for(var row:store.members(runId)) {
             if(!runId.equals(row.runId())||!facts.sourceId().equals(row.sourceId())||row.payloadHash()==null||row.payloadHash().length!=32)throw invalid();
             var expected=original.remove(row.memberId());
-            if(expected==null||!expected.equals(new RunManifestService.Member(row.memberId(),row.sourceItemId(),row.observationId(),HexFormat.of().formatHex(row.payloadHash()),row.replacesObservationId())))throw invalid();
+            // A null original field leaves this projection unspecified; the original part bytes stay authoritative.
+            if(expected==null||!expected.equals(new RunManifestService.Member(row.memberId(),expected.sourceItemId()==null?null:row.sourceItemId(),row.observationId(),HexFormat.of().formatHex(row.payloadHash()),row.replacesObservationId())))throw invalid();
             var part=parts.get(row.partNo());if(part==null||!part.members().contains(expected))throw invalid();
             members.add(new Member(row.id(),row.memberId(),row.sourceItemId(),row.observationId(),expected.payloadHash(),row.replacesObservationId(),row.partNo(),row.terminal()));
         }
