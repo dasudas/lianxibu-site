@@ -26,6 +26,7 @@ import tools.jackson.databind.json.JsonMapper;
 public final class CanonicalJson {
     public static final long MAX_SAFE_INTEGER = 9_007_199_254_740_991L;
     private static final BigInteger MAX = BigInteger.valueOf(MAX_SAFE_INTEGER);
+    private static final java.util.regex.Pattern CANONICAL_INTEGER = java.util.regex.Pattern.compile("0|[1-9][0-9]*");
     private static final JsonFactory FACTORY = JsonFactory.builder()
             .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build();
     private static final JsonMapper MAPPER = JsonMapper.builder(FACTORY)
@@ -86,7 +87,7 @@ public final class CanonicalJson {
                 }
                 if (token == JsonToken.VALUE_NUMBER_INT) {
                     String lexical = parser.getText();
-                    if (!lexical.matches("0|[1-9][0-9]*") || new BigInteger(lexical).compareTo(MAX) > 0) {
+                    if (!CANONICAL_INTEGER.matcher(lexical).matches() || new BigInteger(lexical).compareTo(MAX) > 0) {
                         throw new IllegalArgumentException("JSON integer outside canonical range");
                     }
                 }

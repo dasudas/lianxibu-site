@@ -107,4 +107,11 @@ class CanonicalJsonTest {
         assertArrayEquals("{}".getBytes(StandardCharsets.UTF_8),
                 CanonicalJson.bytes(CanonicalJson.parse("{}")));
     }
+    @Test void DenseCanonicalIntegerVectorKeepsBytesWithinBoundedAllocation(){
+        var text=new StringBuilder("[");for(int n=0;n<10000;n++){if(n>0)text.append(',');text.append(n%10);}text.append(']');String raw=text.toString();
+        var allocation=(com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean();org.junit.jupiter.api.Assertions.assertTrue(allocation.isThreadAllocatedMemorySupported());if(!allocation.isThreadAllocatedMemoryEnabled())allocation.setThreadAllocatedMemoryEnabled(true);
+        for(int warm=0;warm<3;warm++)CanonicalJson.parse(raw);long thread=Thread.currentThread().threadId(),before=allocation.getThreadAllocatedBytes(thread);var value=CanonicalJson.parse(raw);long bytes=allocation.getThreadAllocatedBytes(thread)-before;
+        System.out.println("Fictional dense numeric parser allocated bytes="+bytes);org.junit.jupiter.api.Assertions.assertTrue(bytes>=0&&bytes<=6L*1024*1024,"Canonical dense numeric allocation exceeded budget: "+bytes);assertEquals(10000,value.size());assertArrayEquals(raw.getBytes(StandardCharsets.UTF_8),CanonicalJson.bytes(value));
+    }
+
 }
