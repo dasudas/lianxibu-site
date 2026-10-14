@@ -25,25 +25,34 @@ public final class DedupResultHandler implements Handler {
     private final CatalogVersionBatchJudgmentWriter versions;
     private final CatalogVersionBatchJudgmentWriter.Prepared prepared;
     private final Input preparedInput;private final Validated preparedResult;
+    private final boolean preparedManual;
     public DedupResultHandler(EntityDedupService entities,BiFunction<String,String,String> snapshots,Downstream downstream) {
-        this(entities,snapshots,downstream,null,null,null,null,null);
+        this(entities,snapshots,downstream,null,null,null,null,null,false);
     }
     /** Explicit native ports for new catalog v2 inputs; construction performs no IO. */
     public DedupResultHandler(EntityDedupService entities,BiFunction<String,String,String> snapshots,Downstream downstream,
             CatalogVersionBatchPreflightService batches,CatalogVersionBatchJudgmentWriter versions){
-        this(entities,snapshots,downstream,Objects.requireNonNull(batches),Objects.requireNonNull(versions),null,null,null);
+        this(entities,snapshots,downstream,Objects.requireNonNull(batches),Objects.requireNonNull(versions),null,null,null,false);
     }
     private DedupResultHandler(EntityDedupService entities,BiFunction<String,String,String> snapshots,Downstream downstream,
             CatalogVersionBatchPreflightService batches,CatalogVersionBatchJudgmentWriter versions,
-            CatalogVersionBatchJudgmentWriter.Prepared prepared,Input input,Validated result){
+            CatalogVersionBatchJudgmentWriter.Prepared prepared,Input input,Validated result,boolean manual){
         this.entities=Objects.requireNonNull(entities);this.snapshots=Objects.requireNonNull(snapshots);this.downstream=Objects.requireNonNull(downstream);
-        this.batches=batches;this.versions=versions;this.prepared=prepared;preparedInput=input;preparedResult=result;
+        this.batches=batches;this.versions=versions;this.prepared=prepared;preparedInput=input;preparedResult=result;preparedManual=manual;
     }
     @Override public Handler prepare(Input input,Validated result){
+        return prepare(input,result,false);
+    }
+    private Handler prepare(Input input,Validated result,boolean manual){
         if(input==null||result==null)throw new Rejected();if(!"2".equals(input.dedupResultVersion()))return this;
         if(batches==null||versions==null||TransactionSynchronizationManager.isActualTransactionActive())throw new Rejected();
         var batch=batches.capture(input);var value=versions.prepare(batch,result);
-        return new DedupResultHandler(entities,snapshots,downstream,batches,versions,value,input,result);
+        return new DedupResultHandler(entities,snapshots,downstream,batches,versions,value,input,result,manual);
+    }
+    /** Preparation alone grants no owner or root application permission. */
+    public Handler prepareForManual(Input input,Validated result){
+        if(input==null||!"2".equals(input.dedupResultVersion()))throw new Rejected();
+        return prepare(input,result,true);
     }
     @Override public Applied apply(Input input,Validated result,Current current,boolean manual) {
         if(!TransactionSynchronizationManager.isActualTransactionActive()||TransactionSynchronizationManager.isCurrentTransactionReadOnly())
@@ -56,7 +65,7 @@ public final class DedupResultHandler implements Handler {
         if(!result.equals(ResultApplicationService.validate(input,envelope.toString())))throw new Rejected();
         CatalogVersionBatchJudgmentWriter.Outcome versionOutcome=null;
         if("2".equals(input.dedupResultVersion())){
-            if(manual||versions==null||prepared==null||!input.equals(preparedInput)||!result.equals(preparedResult))throw new Rejected();
+            if(manual!=preparedManual||versions==null||prepared==null||!input.equals(preparedInput)||!result.equals(preparedResult))throw new Rejected();
             // All native version proofs precede member ownership/count mutations.
             versionOutcome=versions.applyInTransaction(prepared);
         }
