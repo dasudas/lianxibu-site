@@ -1,4 +1,4 @@
-package com.lianxibu.site.service.learning;
+package com.lianxibu.site.repository.learning;
 
 import com.lianxibu.site.domain.protocol.CanonicalJson;
 import com.lianxibu.site.domain.protocol.WireValues;

@@ -1,6 +1,7 @@
 package com.lianxibu.site.service.learning;
 
 import static org.junit.jupiter.api.Assertions.*;
+import com.lianxibu.site.repository.learning.LearningRelations;
 import com.lianxibu.site.domain.protocol.CanonicalJson;
 import java.util.ArrayList;
 import java.util.List;
