@@ -166,11 +166,16 @@ public final class CanonicalJson {
 
     private static void writeString(String value, StringBuilder output) {
         validateScalars(value);
+        if (value.length() <= Integer.MAX_VALUE - output.length() - 2) {
+            output.ensureCapacity(output.length() + value.length() + 2);
+        }
         output.append('"');
-        for (int offset = 0; offset < value.length();) {
-            int scalar = value.codePointAt(offset);
-            offset += Character.charCount(scalar);
-            switch (scalar) {
+        int start = 0;
+        for (int offset = 0; offset < value.length(); offset++) {
+            char unit = value.charAt(offset);
+            if (unit >= 0x20 && unit != '"' && unit != '\\') continue;
+            output.append(value, start, offset);
+            switch (unit) {
                 case '"' -> output.append("\\\"");
                 case '\\' -> output.append("\\\\");
                 case '\b' -> output.append("\\b");
@@ -178,15 +183,11 @@ public final class CanonicalJson {
                 case '\n' -> output.append("\\n");
                 case '\f' -> output.append("\\f");
                 case '\r' -> output.append("\\r");
-                default -> {
-                    if (scalar < 0x20) {
-                        output.append("\\u00").append(HEX[scalar >>> 4]).append(HEX[scalar & 0xf]);
-                    } else {
-                        output.appendCodePoint(scalar);
-                    }
-                }
+                default -> output.append("\\u00").append(HEX[unit >>> 4]).append(HEX[unit & 0xf]);
             }
+            start = offset + 1;
         }
+        output.append(value, start, value.length());
         output.append('"');
     }
 

@@ -114,4 +114,26 @@ class CanonicalJsonTest {
         System.out.println("Fictional dense numeric parser allocated bytes="+bytes);org.junit.jupiter.api.Assertions.assertTrue(bytes>=0&&bytes<=6L*1024*1024,"Canonical dense numeric allocation exceeded budget: "+bytes);assertEquals(10000,value.size());assertArrayEquals(raw.getBytes(StandardCharsets.UTF_8),CanonicalJson.bytes(value));
     }
 
+
+    @Test void LongFictionalUnescapedTextKeepsExactBytesWithinAllocationBudget(){
+        String text="F".repeat(600000),expected=Character.toString(34)+text+Character.toString(34);
+        var value=tools.jackson.databind.json.JsonMapper.shared().getNodeFactory().stringNode(text);
+        var memory=(com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean();
+        org.junit.jupiter.api.Assertions.assertTrue(memory.isThreadAllocatedMemorySupported());if(!memory.isThreadAllocatedMemoryEnabled())memory.setThreadAllocatedMemoryEnabled(true);
+        for(int n=0;n<4;n++)CanonicalJson.bytes(value);long thread=Thread.currentThread().threadId(),before=memory.getThreadAllocatedBytes(thread);byte[] actual=CanonicalJson.bytes(value);long allocated=memory.getThreadAllocatedBytes(thread)-before;
+        assertArrayEquals(expected.getBytes(StandardCharsets.UTF_8),actual);System.out.println("Fictional long canonical text allocated bytes="+allocated);
+        org.junit.jupiter.api.Assertions.assertTrue(allocated>=0&&allocated<=2100000,"Long canonical text allocation exceeded budget: "+allocated);
+    }
+    @Test void EveryNonEscapedUnicodeScalarKeepsItsExactUtf8WithoutNormalization(){
+        var all=new StringBuilder();for(int code=0x20;code<=Character.MAX_CODE_POINT;code++)if(code!=34&&code!=92&&(code<0xd800||code>0xdfff))all.appendCodePoint(code);
+        String text=all.toString();var value=tools.jackson.databind.json.JsonMapper.shared().getNodeFactory().stringNode(text);
+        assertArrayEquals((Character.toString(34)+text+Character.toString(34)).getBytes(StandardCharsets.UTF_8),CanonicalJson.bytes(value));
+        for(String bad:java.util.List.of("Fictional"+(char)0xd800,"Fictional"+(char)0xdc00,"Fictional"+(char)0xd800+"text"))assertThrows(IllegalArgumentException.class,()->CanonicalJson.bytes(tools.jackson.databind.json.JsonMapper.shared().getNodeFactory().stringNode(bad)));
+    }
+    @Test void LongMixedEscapesAndSurrogatePairsPreserveHistoricalCanonicalSpelling(){
+        String unit="Fictional中文😀e\u0301"+(char)0x2028+(char)34+(char)92+"\b\t\n\f\r"+(char)0+(char)11;
+        String escaped="Fictional中文😀e\u0301"+(char)0x2028+"\\\"\\\\\\b\\t\\n\\f\\r\\u0000\\u000b";
+        var node=tools.jackson.databind.json.JsonMapper.shared().getNodeFactory().stringNode(unit.repeat(4000));
+        assertArrayEquals((Character.toString(34)+escaped.repeat(4000)+Character.toString(34)).getBytes(StandardCharsets.UTF_8),CanonicalJson.bytes(node));
+    }
 }
