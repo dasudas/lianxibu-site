@@ -80,14 +80,17 @@ class ObservationIngressMySqlTest {
                 + "parser_version VARCHAR(64),config_version BIGINT,qualification_events_json JSON,"
                 + "source_order_json JSON,legacy_flag INT,UNIQUE(article_id,revision_no))");
   reset();
-  var manager=new HoldingCommitManager(db,holding);
-  var writes=new SharedWriteExecutor(new JdbcSharedWriteEntry(db),manager,()->25,ignored->{});
-  var tx=new DataSourceTransactionManager(db);
-  String storedConfig=jdbc.queryForObject("SELECT config_json FROM sources WHERE id='fixture:feed'",String.class);
-  var identity=new SourceIdentityMappingService(new JdbcSourceReads(db),tx,List.of(new ReviewedMapping("fixture:feed","article",SourceIdentityMappingService.sha256(storedConfig),"https://feeds.example.invalid/news","article")));
-  var writer=new ArticleCompatibilityWriter(new JdbcArticleWrites(db),identity,tx,time,List.of());var runs=new JdbcSourceRunStore(db);
-  var projection=new ArticleProjectionService(new JdbcArticleProjection(db),List.of(new ArticleProjectionService.TrustedOrderRule("fixture:feed","fixture-parser","revision_time","fixture-domain")),time);
-  service=new ObservationIngressService(new JdbcObservationStore(db),id->{var row=runs.locked(id);return row==null?null:new ObservationIngressService.RunSnapshot(row.id(),row.sourceId(),row.businessDate(),row.configVersion(),row.configSnapshotJson(),row.activationStage(),row.deliveryState(),row.windowStart(),row.windowEnd());},writes,nodes,(input,day)->{var compatible=writer.accept(input);var p=projection.decide(input,compatible,day);return new ObservationIngressService.ArticleOutcome(p.articleId(),p.evidenceRevisionId(),p.projectionDecision(),p.articleRevision());},time,()->true);
+  service=ingress(db);
+ }
+ private ObservationIngressService ingress(DataSource source){
+  var manager=new HoldingCommitManager(source,holding);
+  var writes=new SharedWriteExecutor(new JdbcSharedWriteEntry(source),manager,()->25,ignored->{});
+  var tx=new DataSourceTransactionManager(source);
+  String storedConfig=new JdbcTemplate(source).queryForObject("SELECT config_json FROM sources WHERE id='fixture:feed'",String.class);
+  var identity=new SourceIdentityMappingService(new JdbcSourceReads(source),tx,List.of(new ReviewedMapping("fixture:feed","article",SourceIdentityMappingService.sha256(storedConfig),"https://feeds.example.invalid/news","article")));
+  var writer=new ArticleCompatibilityWriter(new JdbcArticleWrites(source),identity,tx,time,List.of());var runs=new JdbcSourceRunStore(source);
+  var projection=new ArticleProjectionService(new JdbcArticleProjection(source),List.of(new ArticleProjectionService.TrustedOrderRule("fixture:feed","fixture-parser","revision_time","fixture-domain")),time);
+  return new ObservationIngressService(new JdbcObservationStore(source),id->{var row=runs.locked(id);return row==null?null:new ObservationIngressService.RunSnapshot(row.id(),row.sourceId(),row.businessDate(),row.configVersion(),row.configSnapshotJson(),row.activationStage(),row.deliveryState(),row.windowStart(),row.windowEnd());},writes,nodes,(input,day)->{var compatible=writer.accept(input);var p=projection.decide(input,compatible,day);return new ObservationIngressService.ArticleOutcome(p.articleId(),p.evidenceRevisionId(),p.projectionDecision(),p.articleRevision());},time,()->true);
  }
  private void reset(){holding.set(null);nodes.revoked=false;time.now=Instant.parse("2026-01-03T00:00:00Z");for(String table:TABLES)jdbc.update("DELETE FROM "+table);jdbc.update("INSERT INTO worker_lock VALUES(1)");
   jdbc.update("INSERT INTO sources(id,source_kind,name,state,config_json,revision,config_revision,activation_stage,category) VALUES(?,?,?,?,?,?,?,?,?)","fixture:feed","article","Fictional","enabled","{\"url\":\"https://feeds.example.invalid/news\"}",1,1,"production","article");
@@ -145,6 +148,8 @@ class ObservationIngressMySqlTest {
         return CanonicalJson.bytes(root);
     }
  @Test void committedOrRolledBackFirstUploadLeavesExactlyOneRevisionMemberAndReceiptFor100Seeds() throws Exception {
+  // Independent local admission domains still compete on the same actual InnoDB row.
+  var peer=ingress(new DelegatingDataSource(db));
   for(int seed=0;seed<100;seed++){
    reset();final String preferred=seed%2==0?"fictional-a":"fictional-b",other=seed%2==0?"fictional-b":"fictional-a";
    var wave=new Wave(preferred,seed%4>=2);holding.set(wave);String id="obs-seed-"+seed;
@@ -152,7 +157,7 @@ class ObservationIngressMySqlTest {
    try(var pool=Executors.newFixedThreadPool(2)){
     var first=pool.submit(()->{Thread.currentThread().setName(preferred);return service.accept("node-fixture",raw,action(id));});
     assertTrue(wave.ready.await(5,TimeUnit.SECONDS),"first commit barrier seed "+seed);
-    var second=pool.submit(()->{Thread.currentThread().setName(other);return service.accept("node-fixture",raw,action(id));});
+    var second=pool.submit(()->{Thread.currentThread().setName(other);return peer.accept("node-fixture",raw,action(id));});
     try{long deadline=System.nanoTime()+TimeUnit.MILLISECONDS.toNanos(800);boolean waiting=false;
      while(System.nanoTime()<deadline){if(jdbc.queryForObject("SELECT COUNT(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks r ON r.ENGINE=w.ENGINE AND r.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID WHERE r.OBJECT_SCHEMA='fictional_v03_observations' AND r.OBJECT_NAME='worker_lock'",Integer.class)>0){waiting=true;break;}Thread.sleep(5);}
      assertTrue(waiting,"actual InnoDB writer wait seed "+seed);
