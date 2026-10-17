@@ -44,7 +44,7 @@ public final class CatalogDayEntityGrouping {
                     String root=WireValues.id(fragment.get("root_id"),false),result=WireValues.sha256(fragment.get("result_hash"));if(!roots.add(root)||!fragment.get("members").isArray())throw invalid();var itemIds=new HashSet<String>();for(var item:fragment.get("payload").get("items"))if(!itemIds.add(WireValues.id(item.get("item_id"),false)))throw invalid();
                     for(var member:fragment.get("members")){
                         String id=WireValues.id(member.get("itemId"),false),state=WireValues.text(member.get("state"));long revision=WireValues.nonnegativeInteger(member.get("revision"));
-                        if(!seenItems.add(id)||!itemIds.remove(id)||!category.equals(WireValues.text(member.get("category")))||!source.runId().equals(WireValues.id(member.get("runId"),false))||!source.sourceId().equals(WireValues.id(member.get("sourceId"),true))||!day.equals(WireValues.businessDate(member.get("businessDate")))||!day.equals(WireValues.businessDate(member.get("targetBusinessDate")))||WireValues.nonnegativeInteger(member.get("generation"))!=1||!"production".equals(WireValues.text(member.get("activationStage"))))throw invalid();
+                        if(!seenItems.add(id)||!itemIds.remove(id)||!category.equals(WireValues.text(member.get("category")))||!source.runId().equals(WireValues.id(member.get("runId"),false))||!source.sourceId().equals(WireValues.id(member.get("sourceId"),true))||!day.equals(WireValues.businessDate(member.get("businessDate")))||!validTargetDate(member.get("targetBusinessDate"),day)||WireValues.nonnegativeInteger(member.get("generation"))!=1||!"production".equals(WireValues.text(member.get("activationStage"))))throw invalid();
                         if("ready".equals(state)){String entity=WireValues.id(member.get("entityId"),false);grouped.computeIfAbsent(entity,k->new ArrayList<>()).add(new Member(id,source.runId(),source.sourceId(),root,result,source.hash(),revision));}
                         else if("needs_review".equals(state)&&member.get("entityId").isNull())exclusions.add(new Excluded(id,source.runId(),source.sourceId(),root,"dedup_needs_review"));else throw invalid();applied++;
                     }
@@ -58,5 +58,6 @@ public final class CatalogDayEntityGrouping {
             byte[] raw=CanonicalJson.bytes(output);if(raw.length>MAX_BYTES)throw new GenerationFlowService.CapacityGuarded();return new Plan(category,day,closureHash,cutoff,groups,exclusions,partial?"partial":"complete",new String(raw,StandardCharsets.UTF_8));
         }catch(GenerationFlowService.CapacityGuarded guarded){throw guarded;}catch(RuntimeException rejected){throw invalid();}
     }
+    private static boolean validTargetDate(JsonNode value,LocalDate day){return value!=null&&(value.isNull()||day.equals(WireValues.businessDate(value)));}
     private static IllegalStateException invalid(){return new IllegalStateException("complete original catalog entity membership unavailable");}
 }

@@ -14,6 +14,29 @@ class CatalogDayEntityGroupingTest extends CatalogDayOriginalFinalsTest {
             var f=new Fixture();f.terminal(category);var original=captured(f);int rows=f.f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class);var plan=CatalogDayEntityGrouping.group(original);assertEquals(1,plan.groups().size());var group=plan.groups().getFirst();assertEquals("fictional-entity",group.entityId());assertEquals(category,group.category());assertEquals(1,group.members().size());assertEquals("fictional-current-item",group.members().getFirst().itemId());assertEquals(original.sources().getFirst().result().hash(),group.members().getFirst().finalResultHash());assertEquals(original.closureHash(),plan.closureHash());assertEquals(original.cutoff(),plan.cutoff());assertEquals("complete",plan.coverageState());assertTrue(plan.excluded().isEmpty());assertEquals(plan.hash(),CatalogDayEntityGrouping.group(original).hash());assertThrows(UnsupportedOperationException.class,()->group.members().clear());assertEquals(rows,f.f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class));assertEquals(2,f.f.sends);
         }
     }
+    @Test void FourNativeCategoriesAcceptExplicitNullTargetDateFromOriginalFrozenMembership(){
+        for(String category:List.of("agent","skill","workflow","model")){
+            var f=new Fixture(){
+                @Override void source(String c,boolean unchanged){super.source(c,unchanged);f.jdbc.update("UPDATE source_run_items SET target_business_date=NULL WHERE id='fictional-current-item'");}
+            };
+            f.terminal(category);var original=captured(f);var source=original.sources().getFirst();String raw=source.result().json(),hash=source.result().hash();
+            assertTrue(CanonicalJson.parse(raw).get("stage_result").get("fragments").get(0).get("members").get(0).get("targetBusinessDate").isNull());
+            int rows=f.f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class);int sends=f.f.sends;
+            var plan=CatalogDayEntityGrouping.group(original);assertEquals(1,plan.groups().size());assertEquals("fictional-current-item",plan.groups().getFirst().members().getFirst().itemId());assertEquals(hash,plan.groups().getFirst().members().getFirst().finalResultHash());assertEquals(plan.hash(),CatalogDayEntityGrouping.group(original).hash());
+            assertEquals(raw,source.result().json());assertEquals(hash,source.result().hash());assertEquals(rows,f.f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class));assertEquals(sends,f.f.sends);
+        }
+    }
+    @Test void PureMissingWrongTypeOtherDayTargetAndWrongOriginalDayRemainRejected(){
+        var f=new Fixture();f.terminal("agent");var original=captured(f);var source=original.sources().getFirst();int rows=f.f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class);
+        for(int variant=0;variant<4;variant++){
+            var body=(ObjectNode)CanonicalJson.parse(source.result().json());var member=(ObjectNode)body.get("stage_result").get("fragments").get(0).get("members").get(0);
+            switch(variant){case 0->member.remove("targetBusinessDate");case 1->member.put("targetBusinessDate",17);case 2->member.put("targetBusinessDate",day.plusDays(1).toString());case 3->{member.putNull("targetBusinessDate");member.put("businessDate",day.plusDays(1).toString());}}
+            String hash=CanonicalJson.hash(CanonicalJson.Domain.CONTENT,body),raw=new String(CanonicalJson.bytes(body),java.nio.charset.StandardCharsets.UTF_8);
+            var entries=original.closed().closure().entries().stream().map(e->{if(e.progress()==null)return e;var v=e.progress();return new SourceDedupBarrier.Entry(e.sourceId(),e.decision(),e.reason(),new SourceDedupBarrier.Progress(v.category(),v.day(),v.sourceId(),v.configRevision(),v.configHash(),v.runId(),v.runGeneration(),v.state(),v.availableAt(),hash));}).toList();
+            assertThrows(RuntimeException.class,()->CatalogDayEntityGrouping.values("agent",day,original.closureHash(),original.cutoff(),entries,List.of(new CatalogDayEntityGrouping.Source(source.receipt().runId(),source.receipt().sourceId(),hash,raw))));
+        }
+        assertEquals(rows,f.f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class));assertEquals(2,f.f.sends);
+    }
     @Test void PureTwoSourceSameEntityGroupsOnceAndKeepsEveryOriginalMemberAndDecision(){
         var f=new Fixture();f.terminal("agent");var original=captured(f);var first=original.sources().getFirst();var second=(ObjectNode)CanonicalJson.parse(first.result().json());second.put("run_id","fictional-pure-second-run").put("source_id","fictional-pure-second-source");var stage=(ObjectNode)second.get("stage_result");stage.put("run_id","fictional-pure-second-run").put("source_id","fictional-pure-second-source");var fragment=(ObjectNode)stage.get("fragments").get(0);fragment.put("root_id","fictional-pure-second-root");((ObjectNode)fragment.get("payload").get("items").get(0)).put("item_id","fictional-pure-second-item");var member=(ObjectNode)fragment.get("members").get(0);member.put("itemId","fictional-pure-second-item").put("runId","fictional-pure-second-run").put("sourceId","fictional-pure-second-source");
         String raw=new String(CanonicalJson.bytes(second),java.nio.charset.StandardCharsets.UTF_8),hash=CanonicalJson.hash(CanonicalJson.Domain.CONTENT,second);var entries=new ArrayList<SourceDedupBarrier.Entry>();entries.add(original.closed().closure().entries().stream().filter(e->e.decision()==SourceDedupBarrier.Decision.INCLUDED).findFirst().orElseThrow());entries.add(new SourceDedupBarrier.Entry("fictional-pure-second-source",SourceDedupBarrier.Decision.INCLUDED,"completed",new SourceDedupBarrier.Progress("agent",day,"fictional-pure-second-source",1,"a".repeat(64),"fictional-pure-second-run",1,SourceDedupBarrier.State.COMPLETE,completed,hash)));
