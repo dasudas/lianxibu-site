@@ -7,6 +7,8 @@ import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import tools.jackson.databind.JsonNode;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.*;
 import tools.jackson.databind.json.JsonMapper;
 
 /** Archives the complete frozen plan. Trusted qualification and scheduling are separate. */
@@ -61,7 +63,33 @@ public final class FrozenSourceStagePlanService {
     /** Original plan and universe proved together in this caller's writer; never cached. */
     OriginalPlan readOriginal(String ownerId){return readOriginal(ownerId,true);}
     /** Original plan and universe proved together in this caller's immutable transaction. */
-    OriginalPlan readImmutableOriginal(String ownerId){return readOriginal(ownerId,false);}
+    OriginalPlan readImmutableOriginal(String ownerId){
+        JdbcSourceDedupResults.requireReadOnly();WireValues.id(ownerId,false);var frame=snapshotFrame();
+        if(frame!=null&&frame.values.containsKey(ownerId))return frame.values.get(ownerId);
+        var original=readOriginal(ownerId,false);if(frame!=null)frame.remember(ownerId,original);return original;
+    }
+    /** Same RR snapshot only. Synchronizations are suspended separately by REQUIRES_NEW. */
+    private ReadSnapshot snapshotFrame(){
+        if(!TransactionSynchronizationManager.isSynchronizationActive()
+                ||!Integer.valueOf(TransactionDefinition.ISOLATION_REPEATABLE_READ).equals(TransactionSynchronizationManager.getCurrentTransactionIsolationLevel()))return null;
+        for(var synchronization:TransactionSynchronizationManager.getSynchronizations())
+            if(synchronization instanceof ReadSnapshot frame&&frame.issuer==this)return frame;
+        var frame=new ReadSnapshot(this);TransactionSynchronizationManager.registerSynchronization(frame);return frame;
+    }
+    private static final class ReadSnapshot implements TransactionSynchronization{
+        private static final long MAX_BYTES=1024*1024;
+        private final FrozenSourceStagePlanService issuer;
+        private final Map<String,OriginalPlan> values=new LinkedHashMap<>();
+        private long bytes;
+        private ReadSnapshot(FrozenSourceStagePlanService issuer){this.issuer=issuer;}
+        private void remember(String id,OriginalPlan original){
+            long size=512L+original.universe.members().size()*768L+original.plan.decisions().size()*256L+original.blocks.size()*512L;
+            for(var chunk:original.plan.chunks())size+=(long)chunk.snapshotJson().getBytes(java.nio.charset.StandardCharsets.UTF_8).length+chunk.requestJson().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+            if(size>MAX_BYTES||values.size()>=8||bytes+size>MAX_BYTES)return;
+            values.put(id,original);bytes+=size;
+        }
+        @Override public void afterCompletion(int status){values.clear();bytes=0;}
+    }
     static final class OriginalPlan {
         private final FrozenSourceStagePlanService issuer;
         private final SourcePartitionPlanner.Plan plan;
@@ -172,8 +200,8 @@ public final class FrozenSourceStagePlanService {
     }
     public SourcePartitionPlanner.Plan readImmutable(FrozenSourceStagePlan.Reference reference) {
         try {
-            Objects.requireNonNull(reference);var plan=readImmutable(reference.ownerId());
-            if(!reference.equals(reference(storage.immutableReceipt(reference.ownerId()))))throw unavailable();return plan;
+            Objects.requireNonNull(reference);var original=readImmutableOriginal(reference.ownerId());
+            if(!reference.equals(reference(original.receipt)))throw unavailable();return original.plan;
         }catch(RuntimeException rejected){throw unavailable();}
     }
     private static JsonNode payload(JdbcJobRecords.Disposition receipt) {
