@@ -31,4 +31,18 @@ class FrozenContentVersionSnapshotTest {
   String body="{\"fictional\":\""+"F".repeat(600000)+"\"}";var large=new ContentVersionKey(version.contentKind(),version.contentId(),2,CanonicalJson.hash(CanonicalJson.Domain.CONTENT,CanonicalJson.parse(body)),version.inputJobId());var input=store.read(version).inputHash();fixture.writes.execute(fixture.action("fictional-large-review-proof"),k->null,a->{new JdbcContentReviewEvidence(fixture.source).archive(large,body,input,"fictional-owner",fixture.clock.instant());return true;});
   rr(()->{var first=store.read(large);assertEquals(600000,CanonicalJson.parse(first.bodyJson()).path("fictional").asText().length());assertEquals(large.bodyHash(),CanonicalJson.hash(CanonicalJson.Domain.CONTENT,CanonicalJson.parse(first.bodyJson())));int once=queries.get();assertEquals(first,store.read(large));assertTrue(queries.get()>once);return true;});assertEquals(1,fixture.sends);
  }
+ @Test void NativeEligibilityIsPureAndBoundToThisActualReadOnlyRepeatableSnapshot(){
+  assertFalse(store.canReuseImmutableProofInCurrentReadSnapshot());
+  rr(()->{int before=queries.get(),synchronizations=TransactionSynchronizationManager.getSynchronizations().size();assertTrue(store.canReuseImmutableProofInCurrentReadSnapshot());assertEquals(before,queries.get());assertEquals(synchronizations,TransactionSynchronizationManager.getSynchronizations().size());assertFalse(new JdbcFrozenContentVersions(new DelegatingDataSource(counted)).canReuseImmutableProofInCurrentReadSnapshot());return true;});
+  for(boolean readonly:new boolean[]{true,false})read(readonly,TransactionDefinition.ISOLATION_READ_COMMITTED,TransactionDefinition.PROPAGATION_REQUIRED,()->{assertFalse(store.canReuseImmutableProofInCurrentReadSnapshot());return true;});
+  read(false,TransactionDefinition.ISOLATION_REPEATABLE_READ,TransactionDefinition.PROPAGATION_REQUIRED,()->{assertFalse(store.canReuseImmutableProofInCurrentReadSnapshot());return true;});
+  assertFalse(store.canReuseImmutableProofInCurrentReadSnapshot());
+ }
+ @Test void EligibilityFollowsSuspensionAndRejectsAnUnboundDataSourceWithoutQuerying(){
+  var alienSource=new DelegatingDataSource(counted);var alienManager=new DataSourceTransactionManager(alienSource);var alienRead=new TransactionTemplate(alienManager);alienRead.setReadOnly(true);alienRead.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
+  alienRead.execute(status->{int before=queries.get();assertTrue(TransactionSynchronizationManager.isActualTransactionActive());assertFalse(store.canReuseImmutableProofInCurrentReadSnapshot());assertEquals(before,queries.get());return true;});
+  rr(()->{assertTrue(store.canReuseImmutableProofInCurrentReadSnapshot());read(true,TransactionDefinition.ISOLATION_READ_COMMITTED,TransactionDefinition.PROPAGATION_REQUIRES_NEW,()->{assertFalse(store.canReuseImmutableProofInCurrentReadSnapshot());return true;});assertTrue(store.canReuseImmutableProofInCurrentReadSnapshot());return true;});
+  assertFalse(store.canReuseImmutableProofInCurrentReadSnapshot());
+ }
+
 }

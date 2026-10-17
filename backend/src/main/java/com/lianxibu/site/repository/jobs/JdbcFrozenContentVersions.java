@@ -44,12 +44,16 @@ public final class JdbcFrozenContentVersions {
         }
         return null;
     }
+    /** Native read boundary only; querying eligibility performs no SQL or scope registration. */
+    public boolean canReuseImmutableProofInCurrentReadSnapshot(){
+        return org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()
+                &&org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+                &&Integer.valueOf(org.springframework.transaction.TransactionDefinition.ISOLATION_REPEATABLE_READ).equals(org.springframework.transaction.support.TransactionSynchronizationManager.getCurrentTransactionIsolationLevel())
+                &&org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()
+                &&org.springframework.transaction.support.TransactionSynchronizationManager.hasResource(source);
+    }
     private ReadSnapshot snapshot(){
-        if(!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()
-                ||!org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly()
-                ||!Integer.valueOf(org.springframework.transaction.TransactionDefinition.ISOLATION_REPEATABLE_READ).equals(org.springframework.transaction.support.TransactionSynchronizationManager.getCurrentTransactionIsolationLevel())
-                ||!org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()
-                ||!org.springframework.transaction.support.TransactionSynchronizationManager.hasResource(source))return null;
+        if(!canReuseImmutableProofInCurrentReadSnapshot())return null;
         for(var item:org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations())
             if(item instanceof ReadSnapshot frame&&frame.source==source)return frame;
         var frame=new ReadSnapshot(source);org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(frame);return frame;
