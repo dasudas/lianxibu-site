@@ -46,6 +46,21 @@ class FrozenSourceStagePlanSnapshotTest {
         int rows=f.count();rr(()->{assertEquals(f.plan,service.readImmutable(ref));assertEquals(f.plan,service.readImmutable(ref));return true;});
         verify(storage,times(2)).immutableOwner(ref.ownerId());assertEquals(rows,f.count());assertEquals(0,f.fixture.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));
     }
+    @Test void ImmutableReadsInsideRepeatableReadWriterAlwaysReproveNativeArchives(){
+        var writable=new TransactionTemplate(new org.springframework.jdbc.datasource.DataSourceTransactionManager(f.fixture.source));
+        writable.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
+        int rows=f.count(),reads=f.sourceReads;
+        writable.execute(status->{
+            assertFalse(TransactionSynchronizationManager.isCurrentTransactionReadOnly());
+            assertEquals(f.plan,service.readImmutable(ref));assertEquals(f.plan,service.readImmutable(ref.ownerId()));
+            verify(storage,times(2)).immutableOwner(ref.ownerId());
+            f.fixture.jdbc.update("UPDATE jobs SET action_payload_hash=? WHERE target_type='source_stage_plan'",new byte[32]);
+            assertThrows(RuntimeException.class,()->service.readImmutable(ref));
+            status.setRollbackOnly();return true;
+        });
+        assertEquals(f.plan,rr(()->service.readImmutable(ref)));verify(storage,times(4)).immutableOwner(ref.ownerId());
+        assertEquals(rows,f.count());assertEquals(reads,f.sourceReads);assertEquals(0,f.fixture.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));
+    }
     @Test void ReadCommittedWriterAndAnotherIssuerDoNotBorrowSnapshotReuse(){
         read(TransactionDefinition.ISOLATION_READ_COMMITTED,TransactionDefinition.PROPAGATION_REQUIRED,()->{service.readImmutable(ref);service.readImmutable(ref);return true;});
         verify(storage,times(2)).immutableOwner(ref.ownerId());clearInvocations(storage);

@@ -62,15 +62,17 @@ public final class FrozenSourceStagePlanService {
     public SourcePartitionPlanner.Plan read(String ownerId){return readOriginal(ownerId).plan();}
     /** Original plan and universe proved together in this caller's writer; never cached. */
     OriginalPlan readOriginal(String ownerId){return readOriginal(ownerId,true);}
-    /** Original plan and universe proved together in this caller's immutable transaction. */
+    /** Complete non-locking proof in any active transaction; only readonly RR may reuse it. */
     OriginalPlan readImmutableOriginal(String ownerId){
-        JdbcSourceDedupResults.requireReadOnly();WireValues.id(ownerId,false);var frame=snapshotFrame();
+        if(!TransactionSynchronizationManager.isActualTransactionActive())throw unavailable();
+        WireValues.id(ownerId,false);var frame=snapshotFrame();
         if(frame!=null&&frame.values.containsKey(ownerId))return frame.values.get(ownerId);
         var original=readOriginal(ownerId,false);if(frame!=null)frame.remember(ownerId,original);return original;
     }
     /** Same RR snapshot only. Synchronizations are suspended separately by REQUIRES_NEW. */
     private ReadSnapshot snapshotFrame(){
-        if(!TransactionSynchronizationManager.isSynchronizationActive()
+        if(!TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+                ||!TransactionSynchronizationManager.isSynchronizationActive()
                 ||!Integer.valueOf(TransactionDefinition.ISOLATION_REPEATABLE_READ).equals(TransactionSynchronizationManager.getCurrentTransactionIsolationLevel()))return null;
         for(var synchronization:TransactionSynchronizationManager.getSynchronizations())
             if(synchronization instanceof ReadSnapshot frame&&frame.issuer==this)return frame;
