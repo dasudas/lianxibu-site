@@ -24,8 +24,8 @@ class ResultRecoveryCompetitionMySqlTest {
    var gate=new GatedStore(f.store,preferred);f.service=f.applicationService(gate);
    var input=f.store.input();String raw=f.raw();var action=f.action("fictional-result-seed-"+seed);
    try(var workers=Executors.newFixedThreadPool(2)){
-    var a=workers.submit(()->{Thread.currentThread().setName("fictional-forward");return f.service.applyAutomatic(input,raw,action);});
-    var b=workers.submit(()->{Thread.currentThread().setName("fictional-reverse");return f.service.applyAutomatic(input,raw,action);});
+    var a=workers.submit(()->{Thread.currentThread().setName("fictional-forward");return replayOriginal(()->f.service.applyAutomatic(input,raw,action),()->{});});
+    var b=workers.submit(()->{Thread.currentThread().setName("fictional-reverse");return replayOriginal(()->f.service.applyAutomatic(input,raw,action),()->{});});
     var one=a.get(15,TimeUnit.SECONDS);var two=b.get(15,TimeUnit.SECONDS);
     assertEquals(Status.APPLIED,one.status(),"seed "+seed);assertEquals(one,two,"same permanent receipt seed "+seed);
    }catch(Exception e){throw new AssertionError("result recovery seed "+seed,e);}
@@ -40,6 +40,38 @@ class ResultRecoveryCompetitionMySqlTest {
    f.restart();assertEquals(Status.APPLIED,f.service.applyAutomatic(input,raw,action).status());
    assertEquals(2,f.handlerCalls);assertEquals(1,f.sends);}
   }
+ }
+ @Test void BusyAdmissionReplaysTheSameOriginalResultWithoutAnotherProviderSend()throws Exception{
+  try(var f=new PooledResultJdbcMySqlFixture()){
+   f.fixture();var input=f.store.input();String raw=f.raw();var action=f.action("fictional-busy-result-replay");
+   var busyObserved=new CountDownLatch(1);
+   try(var workers=Executors.newSingleThreadExecutor()){
+    Future<Result> outcome;
+    try(var admission=new JdbcSharedWriteEntry(f.source).admit()){
+     outcome=workers.submit(()->replayOriginal(()->f.service.applyAutomatic(input,raw,action),busyObserved::countDown));
+     assertTrue(busyObserved.await(3,TimeUnit.SECONDS),"fixture must observe the original bounded busy result before release");
+     assertEquals(0,f.count("contents"));assertEquals(1,f.sends);
+     assertEquals(1,new JdbcJobRecords(f.source).byId(ResultJdbcStoreTest.ROOT).callCount());
+    }
+    var result=outcome.get(5,TimeUnit.SECONDS);assertEquals(Status.APPLIED,result.status());
+    assertEquals(result,f.service.applyAutomatic(input,raw,action));
+    assertEquals(1,f.sends);assertEquals(1,f.handlerCalls);assertEquals(1,f.count("contents"));
+    assertEquals(1L,f.jdbc.queryForObject("SELECT body_revision FROM contents",Long.class));
+    assertEquals(1,f.jdbc.queryForObject("SELECT COUNT(*) FROM jobs WHERE target_type='result_application'",Integer.class));
+    assertEquals(1,new JdbcJobRecords(f.source).byId(ResultJdbcStoreTest.ROOT).callCount());assertEquals("free",new JdbcWorkerState(f.source).slot().state());
+   }
+  }
+ }
+ private static Result replayOriginal(java.util.function.Supplier<Result> original,Runnable busyObserved){
+  for(int attempt=0;attempt<3;attempt++){
+   try{return original.get();}
+   catch(SharedWriteExecutor.WriteUnavailable busy){
+    if(attempt==2)throw busy;
+    busyObserved.run();
+    try{Thread.sleep(25);}catch(InterruptedException interrupted){Thread.currentThread().interrupt();throw new IllegalStateException("fictional result replay interrupted",interrupted);}
+   }
+  }
+  throw new IllegalStateException("fictional unreachable replay state");
  }
  private static final class RetryFault extends ResultJdbcStoreTest.FaultManager {
   final AtomicBoolean rollback=new AtomicBoolean();RetryFault(DataSource source){super(source);}
