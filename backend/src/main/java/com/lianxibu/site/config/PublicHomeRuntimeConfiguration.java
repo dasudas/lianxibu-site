@@ -2,6 +2,7 @@ package com.lianxibu.site.config;
 
 import com.lianxibu.site.repository.settings.JdbcSettingsReads;
 import com.lianxibu.site.service.content.ContentService;
+import com.lianxibu.site.service.content.PublishedContentFacade;
 import com.lianxibu.site.service.jobs.PublicHomeReadService;
 import com.lianxibu.site.service.jobs.PublicReadService;
 import com.lianxibu.site.service.learning.LearningService;
@@ -22,7 +23,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 @ConditionalOnProperty(name={"site.browser.enabled","site.content.enabled","site.learning.enabled"},havingValue="true")
 public class PublicHomeRuntimeConfiguration {
     @Bean PublicReadService publicHome(ContentService contents,LearningService learning,DataSource source,PlatformTransactionManager tx) {
-        return new PublicHomeReadService(contents,learning,new SettingsReadService(new JdbcSettingsReads(source),tx),tx);
+        PublicHomeReadService.SnapshotReports nativeReports=contents instanceof PublishedContentFacade facade&&facade.hasNativeHomeBinding(source)
+            ?()->facade.homeReportsInCurrentSnapshot(source):null;
+        return new PublicHomeReadService(contents,learning,new SettingsReadService(new JdbcSettingsReads(source),tx),tx,nativeReports);
     }
     @Bean @Order(7) SecurityFilterChain publicHomeSecurity(HttpSecurity http) throws Exception {
         http.securityMatcher("/home","/capabilities")

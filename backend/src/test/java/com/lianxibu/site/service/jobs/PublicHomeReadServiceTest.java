@@ -20,6 +20,7 @@ class PublicHomeReadServiceTest {
     private LearningService learning;
     private SettingsReadService settings;
     private PublicHomeReadService home;
+    private DataSourceTransactionManager homeTx;
 
     @BeforeEach void setup() {
         contents = mock(ContentService.class);
@@ -27,8 +28,8 @@ class PublicHomeReadServiceTest {
         settings = mock(SettingsReadService.class);
         var source = new JdbcDataSource();
         source.setURL("jdbc:h2:mem:home-" + System.nanoTime() + ";DB_CLOSE_DELAY=-1");
-        home = new PublicHomeReadService(contents, learning, settings,
-                new DataSourceTransactionManager(source));
+        homeTx = new DataSourceTransactionManager(source);
+        home = new PublicHomeReadService(contents, learning, settings, homeTx);
     }
 
     @Test void eachReadRechecksPublishedReportAndPackage() {
@@ -73,6 +74,29 @@ class PublicHomeReadServiceTest {
                 state, PUBLISHED, null, null, null,
                 new ContentService.Coverage("complete", List.of(), List.of(), List.of()),
                 false, List.of(), false, null, null, null, null);
+    }
+
+    private static ContentService.ContentView completeReport(String id){
+        return new ContentService.ContentView(id,"report","Fictional report",2,1,"published",PUBLISHED,"fictional-input",1L,PUBLISHED,
+            new ContentService.Coverage("complete",List.of(),List.of(),List.of()),false,List.of(),false,null,null,
+            new ContentService.ReportBody("Fictional report",List.of(),List.of(),"daily",PUBLISHED,PUBLISHED.plusSeconds(86400),"UTC",null),List.of());
+    }
+    private void emptyLearning(){when(learning.packages(1,50)).thenReturn(new LearningService.Page<>(List.of(),1,50,0));when(settings.resolvePublishedPackage(null)).thenReturn(Optional.empty());}
+    @Test void NativeReportSourceRunsOncePerRequestAndNeverKeepsThePreviousList(){
+        emptyLearning();var reports=new java.util.ArrayList<>(List.of(completeReport("fictional-native-report")));var calls=new java.util.concurrent.atomic.AtomicInteger();
+        var nativeHome=new PublicHomeReadService(contents,learning,settings,homeTx,()->{
+            assertTrue(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());assertTrue(org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly());assertEquals(java.sql.Connection.TRANSACTION_REPEATABLE_READ,org.springframework.transaction.support.TransactionSynchronizationManager.getCurrentTransactionIsolationLevel());calls.incrementAndGet();return reports;
+        });
+        var first=nativeHome.home();reports.clear();assertEquals(1,first.reports().size());assertTrue(nativeHome.home().reports().isEmpty());assertEquals(2,calls.get());verifyNoInteractions(contents);
+    }
+    @Test void MalformedOrUnavailableNativeReportsFailClosedWithoutGenericFallback(){
+        var sources=new java.util.ArrayList<PublicHomeReadService.SnapshotReports>();sources.add(()->null);sources.add(()->List.of(report("fictional-bad","withdrawn",2)));sources.add(()->List.of(completeReport("fictional-duplicate"),completeReport("fictional-duplicate")));sources.add(()->java.util.stream.IntStream.range(0,51).mapToObj(i->completeReport("fictional-large-"+i)).toList());sources.add(()->{throw new IllegalStateException("fictional native report unavailable");});
+        for(var source:sources){var nativeHome=new PublicHomeReadService(contents,learning,settings,homeTx,source);assertThrows(IllegalStateException.class,nativeHome::home);verifyNoInteractions(contents,learning,settings);}
+    }
+    @Test void NativeReportsStillResolveCurrentLearningPackagesAndTheDefault(){
+        var first=new LearningService.PackageSummary("fictional-first","Fictional first","",1,"published");var selected=new LearningService.PackageSummary("fictional-selected","Fictional selected","",2,"published");
+        when(learning.packages(1,50)).thenReturn(new LearningService.Page<>(List.of(first),1,50,1));when(learning.packageSummary(first.id())).thenReturn(first);when(learning.packageSummary(selected.id())).thenReturn(selected);when(settings.resolvePublishedPackage(null)).thenReturn(Optional.of(selected.id()));
+        var nativeHome=new PublicHomeReadService(contents,learning,settings,homeTx,()->List.of(completeReport("fictional-native-report")));var result=nativeHome.home();assertEquals(1,result.reports().size());assertEquals(List.of(selected,first),result.learningPackages());assertEquals(selected.id(),result.defaultPackageId());verifyNoInteractions(contents);verify(learning).packageSummary(first.id());verify(learning).packageSummary(selected.id());
     }
 
 }

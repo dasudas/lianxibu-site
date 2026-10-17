@@ -16,20 +16,28 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 /** Home aggregation over service boundaries, with current eligibility checked on every call. */
 public final class PublicHomeReadService implements PublicReadService {
+    @FunctionalInterface public interface SnapshotReports { List<ContentView> read(); }
     private final ContentService contents;
     private final LearningService learning;
     private final SettingsReadService settings;
     private final TransactionTemplate reads;
+    private final SnapshotReports nativeReports;
 
     public PublicHomeReadService(ContentService contents, LearningService learning,
                                  SettingsReadService settings,
                                  PlatformTransactionManager tx) {
+        this(contents,learning,settings,tx,null);
+    }
+
+    public PublicHomeReadService(ContentService contents,LearningService learning,SettingsReadService settings,
+                                 PlatformTransactionManager tx,SnapshotReports nativeReports) {
         if (contents == null || learning == null || settings == null || tx == null) {
             throw new IllegalArgumentException("home read dependencies required");
         }
         this.contents = contents;
         this.learning = learning;
         this.settings = settings;
+        this.nativeReports = nativeReports;
         reads = new TransactionTemplate(tx);
         reads.setReadOnly(true);
         reads.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
@@ -57,6 +65,7 @@ public final class PublicHomeReadService implements PublicReadService {
     }
 
     private List<ContentView> reports() {
+        if(nativeReports!=null)return nativeReportPage();
         var page = contents.reports(null, 1, 50);
         if (page == null || page.items() == null) throw new IllegalStateException("content page missing");
         List<ContentView> result = new ArrayList<>();
@@ -76,6 +85,22 @@ public final class PublicHomeReadService implements PublicReadService {
             if (result.size() == 50) break;
         }
         return List.copyOf(result);
+    }
+
+    /** The native provider performs complete current qualification in this same snapshot on every call. */
+    private List<ContentView> nativeReportPage() {
+        var page=nativeReports.read();
+        if(page==null||page.size()>50)throw new IllegalStateException("native report page unavailable");
+        Set<String> seen=new HashSet<>();
+        for(var report:page){
+            if(report==null||!"report".equals(report.kind())||report.id()==null||report.id().isEmpty()||!seen.add(report.id())
+                    ||report.revision()<1||report.bodyRevision()<1||!"published".equals(report.publicationState())||report.publishedAt()==null
+                    ||report.reviewRequired()||report.blockingReasons()==null||!report.blockingReasons().isEmpty()
+                    ||report.inputSnapshotId()==null||report.generation()==null||report.generation()<1||report.inputCutoffAt()==null
+                    ||report.coverage()==null||!(report.body() instanceof ContentService.ReportBody)||report.citations()==null)
+                throw new IllegalStateException("native report page unavailable");
+        }
+        return List.copyOf(page);
     }
 
     private List<PackageSummary> packages() {
