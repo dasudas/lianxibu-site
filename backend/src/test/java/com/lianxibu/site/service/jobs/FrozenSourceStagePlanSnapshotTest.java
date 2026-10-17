@@ -12,7 +12,11 @@ class FrozenSourceStagePlanSnapshotTest {
     FrozenSourceStagePlanServiceTest f;JdbcFrozenSourcePlans storage;FrozenSourceStagePlanService service;FrozenSourceStagePlan.Reference ref;
     boolean mysql(){return false;}
     @BeforeEach void setup(){
-        f=mysql()?new FrozenSourceStagePlanMySqlTest():new FrozenSourceStagePlanServiceTest();f.setup();ref=f.freeze();
+        f=mysql()?new FrozenSourceStagePlanMySqlTest():new FrozenSourceStagePlanServiceTest();
+        f.fixture=f.fixture();f.fixture.fixture();f.original=com.lianxibu.site.service.jobs.FrozenSourceUniverseTest.universe(3,false);
+        f.tx(()->{new JdbcJobRecords(f.fixture.source).ensureIntent(new JdbcJobRecords.Intent(FrozenSourceUniverseTest.OWNER,SourcePartitionPlannerTest.KEY,1,"news_dedup",java.time.LocalDate.of(2026,1,1)),f.fixture.clock.instant());return true;});
+        f.universes=new FrozenSourceUniverseService(new JdbcFrozenSourceUniverses(f.fixture.source),run->{f.sourceReads++;return f.original;},f.fixture.clock);
+        f.universeRef=f.tx(()->f.universes.freeze(FrozenSourceUniverseTest.OWNER,f.original.runId()));f.plan=f.plan("Fictional bounded snapshot evidence");f.service=f.service();ref=f.freeze();
         storage=spy(new JdbcFrozenSourcePlans(f.fixture.source));service=new FrozenSourceStagePlanService(storage,f.universes,f.fixture.clock,"fictional-snapshot-owner");
     }
     <T>T read(int isolation,int propagation,Supplier<T> work){var tx=new TransactionTemplate(new org.springframework.jdbc.datasource.DataSourceTransactionManager(f.fixture.source));tx.setReadOnly(true);tx.setIsolationLevel(isolation);tx.setPropagationBehavior(propagation);return tx.execute(s->work.get());}
@@ -32,6 +36,15 @@ class FrozenSourceStagePlanSnapshotTest {
         assertThrows(IllegalStateException.class,()->rr(()->{service.readImmutable(ref);throw new IllegalStateException("fictional rollback");}));
         f.fixture.jdbc.update("UPDATE jobs SET action_payload_hash=? WHERE target_type='source_stage_plan'",new byte[32]);
         assertThrows(RuntimeException.class,()->rr(()->service.readImmutable(ref)));verify(storage,times(2)).immutableOwner(ref.ownerId());
+    }
+    @Test void LargeCompleteOriginalPlanBypassesFrameBudgetWithoutTruncatingOrRejectingProof(){
+        f=mysql()?new FrozenSourceStagePlanMySqlTest():new FrozenSourceStagePlanServiceTest();f.setup();
+        f.plan=f.plan("Fictional large original evidence".repeat(65));
+        var validated=FrozenSourceStagePlanService.prevalidate(f.plan,f.original);ref=f.tx(()->f.service.freezeValidated(validated));
+        storage=spy(new JdbcFrozenSourcePlans(f.fixture.source));service=new FrozenSourceStagePlanService(storage,f.universes,f.fixture.clock,"fictional-large-snapshot-owner");
+        long bodyBytes=f.plan.chunks().stream().mapToLong(c->2L*(c.snapshotJson().length()+c.requestJson().length())).sum();assertTrue(bodyBytes>1024*1024);
+        int rows=f.count();rr(()->{assertEquals(f.plan,service.readImmutable(ref));assertEquals(f.plan,service.readImmutable(ref));return true;});
+        verify(storage,times(2)).immutableOwner(ref.ownerId());assertEquals(rows,f.count());assertEquals(0,f.fixture.jdbc.queryForObject("SELECT SUM(call_count) FROM jobs",Integer.class));
     }
     @Test void ReadCommittedWriterAndAnotherIssuerDoNotBorrowSnapshotReuse(){
         read(TransactionDefinition.ISOLATION_READ_COMMITTED,TransactionDefinition.PROPAGATION_REQUIRED,()->{service.readImmutable(ref);service.readImmutable(ref);return true;});

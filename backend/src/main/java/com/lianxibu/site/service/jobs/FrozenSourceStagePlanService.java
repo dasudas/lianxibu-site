@@ -83,11 +83,15 @@ public final class FrozenSourceStagePlanService {
         private long bytes;
         private ReadSnapshot(FrozenSourceStagePlanService issuer){this.issuer=issuer;}
         private void remember(String id,OriginalPlan original){
-            long size=512L+original.universe.members().size()*768L+original.plan.decisions().size()*256L+original.blocks.size()*512L;
-            for(var chunk:original.plan.chunks())size+=(long)chunk.snapshotJson().getBytes(java.nio.charset.StandardCharsets.UTF_8).length+chunk.requestJson().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+            long size=65536L+original.universe.members().size()*768L+original.universe.parts().size()*512L+original.plan.decisions().size()*256L+original.blocks.size()*1024L;
+            size+=textBytes(original.universe.runId())+textBytes(original.universe.sourceId())+textBytes(original.universe.manifestHash())+textBytes(original.plan.logicalKey())+textBytes(original.plan.scope().stageContextJson());
+            for(var member:original.universe.members())size+=textBytes(member.itemId())+textBytes(member.memberId())+textBytes(member.sourceItemId())+textBytes(member.observationId())+textBytes(member.payloadHash())+textBytes(member.replacesObservationId());
+            var receipt=original.receipt;size+=textBytes(receipt.id())+textBytes(receipt.actionKey())+textBytes(receipt.targetType())+textBytes(receipt.targetKeyJson())+textBytes(receipt.operatorId())+textBytes(receipt.reason())+textBytes(receipt.payloadJson());
+            for(var chunk:original.plan.chunks())size+=512L+chunk.itemIds().size()*256L+textBytes(chunk.rootId())+textBytes(chunk.snapshotJson())+textBytes(chunk.requestJson());
             if(size>MAX_BYTES||values.size()>=8||bytes+size>MAX_BYTES)return;
             values.put(id,original);bytes+=size;
         }
+        private static long textBytes(String value){return value==null?0:64L+2L*value.length();}
         @Override public void afterCompletion(int status){values.clear();bytes=0;}
     }
     static final class OriginalPlan {
