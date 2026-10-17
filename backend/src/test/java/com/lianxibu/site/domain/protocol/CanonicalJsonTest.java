@@ -11,6 +11,30 @@ import java.util.HexFormat;
 import org.junit.jupiter.api.Test;
 
 class CanonicalJsonTest {
+    @Test void CompleteNestedMixedDocumentFitsTheStrictParserAllocationBudget(){
+        var expected=tools.jackson.databind.json.JsonMapper.shared().createArrayNode();
+        var raw=new StringBuilder("[");
+        for(int i=0;i<10000;i++){
+            if(i>0)raw.append(',');
+            raw.append("{\"name\":\"Fictional中文😀\",\"values\":[0,9007199254740991],\"index\":").append(i).append('}');
+            var node=expected.addObject();node.put("name","Fictional中文😀");node.put("index",i);node.putArray("values").add(0).add(CanonicalJson.MAX_SAFE_INTEGER);
+        }
+        raw.append(']');String document=raw.toString();byte[] canonical=CanonicalJson.bytes(expected);
+        var memory=(com.sun.management.ThreadMXBean)java.lang.management.ManagementFactory.getThreadMXBean();
+        org.junit.jupiter.api.Assertions.assertTrue(memory.isThreadAllocatedMemorySupported());if(!memory.isThreadAllocatedMemoryEnabled())memory.setThreadAllocatedMemoryEnabled(true);
+        for(int i=0;i<4;i++)CanonicalJson.parse(document);
+        long thread=Thread.currentThread().threadId(),before=memory.getThreadAllocatedBytes(thread);var actual=CanonicalJson.parse(document);long allocated=memory.getThreadAllocatedBytes(thread)-before;
+        System.out.println("Fictional complete mixed parser allocated bytes="+allocated);
+        assertEquals(10000,actual.size());assertEquals(9999,actual.get(9999).path("index").intValue());
+        assertArrayEquals(canonical,CanonicalJson.bytes(actual));
+        org.junit.jupiter.api.Assertions.assertTrue(allocated>=0&&allocated<=8L*1024*1024,"Complete mixed parser allocation exceeds budget: "+allocated);
+    }
+    @Test void NestedStrictLexicalRulesAndPrimitiveRootsKeepTheirExactTypesAndBytes(){
+        for(String raw:java.util.List.of("null","true","false","0","2147483647","2147483648","9007199254740991","[]","{}","{\"a\":[true,false,null,0,9007199254740991,{\"b\":\"中文😀\"}]}"))
+            assertArrayEquals(raw.getBytes(StandardCharsets.UTF_8),CanonicalJson.bytes(CanonicalJson.parse(raw)));
+        for(String raw:java.util.List.of("{\"x\":null,\"x\":0}","{\"a\":1,\"b\":2,\"c\":3,\"b\":null}","[1,-0]","{\"outer\":[{\"x\":1e2}]}","[01]","[9007199254740992]","{\"outer\":{\"a\":1,\""+(char)92+"u0061\":2}}","[true false]","{\"a\":}","[1,]","true false","[", "{\"a\":\""+(char)92+"uDC00\"}"))
+            assertThrows(IllegalArgumentException.class,()->CanonicalJson.parse(raw),raw);
+    }
     @Test
     void historicalKeyOrderAndNullVector() {
         var value = CanonicalJson.parse("{\"b\":1,\"a\":null}");

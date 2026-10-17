@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
@@ -16,7 +17,6 @@ import java.util.Objects;
 
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
-import tools.jackson.core.StreamReadFeature;
 import tools.jackson.core.json.JsonFactory;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
@@ -26,9 +26,7 @@ import tools.jackson.databind.json.JsonMapper;
 public final class CanonicalJson {
     public static final long MAX_SAFE_INTEGER = 9_007_199_254_740_991L;
     private static final BigInteger MAX = BigInteger.valueOf(MAX_SAFE_INTEGER);
-    private static final java.util.regex.Pattern CANONICAL_INTEGER = java.util.regex.Pattern.compile("0|[1-9][0-9]*");
-    private static final JsonFactory FACTORY = JsonFactory.builder()
-            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build();
+    private static final JsonFactory FACTORY = JsonFactory.builder().build();
     private static final JsonMapper MAPPER = JsonMapper.builder(FACTORY)
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
     private static final char[] HEX = "0123456789abcdef".toCharArray();
@@ -70,43 +68,81 @@ public final class CanonicalJson {
         }
         validateScalars(raw);
         try (JsonParser parser = FACTORY.createParser(raw)) {
+            var stack = new ArrayDeque<ReadFrame>();
+            JsonNode root = null;
             JsonToken token;
-            int roots = 0;
-            int depth = 0;
             while ((token = parser.nextToken()) != null) {
-                if (token == JsonToken.START_OBJECT || token == JsonToken.START_ARRAY) {
-                    if (depth == 0) roots++;
-                    depth++;
-                } else if (token == JsonToken.END_OBJECT || token == JsonToken.END_ARRAY) {
-                    depth--;
-                } else if (depth == 0) {
-                    roots++;
+                if (token == JsonToken.PROPERTY_NAME) {
+                    if (stack.isEmpty() || !stack.peek().node.isObject() || stack.peek().field != null) throw invalidStructure();
+                    String name = parser.getText();
+                    validateScalars(name);
+                    if (stack.peek().node.has(name)) throw new IllegalArgumentException("duplicate JSON object property");
+                    stack.peek().field = name;
+                    continue;
                 }
-                if (token == JsonToken.VALUE_NUMBER_FLOAT) {
-                    throw new IllegalArgumentException("JSON floating number is forbidden");
+                if (token == JsonToken.END_OBJECT || token == JsonToken.END_ARRAY) {
+                    if (stack.isEmpty()) throw invalidStructure();
+                    var frame = stack.pop();
+                    if (frame.field != null || frame.node.isObject() != (token == JsonToken.END_OBJECT)) throw invalidStructure();
+                    continue;
                 }
-                if (token == JsonToken.VALUE_NUMBER_INT) {
-                    String lexical = parser.getText();
-                    if (!CANONICAL_INTEGER.matcher(lexical).matches() || new BigInteger(lexical).compareTo(MAX) > 0) {
-                        throw new IllegalArgumentException("JSON integer outside canonical range");
-                    }
+                var nodes = MAPPER.getNodeFactory();
+                JsonNode value;
+                if (token == JsonToken.START_OBJECT) value = nodes.objectNode();
+                else if (token == JsonToken.START_ARRAY) value = nodes.arrayNode();
+                else if (token == JsonToken.VALUE_STRING) {
+                    String text = parser.getText();
+                    validateScalars(text);
+                    value = nodes.stringNode(text);
+                } else if (token == JsonToken.VALUE_NUMBER_INT) {
+                    long number = integer(parser.getText());
+                    value = number <= Integer.MAX_VALUE ? nodes.numberNode((int) number) : nodes.numberNode(number);
+                } else if (token == JsonToken.VALUE_TRUE) value = nodes.booleanNode(true);
+                else if (token == JsonToken.VALUE_FALSE) value = nodes.booleanNode(false);
+                else if (token == JsonToken.VALUE_NULL) value = nodes.nullNode();
+                else if (token == JsonToken.VALUE_NUMBER_FLOAT) throw new IllegalArgumentException("JSON floating number is forbidden");
+                else throw invalidStructure();
+                if (stack.isEmpty()) {
+                    if (root != null) throw invalidStructure();
+                    root = value;
+                } else {
+                    var frame = stack.peek();
+                    if (frame.node.isObject()) {
+                        if (frame.field == null) throw invalidStructure();
+                        ((tools.jackson.databind.node.ObjectNode) frame.node).set(frame.field, value);
+                        frame.field = null;
+                    } else ((tools.jackson.databind.node.ArrayNode) frame.node).add(value);
                 }
-                if (token == JsonToken.VALUE_STRING || token == JsonToken.PROPERTY_NAME) {
-                    validateScalars(parser.getText());
-                }
+                if (token == JsonToken.START_OBJECT || token == JsonToken.START_ARRAY) stack.push(new ReadFrame(value));
             }
-            if (roots != 1 || depth != 0) {
-                throw new IllegalArgumentException("JSON requires exactly one root");
-            }
-            JsonNode node = MAPPER.readTree(raw);
-            if (node == null) throw new IllegalArgumentException("empty JSON");
-            return node;
+            if (root == null || !stack.isEmpty()) throw invalidStructure();
+            return root;
         } catch (IllegalArgumentException error) {
             throw error;
         } catch (RuntimeException error) {
             throw new IllegalArgumentException("invalid strict JSON", error);
         }
     }
+
+    private static final class ReadFrame {
+        private final JsonNode node;
+        private String field;
+        private ReadFrame(JsonNode node) { this.node = node; }
+    }
+
+    private static long integer(String lexical) {
+        int length = lexical.length();
+        if (length == 0 || length > 16 || length > 1 && lexical.charAt(0) == '0') throw invalidInteger();
+        for (int index = 0; index < length; index++) {
+            char digit = lexical.charAt(index);
+            if (digit < '0' || digit > '9') throw invalidInteger();
+        }
+        if (length == 16 && lexical.compareTo("9007199254740991") > 0) throw invalidInteger();
+        return Long.parseLong(lexical);
+    }
+
+    private static IllegalArgumentException invalidInteger() { return new IllegalArgumentException("JSON integer outside canonical range"); }
+    private static IllegalArgumentException invalidStructure() { return new IllegalArgumentException("JSON requires exactly one complete root"); }
 
     public static byte[] bytes(JsonNode value) {
         Objects.requireNonNull(value, "value");
