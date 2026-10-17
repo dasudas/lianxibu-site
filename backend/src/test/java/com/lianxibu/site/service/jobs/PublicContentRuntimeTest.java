@@ -121,4 +121,20 @@ class PublicContentRuntimeTest {
             jdbc.execute("DROP TABLE runtime_settings");response=request(client,root,"/home","GET");assertEquals(503,response.statusCode(),response.body());assertTrue(response.body().contains("temporarily_unavailable"));assertFalse(response.body().contains("SELECT"));assertEquals("no-store",response.headers().firstValue("Cache-Control").orElseThrow());
         }
     }
+    @Test void ActualNativeReportPageBindingReadsCompleteProofAndNewSnapshotSeesWithdrawal(){
+        f=fixture();noUpdateReport();
+        try(var app=start(true)){
+            var facade=(PublishedContentFacade)app.getBean(ContentService.class);var source=f.fixture.source;
+            assertTrue(facade.hasNativeHomeBinding(source));assertFalse(facade.hasNativeHomeBinding(new org.springframework.jdbc.datasource.DelegatingDataSource(source)));
+            var legacy=new PublishedContentFacade(org.mockito.Mockito.mock(ContentReadService.class),org.mockito.Mockito.mock(PublishedContentFacade.Projection.class),f.fixture.tx);
+            assertFalse(legacy.hasNativeHomeBinding(source));
+            assertThrows(com.lianxibu.site.service.identity.IdentityService.Rejected.class,()->facade.homeReportsInCurrentSnapshot(source));
+            var transaction=new org.springframework.transaction.support.TransactionTemplate(f.fixture.tx);transaction.setReadOnly(true);transaction.setIsolationLevel(org.springframework.transaction.TransactionDefinition.ISOLATION_REPEATABLE_READ);
+            var first=transaction.execute(status->facade.homeReportsInCurrentSnapshot(source));assertEquals(1,first.size());var report=first.getFirst();
+            assertEquals("fictional-no-update",report.id());assertEquals("published",report.publicationState());assertFalse(report.reviewRequired());assertTrue(report.blockingReasons().isEmpty());assertInstanceOf(ContentService.ReportBody.class,report.body());assertEquals(List.of(LocalDate.of(2026,1,1)),report.coverage().noUpdateDates());
+            f.fixture.jdbc.update("UPDATE contents SET state='withdrawn',revision=revision+1 WHERE kind='report' AND id='fictional-no-update'");
+            assertTrue(transaction.execute(status->facade.homeReportsInCurrentSnapshot(source)).isEmpty());
+        }
+    }
+
 }

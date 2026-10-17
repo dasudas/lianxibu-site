@@ -60,9 +60,13 @@ public final class PublishedContentFacade implements ContentService {
         reads=new TransactionTemplate(Objects.requireNonNull(tx));reads.setReadOnly(true);
         reads.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
     }
+    /** Pure assembly capability; current transaction scope is checked separately on every native page read. */
+    public boolean hasNativeHomeBinding(javax.sql.DataSource expectedSource) {
+        return nativeSource!=null&&expectedSource==nativeSource&&transactionSource==nativeSource;
+    }
     /** A fresh fully qualified page for an aggregator already inside this exact native snapshot. */
     public List<ContentView> homeReportsInCurrentSnapshot(javax.sql.DataSource expectedSource) {
-        if(nativeSource==null||expectedSource!=nativeSource||transactionSource!=nativeSource
+        if(!hasNativeHomeBinding(expectedSource)
                 ||!TransactionSynchronizationManager.isActualTransactionActive()
                 ||!TransactionSynchronizationManager.isCurrentTransactionReadOnly()
                 ||!Integer.valueOf(TransactionDefinition.ISOLATION_REPEATABLE_READ).equals(TransactionSynchronizationManager.getCurrentTransactionIsolationLevel())

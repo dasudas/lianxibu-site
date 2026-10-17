@@ -51,7 +51,7 @@ public class PublicContentRuntimeConfiguration {
             return new VersionValidityService(writes,new VersionValidityJdbcStore(ownerLedger,new JdbcValidityPropagation(source),versions,unqualified,writer,clock,actor,null));
         });
         var catalog=new ContentVersionCatalog(new JdbcValidityPropagation(source),versions,ledger,unqualified,tx);
-        return new PublishedContentFacade(qualified,projection,tx,new PublishedContentFacade.OwnerOperations(ownerReads,commands,edits,validityCommands,catalog::list),reports.getIfAvailable());
+        return new PublishedContentFacade(qualified,projection,tx,new PublishedContentFacade.OwnerOperations(ownerReads,commands,edits,validityCommands,catalog::list),reports.getIfAvailable(),source);
     }
     @Bean VersionDispositionReadService versionDispositions(DataSource source,PlatformTransactionManager tx){
         var clock=Clock.systemUTC();String reader="version-reader";
