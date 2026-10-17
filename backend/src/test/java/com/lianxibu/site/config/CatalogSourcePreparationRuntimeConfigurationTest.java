@@ -37,4 +37,27 @@ class CatalogSourcePreparationRuntimeConfigurationTest {
         var loop=new CatalogSourcePreparationRuntimeConfiguration.Loop(cycles,executor);try(var runner=Executors.newSingleThreadExecutor()){loop.start();var active=runner.submit(()->tick.get().run());try{assertTrue(entered.await(5,TimeUnit.SECONDS));tick.get().run();verify(cycles.get(0),times(1)).run(any());loop.stop(stopped::countDown);assertEquals(1,stopped.getCount());assertThrows(IllegalStateException.class,loop::start);}finally{release.countDown();}active.get(5,TimeUnit.SECONDS);assertTrue(stopped.await(1,TimeUnit.SECONDS));}tick.get().run();verifyNoInteractions(cycles.get(1),cycles.get(2),cycles.get(3));when(executor.scheduleWithFixedDelay(any(Runnable.class),eq(1L),eq(1L),eq(TimeUnit.SECONDS))).thenThrow(new RejectedExecutionException());assertThrows(RejectedExecutionException.class,loop::start);assertFalse(loop.isRunning());
     }
     @Test void ConstructorRejectsIncompleteNullOrReusedCyclesWithoutScheduling(){var executor=mock(ScheduledExecutorService.class);var cycles=cycles();assertThrows(RuntimeException.class,()->new CatalogSourcePreparationRuntimeConfiguration.Loop(cycles.subList(0,3),executor));assertThrows(RuntimeException.class,()->new CatalogSourcePreparationRuntimeConfiguration.Loop(List.of(cycles.get(0),cycles.get(0),cycles.get(2),cycles.get(3)),executor));assertThrows(RuntimeException.class,()->new CatalogSourcePreparationRuntimeConfiguration.Loop(Arrays.asList(cycles.get(0),null,cycles.get(2),cycles.get(3)),executor));assertThrows(RuntimeException.class,()->new CatalogSourcePreparationRuntimeConfiguration.Loop(cycles,null));verifyNoInteractions(executor);}
+    ApplicationContextRunner intervalContext(String seconds,ScheduledExecutorService executor,DataSource source,PlatformTransactionManager tx,SettingsUpdateService settings,OperationalInputGate gate){
+        return new ApplicationContextRunner().withUserConfiguration(CatalogSourcePreparationRuntimeConfiguration.class)
+            .withBean(DataSource.class,()->source).withBean(PlatformTransactionManager.class,()->tx).withBean(SettingsUpdateService.class,()->settings).withBean(OperationalInputGate.class,()->gate)
+            .withBean("catalogSourcePreparationExecutor",ScheduledExecutorService.class,()->executor)
+            .withPropertyValues(Arrays.stream(FLAGS).map(n->n+"=true").toArray(String[]::new))
+            .withPropertyValues("site.execution.catalog-source-runtime.interval-seconds="+seconds);
+    }
+    @Test void ConfiguredIntervalSchedulesTheRealAssemblyWithoutDatabaseOrPaidWork(){
+        for(long seconds:new long[]{10,300}){
+            var source=mock(DataSource.class);var tx=mock(PlatformTransactionManager.class);var settings=mock(SettingsUpdateService.class);var gate=mock(OperationalInputGate.class);var executor=mock(ScheduledExecutorService.class);var future=mock(ScheduledFuture.class);
+            when(executor.scheduleWithFixedDelay(any(Runnable.class),eq(seconds),eq(seconds),eq(TimeUnit.SECONDS))).thenReturn(future);
+            intervalContext(Long.toString(seconds),executor,source,tx,settings,gate).run(c->{assertNull(c.getStartupFailure());assertTrue(c.getBean(CatalogSourcePreparationRuntimeConfiguration.Loop.class).isRunning());verifyNoInteractions(source,tx,settings,gate);});
+            verify(executor).scheduleWithFixedDelay(any(Runnable.class),eq(seconds),eq(seconds),eq(TimeUnit.SECONDS));verify(future).cancel(false);
+        }
+    }
+    @Test void InvalidIntervalFailsClosedBeforeSchedulingOrAnyNativeWork(){
+        for(String seconds:List.of("0","301","-1","fictional-invalid")){
+            var source=mock(DataSource.class);var tx=mock(PlatformTransactionManager.class);var settings=mock(SettingsUpdateService.class);var gate=mock(OperationalInputGate.class);var executor=mock(ScheduledExecutorService.class);
+            when(executor.scheduleWithFixedDelay(any(Runnable.class),anyLong(),anyLong(),eq(TimeUnit.SECONDS))).thenReturn(mock(ScheduledFuture.class));
+            intervalContext(seconds,executor,source,tx,settings,gate).run(c->assertNotNull(c.getStartupFailure()));verifyNoInteractions(source,tx,settings,gate);verify(executor,never()).scheduleWithFixedDelay(any(Runnable.class),anyLong(),anyLong(),any());
+        }
+    }
+
 }
