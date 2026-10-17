@@ -17,22 +17,24 @@ public class CatalogDayAnalysisPreparationRuntimeConfiguration {
         var executor=new ScheduledThreadPoolExecutor(1,work->{var thread=new Thread(work,"catalog-day-analysis-preparation");thread.setDaemon(true);return thread;});
         executor.setRemoveOnCancelPolicy(true);executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);executor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);return executor;
     }
-    @Bean Loop catalogDayAnalysisPreparationLoop(CatalogDayAnalysisProofConfiguration.Graphs graphs,@Qualifier("catalogDayAnalysisPreparationExecutor") ScheduledExecutorService executor){
-        return new Loop(CatalogSourceProofConfiguration.CATEGORIES.stream().map(category->graphs.graph(category).cycle()).toList(),executor);
+    @Bean Loop catalogDayAnalysisPreparationLoop(CatalogDayAnalysisProofConfiguration.Graphs graphs,@Qualifier("catalogDayAnalysisPreparationExecutor") ScheduledExecutorService executor,@org.springframework.beans.factory.annotation.Value("${site.execution.catalog-day-analysis-runtime.interval-seconds:1}") long seconds){
+        return new Loop(CatalogSourceProofConfiguration.CATEGORIES.stream().map(category->graphs.graph(category).cycle()).toList(),executor,seconds);
     }
     public static final class Loop implements SmartLifecycle {
         private static final org.slf4j.Logger LOG=org.slf4j.LoggerFactory.getLogger(Loop.class);
-        private final List<CatalogDayAnalysisPreparationCycle> cycles;private final ScheduledExecutorService executor;
+        private final List<CatalogDayAnalysisPreparationCycle> cycles;private final ScheduledExecutorService executor;private final long seconds;
         private boolean running,inFlight;private int next;private volatile boolean failure;private ScheduledFuture<?> future;
         private final List<Runnable> callbacks=new ArrayList<>();
-        Loop(List<CatalogDayAnalysisPreparationCycle> cycles,ScheduledExecutorService executor){
+        Loop(List<CatalogDayAnalysisPreparationCycle> cycles,ScheduledExecutorService executor){this(cycles,executor,1);}
+        Loop(List<CatalogDayAnalysisPreparationCycle> cycles,ScheduledExecutorService executor,long seconds){
+            if(seconds<1||seconds>300)throw new IllegalArgumentException("catalog day analysis preparation interval outside bounds");
             Objects.requireNonNull(cycles);if(cycles.size()!=4||cycles.stream().anyMatch(Objects::isNull))throw new IllegalArgumentException("four catalog day cycles required");
             var unique=Collections.newSetFromMap(new IdentityHashMap<CatalogDayAnalysisPreparationCycle,Boolean>());unique.addAll(cycles);if(unique.size()!=4)throw new IllegalArgumentException("distinct catalog day cycles required");
-            this.cycles=List.copyOf(cycles);this.executor=Objects.requireNonNull(executor);
+            this.cycles=List.copyOf(cycles);this.executor=Objects.requireNonNull(executor);this.seconds=seconds;
         }
         @Override public synchronized void start(){
             if(running)return;if(inFlight)throw new IllegalStateException("catalog day preparation still stopping");running=true;
-            try{future=Objects.requireNonNull(executor.scheduleWithFixedDelay(this::tick,1,1,TimeUnit.SECONDS));}catch(RuntimeException rejected){running=false;future=null;throw rejected;}
+            try{future=Objects.requireNonNull(executor.scheduleWithFixedDelay(this::tick,seconds,seconds,TimeUnit.SECONDS));}catch(RuntimeException rejected){running=false;future=null;throw rejected;}
         }
         private void tick(){
             CatalogDayAnalysisPreparationCycle cycle;synchronized(this){if(!running||inFlight)return;inFlight=true;cycle=cycles.get(next);next=(next+1)%cycles.size();}
