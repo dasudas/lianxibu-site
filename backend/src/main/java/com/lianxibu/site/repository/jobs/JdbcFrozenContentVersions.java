@@ -11,14 +11,23 @@ import tools.jackson.databind.json.JsonMapper;
 public final class JdbcFrozenContentVersions {
     public record Proof(String versionJson,String inputHash,String snapshotJson,
                         String resultJson,String bodyJson,String attemptId,java.time.Instant recordedAt) { }
+    private final DataSource source;
     private final JdbcTemplate jdbc;
     private final JdbcFrozenInputs inputs;
     private final JdbcResultState results;
     private final JdbcVersionAvailability availability;
-    public JdbcFrozenContentVersions(DataSource source){jdbc=new JdbcTemplate(Objects.requireNonNull(source));inputs=new JdbcFrozenInputs(source);results=new JdbcResultState(source);availability=new JdbcVersionAvailability(source);}
+    public JdbcFrozenContentVersions(DataSource source){this.source=Objects.requireNonNull(source);jdbc=new JdbcTemplate(source);inputs=new JdbcFrozenInputs(source);results=new JdbcResultState(source);availability=new JdbcVersionAvailability(source);}
     public java.time.Instant observedAt(ContentVersionKey target,String inputHash){return availability.read(target,inputHash);}
     public Proof read(ContentVersionKey target){
         String version=version(target);if(target.inputJobId()==null)return null;
+        var frame=snapshot();
+        if(frame!=null&&frame.values.containsKey(target))return frame.values.get(target);
+        var proof=readNative(target,version);
+        if(frame!=null&&proof!=null)frame.remember(target,proof);
+        return proof;
+    }
+    /** Only complete native data is reused; mutable availability and validity remain separate reads. */
+    private Proof readNative(ContentVersionKey target,String version){
         var archives=jdbc.query("SELECT target_key_json,target_key_hash,action_payload,action_payload_hash,created_at,acted_at FROM jobs WHERE record_kind='disposition' AND target_type='content_review_version' AND target_key_hash=UNHEX(?)",(rs,n)->new Object[]{rs.getString(1),rs.getBytes(2),rs.getString(3),rs.getBytes(4),rs.getTimestamp(5),rs.getTimestamp(6)},JdbcResultState.sha(version));
         for(var row:archives){var node=CanonicalJson.parse((String)row[0]);if(!version.equals(JdbcFrozenInputs.canonical(node))||!Arrays.equals((byte[])row[1],HexFormat.of().parseHex(JdbcResultState.sha(version))))throw unavailable();var payload=payload(row,2,3);if(!"content-version-evidence-v1".equals(payload.path("schema_version").asText())||!target.inputJobId().equals(payload.path("owner_id").asText()))throw unavailable();
             String hash=payload.path("input_hash").asText(),part=payload.path("part_id").asText();var parts=jdbc.query("SELECT id,owner_job_id,purpose,stamp_id,part_no,payload_json,payload_hash,created_at FROM jobs WHERE id=? AND record_kind='snapshot_part'",(rs,n)->new Object[]{rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4),rs.getLong(5),rs.getString(6),rs.getBytes(7),rs.getTimestamp(8)},part);
@@ -34,6 +43,30 @@ public final class JdbcFrozenContentVersions {
             }
         }
         return null;
+    }
+    private ReadSnapshot snapshot(){
+        if(!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()
+                ||!org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+                ||!Integer.valueOf(org.springframework.transaction.TransactionDefinition.ISOLATION_REPEATABLE_READ).equals(org.springframework.transaction.support.TransactionSynchronizationManager.getCurrentTransactionIsolationLevel())
+                ||!org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()
+                ||!org.springframework.transaction.support.TransactionSynchronizationManager.hasResource(source))return null;
+        for(var item:org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations())
+            if(item instanceof ReadSnapshot frame&&frame.source==source)return frame;
+        var frame=new ReadSnapshot(source);org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(frame);return frame;
+    }
+    private static final class ReadSnapshot implements org.springframework.transaction.support.TransactionSynchronization {
+        private final DataSource source;
+        private final Map<ContentVersionKey,Proof> values=new LinkedHashMap<>();
+        private long bytes;
+        private ReadSnapshot(DataSource source){this.source=source;}
+        private void remember(ContentVersionKey key,Proof proof){
+            long size=4096L+text(key.contentKind())+text(key.contentId())+text(key.bodyHash())+text(key.inputJobId())
+                    +text(proof.versionJson())+text(proof.inputHash())+text(proof.snapshotJson())+text(proof.resultJson())+text(proof.bodyJson())+text(proof.attemptId());
+            if(values.size()>=8||size>1024*1024||bytes+size>1024*1024)return;
+            values.put(key,proof);bytes+=size;
+        }
+        private static long text(String value){return value==null?0:64L+2L*value.length();}
+        @Override public void afterCompletion(int status){values.clear();bytes=0;}
     }
     private static java.time.Instant latest(Object... values) {
         java.time.Instant result=null;
