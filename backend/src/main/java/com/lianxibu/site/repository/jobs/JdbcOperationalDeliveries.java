@@ -23,12 +23,15 @@ public final class JdbcOperationalDeliveries {
     public String channelId(){return channelId;}
     public Stored next(Instant now) {
         if(destination==Destination.CLOUD)return nextCloud(now);
+        // This hash is the existing canonical {notice_id: id} index locator only.
+        // The selected notice and latest complete receipt are still validated before a claim.
         var ids=jdbc.query("SELECT n.id FROM jobs n WHERE n.record_kind='disposition' AND n.target_type='ops_rule'"
                 +" AND n.id LIKE 'opsn!_%' ESCAPE '!'"
                 +" AND NOT EXISTS (SELECT 1 FROM jobs done WHERE done.id=CONCAT('opsd_',SUBSTRING(n.id,6)))"
-                +" AND NOT EXISTS (SELECT 1 FROM jobs d WHERE d.target_type='ops_log_delivery' AND d.target_id=n.id"
-                +" AND d.eligible_at>? AND NOT EXISTS (SELECT 1 FROM jobs newer WHERE newer.target_type='ops_log_delivery'"
-                +" AND newer.target_id=n.id AND newer.revision>d.revision)) ORDER BY n.id LIMIT 1",
+                +" AND NOT EXISTS (SELECT 1 FROM jobs d WHERE d.record_kind='disposition' AND d.target_type='ops_log_delivery' AND d.target_id=n.id"
+                +" AND d.target_key_hash=UNHEX(SHA2(CONCAT('{\"notice_id\":',JSON_QUOTE(n.id),'}'),256))"
+                +" AND d.eligible_at>? AND NOT EXISTS (SELECT 1 FROM jobs newer WHERE newer.record_kind='disposition' AND newer.target_type='ops_log_delivery'"
+                +" AND newer.target_key_hash=d.target_key_hash AND newer.target_id=n.id AND newer.revision>d.revision)) ORDER BY n.id LIMIT 1",
                 (rs,index)->rs.getString(1),Timestamp.from(now));
         return ids.isEmpty()?null:notice(ids.getFirst());
     }

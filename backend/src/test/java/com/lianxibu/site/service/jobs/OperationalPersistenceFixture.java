@@ -13,6 +13,9 @@ final class OperationalPersistenceFixture {
     OperationalPersistenceFixture() {
         source.setURL("jdbc:h2:mem:ops-jdbc-"+System.nanoTime()+";DB_CLOSE_DELAY=-1;MODE=MySQL");
         jdbc=new JdbcTemplate(source);tx=new DataSourceTransactionManager(source);
+        jdbc.execute("CREATE ALIAS SHA2 FOR 'com.lianxibu.site.service.jobs.OperationalLogDeliveryLocatorTest.sha2'");
+        jdbc.execute("CREATE ALIAS UNHEX FOR 'com.lianxibu.site.service.jobs.OperationalLogDeliveryLocatorTest.unhex'");
+        jdbc.execute("CREATE ALIAS JSON_QUOTE FOR 'com.lianxibu.site.service.jobs.OperationalLogDeliveryLocatorTest.jsonQuote'");
         jdbc.execute("CREATE TABLE worker_lock(id INT PRIMARY KEY)");jdbc.update("INSERT INTO worker_lock VALUES(1)");
         jdbc.execute("CREATE TABLE runtime_settings(setting_key VARCHAR(64) PRIMARY KEY,value_json CLOB NOT NULL,revision BIGINT NOT NULL,updated_at TIMESTAMP NOT NULL)");
         jdbc.execute("CREATE TABLE jobs(id VARCHAR(64) PRIMARY KEY,business_key VARCHAR(191) NOT NULL UNIQUE,"
