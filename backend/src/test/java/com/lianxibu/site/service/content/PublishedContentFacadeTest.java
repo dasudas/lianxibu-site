@@ -85,4 +85,31 @@ class PublishedContentFacadeTest {
         assertThrows(IllegalArgumentException.class,()->facade().reports("unknown",1,10));
         assertThrows(IllegalArgumentException.class,()->facade().interpretations("report",1,10));
     }
+    PublishedContentFacade nativeFacade(){return new PublishedContentFacade(reads,this::project,tx,null,null,jdbc.getDataSource());}
+    <T>T nativeRead(boolean readonly,int isolation,org.springframework.transaction.PlatformTransactionManager manager,java.util.function.Supplier<T> work){
+        var transaction=new org.springframework.transaction.support.TransactionTemplate(manager);transaction.setReadOnly(readonly);transaction.setIsolationLevel(isolation);return transaction.execute(status->work.get());
+    }
+    <T>T rr(java.util.function.Supplier<T> work){return nativeRead(true,java.sql.Connection.TRANSACTION_REPEATABLE_READ,tx,work);}
+    @Test void NativeHomePageAlwaysRunsFullQualificationAndNewTransactionsSeeWithdrawal(){
+        insert("report","fictional-home-report","daily");insert("report","hidden-home-report","daily");var facade=nativeFacade();
+        rr(()->{var first=facade.homeReportsInCurrentSnapshot(jdbc.getDataSource());assertEquals(1,first.size());assertEquals("fictional-home-report",first.getFirst().id());assertThrows(UnsupportedOperationException.class,first::clear);assertEquals(1,facade.homeReportsInCurrentSnapshot(jdbc.getDataSource()).size());assertEquals(4,qualifications.get());return true;});
+        jdbc.update("UPDATE contents SET state='withdrawn' WHERE id='fictional-home-report'");
+        assertTrue(rr(()->facade.homeReportsInCurrentSnapshot(jdbc.getDataSource())).isEmpty());assertEquals(5,qualifications.get());
+    }
+    @Test void NativeHomeScopeRejectsBeforeQualificationAndCannotBorrowAnotherDataSource(){
+        insert("report","fictional-home-report","daily");var facade=nativeFacade();var source=jdbc.getDataSource();
+        assertThrows(IdentityService.Rejected.class,()->facade.homeReportsInCurrentSnapshot(source));
+        for(boolean readonly:new boolean[]{true,false})nativeRead(readonly,java.sql.Connection.TRANSACTION_READ_COMMITTED,tx,()->{assertThrows(IdentityService.Rejected.class,()->facade.homeReportsInCurrentSnapshot(source));return true;});
+        nativeRead(false,java.sql.Connection.TRANSACTION_REPEATABLE_READ,tx,()->{assertThrows(IdentityService.Rejected.class,()->facade.homeReportsInCurrentSnapshot(source));return true;});
+        var alien=new JdbcDataSource();alien.setURL("jdbc:h2:mem:fictional-alien-home-"+System.nanoTime());
+        rr(()->{assertThrows(IdentityService.Rejected.class,()->facade.homeReportsInCurrentSnapshot(alien));assertThrows(IdentityService.Rejected.class,()->facade().homeReportsInCurrentSnapshot(source));assertThrows(IdentityService.Rejected.class,()->new PublishedContentFacade(reads,this::project,tx,null,null,alien).homeReportsInCurrentSnapshot(alien));return true;});
+        nativeRead(true,java.sql.Connection.TRANSACTION_REPEATABLE_READ,new DataSourceTransactionManager(alien),()->{assertThrows(IdentityService.Rejected.class,()->facade.homeReportsInCurrentSnapshot(source));return true;});
+        assertEquals(0,qualifications.get());
+    }
+    @Test void NativeHomePageNeverKeepsAFormerProjectionAfterItsProofChanges(){
+        insert("report","fictional-home-report","daily");var facade=nativeFacade();assertEquals(1,rr(()->facade.homeReportsInCurrentSnapshot(jdbc.getDataSource())).size());
+        bodies.put("report:fictional-home-report",new ReportBody("Fictional changed",List.of(),List.of(),"daily",TIME,TIME.plusSeconds(86400),"UTC",null));
+        assertThrows(IdentityService.Rejected.class,()->rr(()->facade.homeReportsInCurrentSnapshot(jdbc.getDataSource())));assertEquals(2,qualifications.get());
+    }
+
 }

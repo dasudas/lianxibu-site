@@ -11,6 +11,8 @@ import java.util.function.Supplier;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
@@ -36,6 +38,8 @@ public final class PublishedContentFacade implements ContentService {
     private final TransactionTemplate reads;
     private final OwnerOperations owner;
     private final OwnerReportOperations reports;
+    private final javax.sql.DataSource nativeSource;
+    private final javax.sql.DataSource transactionSource;
 
     public PublishedContentFacade(ContentReadService content,Projection projection,PlatformTransactionManager tx) {
         this(content,projection,tx,null);
@@ -46,10 +50,25 @@ public final class PublishedContentFacade implements ContentService {
     }
     public PublishedContentFacade(ContentReadService content,Projection projection,PlatformTransactionManager tx,
             OwnerOperations owner,OwnerReportOperations reports) {
-        this.owner=owner;this.reports=reports;
+        this(content,projection,tx,owner,reports,null);
+    }
+    public PublishedContentFacade(ContentReadService content,Projection projection,PlatformTransactionManager tx,
+            OwnerOperations owner,OwnerReportOperations reports,javax.sql.DataSource nativeSource) {
+        this.owner=owner;this.reports=reports;this.nativeSource=nativeSource;
+        transactionSource=tx instanceof DataSourceTransactionManager manager?manager.getDataSource():null;
         this.content=Objects.requireNonNull(content);this.projection=Objects.requireNonNull(projection);
         reads=new TransactionTemplate(Objects.requireNonNull(tx));reads.setReadOnly(true);
         reads.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
+    }
+    /** A fresh fully qualified page for an aggregator already inside this exact native snapshot. */
+    public List<ContentView> homeReportsInCurrentSnapshot(javax.sql.DataSource expectedSource) {
+        if(nativeSource==null||expectedSource!=nativeSource||transactionSource!=nativeSource
+                ||!TransactionSynchronizationManager.isActualTransactionActive()
+                ||!TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+                ||!Integer.valueOf(TransactionDefinition.ISOLATION_REPEATABLE_READ).equals(TransactionSynchronizationManager.getCurrentTransactionIsolationLevel())
+                ||!TransactionSynchronizationManager.isSynchronizationActive()
+                ||!TransactionSynchronizationManager.hasResource(nativeSource))throw unavailable();
+        return List.copyOf(reports(null,1,50).items());
     }
     @Override public ContentView report(String id) {
         WireValues.id(id,false);
