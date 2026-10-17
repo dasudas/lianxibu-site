@@ -28,6 +28,34 @@ public final class JdbcSharedWriteEntry {
         this.observer = observer;
     }
 
+    /** Process-local admission only. The native row must still be locked in the transaction. */
+    public interface Admission extends AutoCloseable { @Override void close(); }
+    private static final java.util.Map<DataSource,java.util.concurrent.locks.ReentrantLock> LOCAL = new java.util.WeakHashMap<>();
+    private static synchronized java.util.concurrent.locks.ReentrantLock local(DataSource source) {
+        return LOCAL.computeIfAbsent(source, ignored -> new java.util.concurrent.locks.ReentrantLock(true));
+    }
+    public Admission admit() {
+        if (TransactionSynchronizationManager.isActualTransactionActive())
+            throw new IllegalStateException("local admission must precede the transaction");
+        var lock = local(source);
+        if (lock.isHeldByCurrentThread()) throw new IllegalStateException("local admission is not reentrant");
+        try {
+            if (!lock.tryLock(100, java.util.concurrent.TimeUnit.MILLISECONDS))
+                throw new org.springframework.dao.CannotAcquireLockException("local writer admission busy");
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new org.springframework.dao.CannotAcquireLockException("local writer admission interrupted", interrupted);
+        }
+        var owner = Thread.currentThread();
+        return new Admission() {
+            private boolean closed;
+            @Override public void close() {
+                if (Thread.currentThread() != owner) throw new IllegalStateException("local admission owner required");
+                if (!closed) { closed = true; lock.unlock(); }
+            }
+        };
+    }
+
     public void lock() {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("shared entry requires an active transaction");
