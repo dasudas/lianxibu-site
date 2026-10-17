@@ -87,7 +87,7 @@ public final class SharedWriteExecutor {
         Work<T> work=preparation.get();
         if(work==null)throw new IllegalStateException("prepared writer work required");
         for (int attempt = 0; attempt < 3; attempt++) {
-            try {
+            try (var admission = java.util.Objects.requireNonNull(entry.admit())) {
                 T value = writes.execute(status -> {
                     try {
                     entry.lock();
