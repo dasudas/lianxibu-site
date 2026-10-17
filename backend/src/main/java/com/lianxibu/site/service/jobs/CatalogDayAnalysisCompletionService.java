@@ -24,9 +24,12 @@ public final class CatalogDayAnalysisCompletionService {
     private final TransactionTemplate reads;
     private final String category;
     public CatalogDayAnalysisCompletionService(DataSource source,PlatformTransactionManager manager,Clock clock,String category){
+        this(source,manager,clock,category,new CatalogAnalysisPreparedInputService(source,manager,clock,category));
+    }
+    CatalogDayAnalysisCompletionService(DataSource source,PlatformTransactionManager manager,Clock clock,String category,CatalogAnalysisPreparedInputService originalPrepared){
         Objects.requireNonNull(source);Objects.requireNonNull(manager);Objects.requireNonNull(clock);
         this.category=switch(Objects.requireNonNull(category)){case "agent","skill","workflow","model"->category;default->throw invalid();};
-        prepared=new CatalogAnalysisPreparedInputService(source,manager,clock,category);
+        prepared=Objects.requireNonNull(originalPrepared);
         originals=new JdbcFrozenContentVersions(source);versions=new FrozenContentVersionService(originals);
         resultVersions=new JdbcCatalogAnalysisResultVersions(source);results=new JdbcResultState(source);
         reads=new TransactionTemplate(manager);reads.setReadOnly(true);reads.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
@@ -40,7 +43,7 @@ public final class CatalogDayAnalysisCompletionService {
         readonly();if(day==null||entity==null||entity.isBlank()||cutoff==null||cutoff.getNano()%1000!=0)throw invalid();
         var original=prepared.read(day,entity);if(original==null)return null;
         var candidates=resultVersions.read(original.input().ownerId());if(candidates.isEmpty())return null;
-        return read(day,entity,candidates.getFirst(),cutoff);
+        return completed(original,day,entity,candidates.getFirst(),cutoff);
     }
     /** Own one read-only repeatable-read snapshot, including original INPUT and committed result. */
     public Completed find(LocalDate day,String entity,ContentVersionKey target,Instant cutoff){
@@ -52,6 +55,11 @@ public final class CatalogDayAnalysisCompletionService {
         readonly();
         if(day==null||entity==null||entity.isBlank()||target==null||!category.equals(target.contentKind())||cutoff==null||cutoff.getNano()%1000!=0)throw invalid();
         var original=prepared.read(day,entity);if(original==null)return null;
+        return completed(original,day,entity,target,cutoff);
+    }
+    private Completed completed(CatalogAnalysisPreparedInputService.Prepared original,LocalDate day,String entity,ContentVersionKey target,Instant cutoff){
+        readonly();
+        if(day==null||entity==null||entity.isBlank()||target==null||!category.equals(target.contentKind())||cutoff==null||cutoff.getNano()%1000!=0)throw invalid();
         var input=original.input();var reservation=original.reservation();
         var context=FrozenApplicationContext.fromJson(CanonicalJson.parse(input.snapshotJson()).get(FrozenApplicationContext.FIELD));
         if(!category.equals(reservation.category())||!entity.equals(reservation.entityId())||!day.equals(reservation.day())

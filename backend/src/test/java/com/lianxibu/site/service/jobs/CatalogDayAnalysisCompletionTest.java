@@ -37,6 +37,17 @@ class CatalogDayAnalysisCompletionTest {
             var replay=restarted.find(f.day(),f.entity(),f.version(),at);assertNotNull(replay);assertEquals(complete.reservation().json(),replay.reservation().json());assertEquals(complete.version(),replay.version());assertEquals(complete.inputHash(),replay.inputHash());assertEquals(complete.bodyJson(),replay.bodyJson());assertEquals(complete.snapshotJson(),replay.snapshotJson());assertEquals(complete.availableAt(),replay.availableAt());assertEquals(jobs,f.f().jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class));assertEquals(2,f.f().sends);
         }
     }
+    @Test void NativeDiscoveryReadsOneOriginalPreparedInputPerCallWithoutNewRowsOrCalls(){
+        var f=fixture("workflow",false);var cutoff=observe(f,Clock.fixed(f.clock().instant().plusSeconds(5),ZoneOffset.UTC));
+        var original=spy(new CatalogAnalysisPreparedInputService(f.f().source,f.f().tx,f.clock(),"workflow"));
+        var reader=new CatalogDayAnalysisCompletionService(f.f().source,f.f().tx,f.clock(),"workflow",original);
+        int rows=f.f().jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class);
+        var expected=f.service().find(f.day(),f.entity(),f.version(),cutoff);var found=reader.find(f.day(),f.entity(),cutoff);
+        assertEquals(expected.version(),found.version());assertEquals(expected.bodyJson(),found.bodyJson());assertEquals(expected.snapshotJson(),found.snapshotJson());assertEquals(expected.reservation().json(),found.reservation().json());
+        verify(original,times(1)).read(f.day(),f.entity());
+        assertNull(reader.find(f.day(),f.entity(),cutoff.minusNanos(1000)));verify(original,times(2)).read(f.day(),f.entity());
+        assertEquals(rows,f.f().jdbc.queryForObject("SELECT COUNT(*) FROM jobs",Integer.class));assertEquals(2,f.f().sends);
+    }
     @Test void VersionTwoKeepsBothOriginalAliasesAndRejectsOtherRootOrCategory(){
         var f=fixture("agent",true);var at=observe(f,Clock.fixed(f.clock().instant().plusSeconds(5),ZoneOffset.UTC));
         var complete=f.service().find(f.day(),f.entity(),f.version(),at);assertEquals(2L,complete.reservation().generation());assertEquals(2,complete.reservation().members().size());assertEquals(2,CanonicalJson.parse(complete.bodyJson()).get("citation_ids").size());
